@@ -1,0 +1,471 @@
+<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"on-tertiary-container":"#1fa84e","surface-dim":"#d0daf2","on-primary":"#ffffff","primary":"#001632","on-background":"#111c2d","background":"#f9f9ff","outline-variant":"#c4c6ce","surface-bright":"#f9f9ff","tertiary-fixed-dim":"#62df7d","inverse-on-surface":"#ecf0ff","primary-fixed-dim":"#b2c7ee","on-primary-container":"#7d93b7","surface-container-low":"#f0f3ff","tertiary":"#001c06","on-secondary-fixed-variant":"#003ea8","surface-container-lowest":"#ffffff","secondary-fixed-dim":"#b4c5ff","surface":"#f9f9ff","outline":"#74777e","tertiary-container":"#003311","on-tertiary":"#ffffff","on-primary-fixed-variant":"#324768","on-secondary-container":"#fefcff","secondary-fixed":"#dbe1ff","error":"#ba1a1a","on-tertiary-fixed-variant":"#005320","primary-fixed":"#d5e3ff","inverse-primary":"#b2c7ee","surface-variant":"#d9e3fb","surface-tint":"#4a5f81","inverse-surface":"#273143","error-container":"#ffdad6","surface-container-highest":"#d9e3fb","tertiary-fixed":"#7ffc97","secondary":"#0051d5","on-surface-variant":"#44474e","on-error":"#ffffff","on-tertiary-fixed":"#002109","on-error-container":"#93000a","on-surface":"#111c2d","surface-container-high":"#dfe8ff","secondary-container":"#316bf3","on-secondary-fixed":"#00174b","on-primary-fixed":"#021c3a","surface-container":"#e8eeff","on-secondary":"#ffffff","primary-container":"#142b4a"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-sm":"0.5rem","space-lg":"1.5rem","margin":"2rem","space-xl":"2.5rem","gutter-mobile":"1rem","space-xs":"0.25rem","gutter":"1.5rem","margin-mobile":"1rem","space-md":"1rem"},"fontFamily":{"headline-md":["Inter"],"headline-lg":["Inter"],"display-hero":["Inter"],"body-lg":["Inter"],"headline-sm":["Inter"],"display-hero-mobile":["Inter"],"title-md":["Inter"],"headline-lg-mobile":["Inter"],"label-md":["Inter"],"caption":["Inter"],"body-md":["Inter"],"label-sm":["Inter"]},"fontSize":{"headline-md":["24px",{"lineHeight":"32px","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"700"}],"display-hero":["40px",{"lineHeight":"48px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}],"display-hero-mobile":["30px",{"lineHeight":"38px","letterSpacing":"-0.01em","fontWeight":"700"}],"title-md":["16px",{"lineHeight":"24px","fontWeight":"600"}],"headline-lg-mobile":["24px",{"lineHeight":"32px","fontWeight":"700"}],"label-md":["14px",{"lineHeight":"20px","fontWeight":"500"}],"caption":["12px",{"lineHeight":"16px","fontWeight":"400"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}]}}}};</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-space-md flex items-center gap-space-sm bg-surface-container-low"><img alt="CarRent Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WcC1BdUOq85_prvqL16Tabbbs_CY3qidzggV5WUHByXWf8xRHtQj-fR7EXQuS8WqkEaRaSWHJQjB5GECszBQyudzClcznkArJaDRJCUtP82uZxmzc0VDvXekIXs61l-D-vtv7dcZzac_eDOC4-x1LHEzsI04-ouPUe2VesuuNZyUVQpH3e9Qmw-Uq5rVB7KcXIfDmjQMlsrcWv9Baip7nWYIMFWUuyNoYtroQDL9UOoN8EyfDNzucenlw"><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary leading-tight">CarRent</span><span class="font-caption text-caption text-on-surface-variant leading-none">Quản trị hệ thống</span></div></div><div class="flex-1 overflow-y-auto py-space-sm px-space-sm"><nav class="flex flex-col gap-space-xs" data-active-classes="bg-primary text-on-primary font-title-md text-title-md rounded-lg"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="tong-quan" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span class="font-label-md text-label-md">Tổng quan</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="quan-ly-xe" href="#"><span class="material-symbols-outlined text-[20px]">directions_car</span><span class="font-label-md text-label-md">Quản lý xe</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="duyet-xe" href="#"><span class="material-symbols-outlined text-[20px]">verified</span><span class="font-label-md text-label-md">Duyệt xe</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="don-thue" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span class="font-label-md text-label-md">Đơn thuê</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="doanh-thu" href="#"><span class="material-symbols-outlined text-[20px]">payments</span><span class="font-label-md text-label-md">Doanh thu</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="quan-ly-nguoi-dung" href="#"><span class="material-symbols-outlined text-[20px]">group</span><span class="font-label-md text-label-md">Quản lý người dùng</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="dia-diem" href="#"><span class="material-symbols-outlined text-[20px]">location_on</span><span class="font-label-md text-label-md">Địa điểm</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="tai-khoan-he-thong" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span class="font-label-md text-label-md">Tài khoản</span></a></nav></div><div class="p-space-sm bg-surface-container-low"><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-error hover:bg-error-container hover:text-on-error-container transition-colors" data-path="dang-nhap" href="#"><span class="material-symbols-outlined text-[20px]">logout</span><span class="font-label-md text-label-md">Đăng xuất</span></a></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter"><div class="flex items-center gap-space-sm"><span class="font-title-md text-title-md text-primary">Cổng thông tin Điều hành &amp; Quản trị</span></div><div class="flex items-center gap-space-md"><a class="text-on-surface-variant hover:text-on-surface font-label-md text-label-md hidden sm:inline-flex" data-path="trang-chu" href="#">Xem trang khách</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="relative pt-16 w-full px-gutter min-h-screen bg-surface"><div class="flex flex-col w-full pb-space-xl">
+<!-- Breadcrumb Navigation -->
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm pt-space-md mb-space-sm">
+<a class="hover:text-primary transition-colors" href="#">Kênh đối tác</a>
+<span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Quản lý xe</a>
+<span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span>
+<span class="text-on-surface font-label-md text-label-md">Thêm xe mới</span>
+</div>
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Đăng ký xe cho thuê mới</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-xs">Điền thông tin và tải ảnh xe để gửi kiểm duyệt.</p>
+</div>
+<div class="flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm w-fit self-start md:self-auto">
+<span class="material-symbols-outlined text-[18px] text-secondary">verified_user</span>
+<span class="">Hồ sơ đối tác đã xác minh</span>
+</div>
+</div>
+<!-- Main Thymeleaf Form -->
+<form action="#" class="flex flex-col gap-space-lg" enctype="multipart/form-data" id="ownerAddVehicleForm" method="POST">
+<!-- Cụm 1: Thông tin cơ bản -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center gap-space-sm pb-space-xs">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">directions_car</span>
+</div>
+<div>
+<h2 class="font-title-md text-title-md text-primary">1. Thông tin cơ bản</h2>
+
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Tên xe -->
+<div class="flex flex-col gap-space-xs md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-1" for="carName">
+            Tên thương mại của xe <span class="text-error">*</span>
+</label>
+<input class="h-[42px] px-space-md rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md placeholder:text-outline focus:outline-none focus:bg-surface-container-low transition-colors" id="carName" name="carName" placeholder="Ví dụ: VinFast VF 8 Plus, Toyota Camry 2.5Q" required="" type="text">
+</div>
+<!-- Hãng sản xuất -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-1" for="carBrand">
+            Hãng sản xuất <span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full h-[42px] px-space-md pr-10 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md appearance-none focus:outline-none focus:bg-surface-container-low transition-colors" id="carBrand" name="carBrand" required="">
+<option disabled="" selected="" value="">Chọn hãng sản xuất</option>
+<option value="vinfast">VinFast</option>
+<option value="toyota">Toyota</option>
+<option value="hyundai">Hyundai</option>
+<option value="kia">Kia</option>
+<option value="mazda">Mazda</option>
+<option value="honda">Honda</option>
+<option value="ford">Ford</option>
+<option value="mitsubishi">Mitsubishi</option>
+<option value="mercedes">Mercedes-Benz</option>
+<option value="bmw">BMW</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[20px]">
+              expand_more
+            </span>
+</div>
+</div>
+<!-- Phân khúc xe -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-1" for="carCategory">
+            Phân khúc / Danh mục xe <span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full h-[42px] px-space-md pr-10 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md appearance-none focus:outline-none focus:bg-surface-container-low transition-colors" id="carCategory" name="carCategory" required="">
+<option disabled="" selected="" value="">Chọn phân khúc</option>
+<option value="suv">SUV Đô thị</option>
+<option value="sedan">Sedan 5 chỗ</option>
+<option value="crossover">Crossover</option>
+<option value="mpv">MPV 7 chỗ</option>
+<option value="pickup">Bán tải</option>
+<option value="hatchback">Hatchback hạng A/B</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[20px]">
+              expand_more
+            </span>
+</div>
+</div>
+<!-- Biển kiểm soát -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-1" for="licensePlate">
+            Biển kiểm soát <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-[20px]">badge</span>
+<input class="w-full h-[42px] pl-10 pr-space-md rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md uppercase placeholder:normal-case placeholder:text-outline focus:outline-none focus:bg-surface-container-low transition-colors" id="licensePlate" name="licensePlate" placeholder="VD: 51K-123.45 hoặc 30H-890.12" required="" type="text">
+</div>
+
+</div>
+<!-- Năm sản xuất -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-1" for="manufactureYear">
+            Năm sản xuất <span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full h-[42px] px-space-md pr-10 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md appearance-none focus:outline-none focus:bg-surface-container-low transition-colors" id="manufactureYear" name="manufactureYear" required="">
+<option disabled="" selected="" value="">Chọn năm sản xuất</option>
+<option value="2025">2025</option>
+<option value="2024">2024</option>
+<option value="2023">2023</option>
+<option value="2022">2022</option>
+<option value="2021">2021</option>
+<option value="2020">2020</option>
+<option value="2019">2019</option>
+<option value="2018">2018</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[20px]">
+              expand_more
+            </span>
+</div>
+
+</div>
+</div>
+</section>
+<!-- Cụm 2: Thông số vận hành & Đơn giá -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center gap-space-sm pb-space-xs">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</div>
+<div>
+<h2 class="font-title-md text-title-md text-primary">2. Thông số vận hành &amp; Đơn giá</h2>
+
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Số chỗ ngồi -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-1" for="seatCount">
+            Số chỗ ngồi <span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full h-[42px] px-space-md pr-10 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md appearance-none focus:outline-none focus:bg-surface-container-low transition-colors" id="seatCount" name="seatCount" required="">
+<option disabled="" selected="" value="">Chọn số chỗ ngồi</option>
+<option value="4">4 chỗ</option>
+<option selected="" value="5">5 chỗ</option>
+<option value="7">7 chỗ</option>
+<option value="8">8 chỗ</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[20px]">
+              expand_more
+            </span>
+</div>
+</div>
+<!-- Hộp số -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-1">
+            Loại hộp số <span class="text-error">*</span>
+</span>
+<div class="grid grid-cols-2 gap-space-sm">
+<label class="relative flex items-center justify-center gap-space-xs h-[42px] px-space-md rounded-lg bg-surface-container cursor-pointer select-none transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary">
+<input checked="" class="sr-only" name="transmission" type="radio" value="AUTOMATIC">
+<span class="material-symbols-outlined text-[18px]">auto_mode</span>
+<span class="font-label-md text-label-md">Tự động</span>
+</label>
+<label class="relative flex items-center justify-center gap-space-xs h-[42px] px-space-md rounded-lg bg-surface-container cursor-pointer select-none transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary">
+<input class="sr-only" name="transmission" type="radio" value="MANUAL">
+<span class="material-symbols-outlined text-[18px]">alt_route</span>
+<span class="font-label-md text-label-md">Số sàn</span>
+</label>
+</div>
+</div>
+<!-- Nhiên liệu -->
+<div class="flex flex-col gap-space-xs md:col-span-2">
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-1">
+            Loại nhiên liệu sử dụng <span class="text-error">*</span>
+</span>
+<div class="grid grid-cols-3 gap-space-sm">
+<label class="relative flex items-center justify-center gap-space-xs h-[42px] px-space-md rounded-lg bg-surface-container cursor-pointer select-none transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary">
+<input checked="" class="sr-only" name="fuelType" type="radio" value="GASOLINE">
+<span class="material-symbols-outlined text-[18px]">local_gas_station</span>
+<span class="font-label-md text-label-md">Xăng</span>
+</label>
+<label class="relative flex items-center justify-center gap-space-xs h-[42px] px-space-md rounded-lg bg-surface-container cursor-pointer select-none transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary">
+<input class="sr-only" name="fuelType" type="radio" value="DIESEL">
+<span class="material-symbols-outlined text-[18px]">oil_barrel</span>
+<span class="font-label-md text-label-md">Dầu Diesel</span>
+</label>
+<label class="relative flex items-center justify-center gap-space-xs h-[42px] px-space-md rounded-lg bg-surface-container cursor-pointer select-none transition-colors has-[:checked]:bg-primary has-[:checked]:text-on-primary">
+<input class="sr-only" name="fuelType" type="radio" value="ELECTRIC">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span class="font-label-md text-label-md">Điện</span>
+</label>
+</div>
+</div>
+<!-- Đơn giá thuê theo ngày -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-1" for="pricePerDay">
+            Đơn giá thuê theo ngày (VNĐ/ngày) <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full h-[42px] px-space-md pr-24 rounded-lg bg-surface-container-lowest text-on-surface font-title-md text-title-md placeholder:text-outline focus:outline-none focus:bg-surface-container-low transition-colors" id="pricePerDay" min="300000" name="pricePerDay" placeholder="1200000" required="" step="50000" type="number">
+<span class="absolute right-3 font-label-sm text-label-sm text-on-surface-variant pointer-events-none">
+              VNĐ / ngày
+            </span>
+</div>
+
+</div>
+<!-- Tiền cọc thế chấp yêu cầu -->
+<div class="flex flex-col gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface flex items-center gap-1" for="depositAmount">
+            Tiền cọc thế chấp yêu cầu (VNĐ) <span class="text-error">*</span>
+</label>
+<div class="relative flex items-center">
+<input class="w-full h-[42px] px-space-md pr-16 rounded-lg bg-surface-container-lowest text-on-surface font-title-md text-title-md placeholder:text-outline focus:outline-none focus:bg-surface-container-low transition-colors" id="depositAmount" min="0" name="depositAmount" required="" step="1000000" type="number" value="15000000">
+<span class="absolute right-3 font-label-sm text-label-sm text-on-surface-variant pointer-events-none">
+              VNĐ
+            </span>
+</div>
+
+</div>
+</div>
+</section>
+<!-- Cụm 3: Hình ảnh thực tế của xe -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">add_a_photo</span>
+</div>
+<div>
+<h2 class="font-title-md text-title-md text-primary">3. Hình ảnh thực tế của xe</h2>
+
+</div>
+</div>
+<span class="font-label-sm text-label-sm px-space-sm py-0.5 rounded bg-surface-container-high text-primary font-medium">
+          4/4 góc bắt buộc
+        </span>
+</div>
+<!-- Drag and Drop Dropzone -->
+<div class="group relative flex flex-col items-center justify-center p-space-xl rounded-xl bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors text-center" id="dropzone">
+<input accept="image/png, image/jpeg, image/webp" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" id="carImagesInput" multiple="" name="carImages" type="file">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-secondary mb-space-sm group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[26px]">cloud_upload</span>
+</div>
+<p class="font-title-md text-title-md text-primary">Kéo thả hoặc bấm để tải ảnh xe lên</p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-xl">
+          Bao gồm: <strong class="text-on-surface">Mặt trước</strong>, <strong class="text-on-surface">Góc sau</strong>, <strong class="text-on-surface">Khoang lái nội thất</strong>, <strong class="text-on-surface">Hàng ghế hành khách</strong>
+</p>
+<span class="font-caption text-caption text-outline mt-space-xs">Định dạng JPG, PNG, WEBP dung lượng tối đa 10MB/ảnh</span>
+</div>
+<!-- 4 Thumbnail Previews -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Thumbnail 1: Mặt trước -->
+<div class="relative flex flex-col rounded-lg bg-surface-container-low overflow-hidden group">
+<div class="relative aspect-video w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Góc chụp trực diện phía trước ngoại thất xe ô tô màu trắng hiện đại sạch sẽ đỗ trong bãi xe có ánh sáng ban ngày tự nhiên, rõ biển số và logo, góc chụp thương mại sắc nét tông xanh navy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBD1CbN8Oeb4aEgJu_zd7o1lyZ3UzCexpcFTLOXcxB3ZBdt2577B-4D9Q1mteZEmGZ2EJ2j3NrwNntEVoqvL0l4by7gmAJuIqP2Dh33Km4oSBOI139vqJDg4MDKD_ZYCUcZMViQdgjB4t9pOrLLAJmVzAJI2V44Traxx6kO91P3ryiXur93S7taAHGL2NuBr-N6z3706GwaTkfkI6Cy2Duny0-Dg3ugIsdy50p4vQNeFm9PNe_zR9DF">
+<button class="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface-container-lowest/90 text-error hover:bg-error hover:text-on-error flex items-center justify-center shadow-sm transition-colors" onclick="this.closest('.group').remove()" title="Xóa ảnh này" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+<span class="absolute bottom-2 left-2 px-space-xs py-0.5 rounded bg-primary/80 backdrop-blur-sm text-on-primary font-caption text-caption">
+              Mặt trước
+            </span>
+</div>
+<div class="p-space-sm flex items-center justify-between">
+<span class="font-caption text-caption text-on-surface font-medium truncate">IMG_MatTruoc_01.jpg</span>
+<span class="font-caption text-caption text-on-surface-variant">2.4 MB</span>
+</div>
+</div>
+<!-- Thumbnail 2: Góc sau -->
+<div class="relative flex flex-col rounded-lg bg-surface-container-low overflow-hidden group">
+<div class="relative aspect-video w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Góc chụp ba phần tư phía sau đuôi xe ô tô cao cấp hiển thị cụm đèn hậu LED sắc sảo và cốp xe rộng rãi, ánh sáng chiều ấm áp sang trọng phản chiếu bề mặt sơn bóng bẩy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkEgpn_FfDI-3usg8qfCDtT38Js0IakfborlF588phYz5ljF1uDBRU-04hbnKttucDW-jDkDvmFhGgcdsSxmWgvjXcuVTQonu49pDoSCw6X5g9b-CJe3gbf5KNCNaC-JC60r2Hp2pgmitN1knDXGsSsCgv9skx657s1mMmJSkJPFCPlXVzzJQwoboRaP5AT8JjCuC85c-KvsoMrJIK9geqTw5DsR3xw3UL8BLSuGbDESf4k1dstEpL">
+<button class="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface-container-lowest/90 text-error hover:bg-error hover:text-on-error flex items-center justify-center shadow-sm transition-colors" onclick="this.closest('.group').remove()" title="Xóa ảnh này" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+<span class="absolute bottom-2 left-2 px-space-xs py-0.5 rounded bg-primary/80 backdrop-blur-sm text-on-primary font-caption text-caption">
+              Góc sau
+            </span>
+</div>
+<div class="p-space-sm flex items-center justify-between">
+<span class="font-caption text-caption text-on-surface font-medium truncate">IMG_GocSau_02.jpg</span>
+<span class="font-caption text-caption text-on-surface-variant">1.9 MB</span>
+</div>
+</div>
+<!-- Thumbnail 3: Khoang lái nội thất -->
+<div class="relative flex flex-col rounded-lg bg-surface-container-low overflow-hidden group">
+<div class="relative aspect-video w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Khoang nội thất xe hơi cao cấp nhìn từ góc ghế phụ qua vô lăng bọc da, màn hình điều khiển trung tâm sắc nét sáng đèn, bảng táp lô tinh tế không vết trầy xước." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCI9yqjYGnyrtvfRUMOa07BRIMFKznAg7fegPBaGEuRVXHAdaXgqbh2MyiROBWePQlKNZ13CixkcMPYW80GX7ORfwrylfBr0Nj33Vot6k5im4ivJEiP6wL2LJ-zS7OjX3sZRua1Pf-h4FwaxwuQKUOn-9vUPbWIGGASa3ALtF-9rvKZ-wXnnZIkCPkDVP-99nYeJ_b-asdVww_kmVT4GeGc1LIgLgfuPMBJ21vdCsKp8lcuq300DHHG">
+<button class="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface-container-lowest/90 text-error hover:bg-error hover:text-on-error flex items-center justify-center shadow-sm transition-colors" onclick="this.closest('.group').remove()" title="Xóa ảnh này" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+<span class="absolute bottom-2 left-2 px-space-xs py-0.5 rounded bg-primary/80 backdrop-blur-sm text-on-primary font-caption text-caption">
+              Khoang lái nội thất
+            </span>
+</div>
+<div class="p-space-sm flex items-center justify-between">
+<span class="font-caption text-caption text-on-surface font-medium truncate">IMG_KhoangLai_03.jpg</span>
+<span class="font-caption text-caption text-on-surface-variant">3.1 MB</span>
+</div>
+</div>
+<!-- Thumbnail 4: Hàng ghế hành khách -->
+<div class="relative flex flex-col rounded-lg bg-surface-container-low overflow-hidden group">
+<div class="relative aspect-video w-full overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover transition-transform group-hover:scale-105" data-alt="Hàng ghế hành khách phía sau xe ô tô bọc da màu kem nguyên bản sạch sẽ phẳng phiu, khoảng để chân rộng rãi, góc nhìn thông thoáng đầy đủ tựa đầu và cửa gió điều hòa." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZWvBtxvEQWYp1KJrhwbp38I18dMG38m8r-WLusOYYDZCK8EEZ_rL9wUS_XLUuAUeA2iqwYxDCWw6oAkvgy3BahV3t5PoIrAK52ZVC8acxR2TyX-CW_Azqeju7gNv77yzmrMwNKoUXS40f-EKmDwkqXWtSsk4lKy-IEgq8bn-65JdqkQYPhs5aG-JqE5QUp4HfblfyRxsmmY67jxcpe8z54rq1J-2mUUUCTtImauuLVFRiILMXEyhG">
+<button class="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface-container-lowest/90 text-error hover:bg-error hover:text-on-error flex items-center justify-center shadow-sm transition-colors" onclick="this.closest('.group').remove()" title="Xóa ảnh này" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+<span class="absolute bottom-2 left-2 px-space-xs py-0.5 rounded bg-primary/80 backdrop-blur-sm text-on-primary font-caption text-caption">
+              Ghế hành khách
+            </span>
+</div>
+<div class="p-space-sm flex items-center justify-between">
+<span class="font-caption text-caption text-on-surface font-medium truncate">IMG_HangGheSau_04.jpg</span>
+<span class="font-caption text-caption text-on-surface-variant">2.7 MB</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Cụm 4: Tiện ích & Mô tả chi tiết -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex items-center gap-space-sm pb-space-xs">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">featured_play_list</span>
+</div>
+<div>
+<h2 class="font-title-md text-title-md text-primary">4. Tiện ích &amp; Mô tả chi tiết</h2>
+
+</div>
+</div>
+<!-- Checkbox tiện ích -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-md text-label-md text-on-surface">Tiện ích an toàn &amp; trang bị tiện nghi trên xe</span>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-space-sm pt-space-xs">
+<!-- GPS -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer select-none transition-colors">
+<input checked="" class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="GPS">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">navigation</span>
+<span class="font-body-md text-body-md">Bản đồ định vị GPS</span>
+</div>
+</label>
+<!-- Camera 360 -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer select-none transition-colors">
+<input checked="" class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="CAM_360">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">videocam</span>
+<span class="font-body-md text-body-md">Camera 360 độ</span>
+</div>
+</label>
+<!-- Áp suất lốp -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer select-none transition-colors">
+<input checked="" class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="TPMS">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">tire_repair</span>
+<span class="font-body-md text-body-md">Cảm biến áp suất lốp</span>
+</div>
+</label>
+<!-- VETC -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer select-none transition-colors">
+<input checked="" class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="ETC_TAG">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">toll</span>
+<span class="font-body-md text-body-md">Thu phí tự động VETC</span>
+</div>
+</label>
+<!-- Cửa sổ trời -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer select-none transition-colors">
+<input class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="SUNROOF">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">wb_twilight</span>
+<span class="font-body-md text-body-md">Cửa sổ trời toàn cảnh</span>
+</div>
+</label>
+<!-- Sạc không dây -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-none select-none transition-colors">
+<input checked="" class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="WIRELESS_CHARGER">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">power</span>
+<span class="font-body-md text-body-md">Sạc điện thoại không dây</span>
+</div>
+</label>
+<!-- Apple CarPlay / Android Auto -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer select-none transition-colors">
+<input checked="" class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="CARPLAY">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">phonelink_setup</span>
+<span class="font-body-md text-body-md">Apple CarPlay / Android Auto</span>
+</div>
+</label>
+<!-- Cảm biến lùi -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer select-none transition-colors">
+<input checked="" class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="REVERSE_SENSOR">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">radar</span>
+<span class="font-body-md text-body-md">Cảm biến lùi &amp; va chạm</span>
+</div>
+</label>
+<!-- Ghế sưởi / Làm mát -->
+<label class="flex items-center gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer select-none transition-colors">
+<input class="w-4 h-4 accent-secondary rounded" name="amenities" type="checkbox" value="SEAT_COOLING">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">airline_seat_recline_extra</span>
+<span class="font-body-md text-body-md">Làm mát / Sưởi ghế</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Textarea Mô tả chi tiết -->
+<div class="flex flex-col gap-space-xs mt-space-xs">
+<label class="font-label-md text-label-md text-on-surface flex items-center justify-between" for="carDescription">
+<span class="">Mô tả chi tiết phương tiện</span>
+<span class="font-caption text-caption text-outline">Tối đa 1500 ký tự</span>
+</label>
+<textarea class="w-full p-space-md rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md placeholder:text-outline focus:outline-none focus:bg-surface-container-low transition-colors resize-y min-h-[110px]" id="carDescription" name="carDescription" placeholder="Mô tả chi tiết tình trạng xe (xe gia đình giữ gìn, bảo dưỡng định kỳ chính hãng, vệ sinh khử mùi sau mỗi chuyến đi), quy định số km tối đa trong ngày, và yêu cầu khi giao nhận xe..." rows="4"></textarea>
+</div>
+</section>
+<!-- Cụm 5: Nút hành động cuối form & Thông báo cam kết -->
+<div class="flex flex-col gap-space-md mt-space-xs">
+<!-- Banner cam kết xét duyệt -->
+<div class="flex items-center gap-space-sm p-space-md rounded-xl bg-surface-container-high text-primary">
+<span class="material-symbols-outlined text-[24px] text-secondary shrink-0">info</span>
+<p class="font-body-md text-body-md">Hồ sơ xe sẽ được ban quản trị xét duyệt trong vòng <strong>2 - 4 giờ làm việc</strong>.</p>
+</div>
+<!-- Action Buttons Bar -->
+<div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-space-md pt-space-xs">
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-error transition-colors px-space-md py-space-sm" href="#">
+          Hủy bỏ thao tác
+        </a>
+<div class="flex items-center gap-space-sm w-full sm:w-auto">
+<!-- Nút Lưu nháp -->
+<button class="flex-1 sm:flex-initial h-[42px] px-space-lg rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors flex items-center justify-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span class="">Lưu bản nháp</span>
+</button>
+<!-- Nút Gửi kiểm duyệt -->
+<button class="flex-1 sm:flex-initial h-[42px] px-space-xl rounded-lg bg-secondary text-on-secondary font-title-md text-title-md hover:bg-secondary-container transition-colors shadow-sm flex items-center justify-center gap-space-xs" type="submit">
+<span class="material-symbols-outlined text-[18px]">send</span>
+<span class="">Gửi hồ sơ kiểm duyệt</span>
+</button>
+</div>
+</div>
+</div>
+</form>
+</div>
+<script>
+  // Simple interactive enhancement for the owner form dropzone
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('carImagesInput');
+
+  if (dropzone && fileInput) {
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('bg-surface-container');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('bg-surface-container');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('bg-surface-container');
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+      }
+    });
+  }
+</script></main></div>
+
+</body></html>

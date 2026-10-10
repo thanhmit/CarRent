@@ -1,0 +1,23 @@
+/* CarRent custom tweaks — layout logic belongs to Tailwind (D-18). */
+.site-footer {
+    margin-top: auto;
+}
+
+.car-card:hover {
+    box-shadow: 0 6px 18px rgba(0, 22, 50, 0.15);
+}
+
+.badge-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge-approved {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.badge-rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+}

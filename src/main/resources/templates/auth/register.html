@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Đăng ký')}"></head>
+<body class="bg-background font-body-md text-body-md text-on-surface min-h-screen flex flex-col justify-between">
+<div th:replace="~{fragments/header :: authHeader}"></div>
+<main class="flex-1 flex items-center justify-center py-space-xl px-4">
+  <div class="flex flex-col w-full">
+    <div class="max-w-6xl mx-auto w-full py-space-sm px-2 sm:px-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 rounded-xl bg-surface-container-lowest shadow-xl overflow-hidden">
+        <div class="p-6 sm:p-10 flex flex-col justify-between lg:col-span-8">
+          <div>
+            <div class="mb-space-lg">
+              <span class="inline-flex items-center gap-space-xs font-label-sm text-label-sm text-secondary bg-surface-container px-3 py-1 rounded-full mb-space-sm font-semibold"><span class="material-symbols-outlined text-[16px]">how_to_reg</span>Khởi đầu hành trình mới</span>
+              <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Đăng ký tài khoản CarRent</h1>
+              <p class="font-body-md text-body-md text-on-surface-variant mt-space-xs">Bắt đầu hành trình thuê xe hoặc đăng ký cho thuê xe dễ dàng</p>
+            </div>
+            <form class="space-y-space-md" id="registerForm" method="post" th:action="@{/register}" th:object="${form}" novalidate>
+              <fieldset>
+                <legend class="block font-label-md text-label-md text-on-surface mb-2 font-semibold">Bạn tham gia CarRent với vai trò gì? <span class="text-error">*</span></legend>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm" id="roleSelector">
+                  <label id="card-customer" class="relative flex flex-col p-4 rounded-lg cursor-pointer transition-all duration-200 shadow-sm hover:bg-surface-container-low focus-within:ring-2 focus-within:ring-secondary" th:classappend="*{role != null and role.name() == 'CUSTOMER'} ? 'bg-surface-container-low' : 'bg-surface-container-lowest'">
+                    <input class="sr-only" id="role-customer" th:field="*{role}" value="CUSTOMER" type="radio" onchange="updateRoleStyles()" aria-describedby="role-error" th:attr="aria-invalid=${#fields.hasErrors('role')}"/>
+                    <div class="flex items-center justify-between mb-2"><span class="inline-flex p-2 rounded-lg bg-surface-container-lowest text-secondary"><span class="material-symbols-outlined text-[20px]">directions_car</span></span><span id="check-customer" class="material-symbols-outlined text-secondary text-[20px]" th:classappend="*{role == null or role.name() != 'CUSTOMER'} ? 'hidden'">check_circle</span></div>
+                    <span class="font-title-md text-title-md text-on-surface">Khách thuê xe</span><span class="font-caption text-caption text-on-surface-variant mt-1 leading-normal">Tìm và đặt xe nhanh chóng</span>
+                  </label>
+                  <label id="card-owner" class="relative flex flex-col p-4 rounded-lg cursor-pointer transition-all duration-200 shadow-sm hover:bg-surface-container-low focus-within:ring-2 focus-within:ring-secondary" th:classappend="*{role != null and role.name() == 'OWNER'} ? 'bg-surface-container-low' : 'bg-surface-container-lowest'">
+                    <input class="sr-only" id="role-owner" th:field="*{role}" value="OWNER" type="radio" onchange="updateRoleStyles()" aria-describedby="role-error" th:attr="aria-invalid=${#fields.hasErrors('role')}"/>
+                    <div class="flex items-center justify-between mb-2"><span class="inline-flex p-2 rounded-lg bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[20px]">key</span></span><span id="check-owner" class="material-symbols-outlined text-secondary text-[20px]" th:classappend="*{role == null or role.name() != 'OWNER'} ? 'hidden'">check_circle</span></div>
+                    <span class="font-title-md text-title-md text-on-surface">Chủ xe</span><span class="font-caption text-caption text-on-surface-variant mt-1 leading-normal">Cho thuê xe nhàn rỗi</span>
+                  </label>
+                </div>
+                <p id="role-error" class="text-error font-caption text-caption mt-1" th:if="${#fields.hasErrors('role')}" th:errors="*{role}">Vai trò không hợp lệ</p>
+              </fieldset>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                <div>
+                  <label class="block font-label-md text-label-md text-on-surface mb-1" for="fullName">Họ và tên <span class="text-error">*</span></label>
+                  <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">person</span></span><input class="w-full pl-10 pr-3 py-2.5 rounded-lg bg-surface-container-lowest font-body-md text-body-md text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary transition-all placeholder:text-outline-variant" id="fullName" th:field="*{fullName}" placeholder="Nguyễn Văn A" required maxlength="100" type="text" autocomplete="name" aria-describedby="fullName-error" th:attr="aria-invalid=${#fields.hasErrors('fullName')}"/></div>
+                  <p id="fullName-error" class="text-error font-caption text-caption mt-1" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}">Lỗi họ tên</p>
+                </div>
+                <div>
+                  <label class="block font-label-md text-label-md text-on-surface mb-1" for="phone">Số điện thoại</label>
+                  <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">phone</span></span><input class="w-full pl-10 pr-3 py-2.5 rounded-lg bg-surface-container-lowest font-body-md text-body-md text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary transition-all placeholder:text-outline-variant" id="phone" th:field="*{phone}" placeholder="0912 345 678" maxlength="20" type="tel" autocomplete="tel" aria-describedby="phone-error" th:attr="aria-invalid=${#fields.hasErrors('phone')}"/></div>
+                  <p id="phone-error" class="text-error font-caption text-caption mt-1" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}">Lỗi số điện thoại</p>
+                </div>
+              </div>
+              <div>
+                <label class="block font-label-md text-label-md text-on-surface mb-1" for="email">Địa chỉ Email <span class="text-error">*</span></label>
+                <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">mail</span></span><input class="w-full pl-10 pr-3 py-2.5 rounded-lg bg-surface-container-lowest font-body-md text-body-md text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary transition-all placeholder:text-outline-variant" id="email" th:field="*{email}" placeholder="nguyenvana@email.com" required maxlength="150" type="text" autocomplete="email" aria-describedby="email-error" th:attr="aria-invalid=${#fields.hasErrors('email')}"/></div>
+                <p id="email-error" class="text-error font-caption text-caption mt-1" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Lỗi email</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                <div>
+                  <div class="flex items-center justify-between mb-1"><label class="font-label-md text-label-md text-on-surface" for="password">Mật khẩu <span class="text-error">*</span></label><span class="font-caption text-caption text-on-surface-variant">Tối thiểu 6 ký tự</span></div>
+                  <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">lock</span></span><input class="w-full pl-10 pr-10 py-2.5 rounded-lg bg-surface-container-lowest font-body-md text-body-md text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary transition-all placeholder:text-outline-variant" id="password" name="password" minlength="6" maxlength="72" placeholder="••••••••" required type="password" autocomplete="new-password" aria-describedby="password-error" th:attr="aria-invalid=${#fields.hasErrors('password')}"/><button class="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary rounded" aria-label="Hiện mật khẩu" aria-pressed="false" onclick="togglePassword(this, 'password')" type="button"><span class="material-symbols-outlined text-[18px]">visibility</span></button></div>
+                  <p id="password-error" class="text-error font-caption text-caption mt-1" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Lỗi mật khẩu</p>
+                </div>
+                <div>
+                  <label class="block font-label-md text-label-md text-on-surface mb-1" for="confirmPassword">Xác nhận mật khẩu <span class="text-error">*</span></label>
+                  <div class="relative"><span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant"><span class="material-symbols-outlined text-[18px]">lock_reset</span></span><input class="w-full pl-10 pr-10 py-2.5 rounded-lg bg-surface-container-lowest font-body-md text-body-md text-on-surface shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary transition-all placeholder:text-outline-variant" id="confirmPassword" name="confirmPassword" placeholder="••••••••" required type="password" autocomplete="new-password" aria-describedby="confirmPassword-error" th:attr="aria-invalid=${#fields.hasErrors('confirmPassword')}"/><button class="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary rounded" aria-label="Hiện mật khẩu xác nhận" aria-pressed="false" onclick="togglePassword(this, 'confirmPassword')" type="button"><span class="material-symbols-outlined text-[18px]">visibility</span></button></div>
+                  <p id="confirmPassword-error" class="text-error font-caption text-caption mt-1" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}">Lỗi xác nhận mật khẩu</p>
+                </div>
+              </div>
+              <div class="pt-2"><button class="w-full py-3 px-6 rounded-lg font-title-md text-title-md font-semibold text-white bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.99] transition-all shadow-md flex items-center justify-center gap-space-xs" type="submit"><span>Đăng ký tài khoản</span><span class="material-symbols-outlined text-[20px]">arrow_forward</span></button></div>
+            </form>
+          </div>
+          <div class="mt-8 pt-4 text-center"><p class="font-body-md text-body-md text-on-surface-variant">Đã có tài khoản? <a class="font-label-md text-label-md text-secondary font-semibold hover:underline ml-1" th:href="@{/login}">Đăng nhập ngay</a></p></div>
+        </div>
+        <div class="bg-primary-container text-on-primary p-6 sm:p-10 flex flex-col justify-between relative overflow-hidden lg:col-span-4">
+          <div class="absolute -top-24 -right-24 w-72 h-72 bg-secondary/20 rounded-full blur-3xl pointer-events-none"></div><div class="absolute -bottom-24 -left-24 w-72 h-72 bg-tertiary-fixed-dim/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="relative z-10"><div class="space-y-4"></div></div>
+          <div class="relative z-10 mt-8 pt-6"><div class="rounded-lg overflow-hidden shadow-lg mb-4"><img class="w-full h-32 object-cover" alt="Xe SUV và sedan trên đường ven biển" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIS4gHnoa0Fsow-PYdr_vGe_wfZLIvZQ350wgS9qCqbpzLqLWRDyw25lCvlU-Gv0CTe8X6x7nw0GIg0hLVO3JrE0Vint0fXvimu14Ic5JrUIWkQ1JoKMgafZ2Mm7D8lz0i49HuKUjP2ayCILFF_ooRNiOXWRhu32umSOyHTxrkx670gxQVq0yNc868ssagd0nVDXQ8fXqi2Hf4JL-IobgUox6CfP3F7pCrNnhETinTBKYPOeYPHXhi"/></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script>
+function updateRoleStyles() {
+  for (const role of ['customer', 'owner']) {
+    const checked = document.getElementById('role-' + role).checked;
+    document.getElementById('card-' + role).classList.toggle('bg-surface-container-low', checked);
+    document.getElementById('card-' + role).classList.toggle('bg-surface-container-lowest', !checked);
+    document.getElementById('check-' + role).classList.toggle('hidden', !checked);
+  }
+}
+function togglePassword(button, id) {
+  const input = document.getElementById(id);
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  button.setAttribute('aria-pressed', String(show));
+  button.setAttribute('aria-label', (show ? 'Ẩn' : 'Hiện') + (id === 'confirmPassword' ? ' mật khẩu xác nhận' : ' mật khẩu'));
+  button.querySelector('span').textContent = show ? 'visibility_off' : 'visibility';
+}
+</script>
+</body>
+</html>

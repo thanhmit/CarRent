@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Không có quyền truy cập')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
+  <div class="max-w-3xl mx-auto px-gutter py-space-xl flex flex-col items-center justify-center gap-space-md text-center">
+    <span class="material-symbols-outlined text-outline text-[64px]">lock</span>
+    <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Không có quyền truy cập</h1>
+    <p class="font-body-lg text-body-lg text-on-surface-variant">Bạn không có quyền truy cập trang này.</p>
+    <a class="px-space-md py-space-sm bg-secondary text-on-secondary font-label-md text-label-md rounded-lg hover:bg-secondary-container transition-colors shadow-sm" th:href="@{/}">Về trang chủ</a>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

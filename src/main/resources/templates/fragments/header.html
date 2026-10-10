@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]" th:fragment="header">
+  <div class="h-16 max-w-7xl mx-auto px-4 sm:px-gutter flex items-center justify-between gap-2">
+    <div class="flex items-center gap-space-lg min-w-0">
+      <a class="flex items-center gap-space-sm shrink-0" th:href="@{/}" aria-label="CarRent - Trang chủ">
+        <span class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[20px]">directions_car</span></span>
+        <span class="hidden min-[390px]:inline font-headline-sm text-headline-sm text-primary tracking-tight">CarRent</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-space-xs" aria-label="Điều hướng chính">
+        <a class="px-space-md py-space-sm transition-colors bg-surface-container-high text-on-surface rounded-lg font-title-md text-title-md" th:href="@{/}">Trang chủ</a>
+        <a class="px-space-md py-space-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors rounded-lg font-label-md text-label-md" th:href="@{/cars}">Tìm xe</a>
+        <a sec:authorize="hasRole('CUSTOMER')" class="px-space-md py-space-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors rounded-lg font-label-md text-label-md" th:href="@{/bookings}">Đơn thuê của tôi</a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-1 sm:gap-space-sm shrink-0">
+      <a class="md:hidden px-2 py-space-sm text-on-surface-variant font-label-md text-label-md" th:href="@{/cars}">Tìm xe</a>
+      <a sec:authorize="isAnonymous()" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface whitespace-nowrap" th:href="@{/login}">Đăng nhập</a>
+      <a sec:authorize="isAnonymous()" class="font-label-md text-label-md text-white bg-secondary px-2 sm:px-space-md py-space-sm rounded-lg whitespace-nowrap" th:href="@{/register}">Đăng ký</a>
+      <a sec:authorize="isAuthenticated()" class="w-8 h-8 flex items-center justify-center text-on-surface-variant" th:href="@{/notifications}" aria-label="Thông báo"><span class="material-symbols-outlined">notifications</span></a>
+      <details sec:authorize="isAuthenticated()" class="relative group">
+        <summary class="flex items-center gap-space-xs cursor-pointer text-on-surface-variant hover:text-on-surface list-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary rounded-lg" aria-label="Menu tài khoản">
+          <span class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></span>
+          <span class="hidden lg:inline font-label-md text-label-md max-w-32 truncate" sec:authentication="principal.fullName">Tài khoản</span>
+          <span class="material-symbols-outlined hidden lg:inline text-[18px]">expand_more</span>
+        </summary>
+        <div class="absolute right-0 top-full mt-2 w-52 max-w-[calc(100vw-2rem)] bg-surface-container-lowest rounded-lg shadow-xl p-2 flex flex-col z-50 font-label-md text-label-md">
+          <span class="px-3 py-2 text-on-surface truncate lg:hidden" sec:authentication="principal.fullName">Tài khoản</span>
+          <a class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/profile}">Hồ sơ</a>
+          <a sec:authorize="hasRole('CUSTOMER')" class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/bookings}">Đơn thuê của tôi</a>
+          <a sec:authorize="hasRole('OWNER')" class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/owner/cars}">Xe của tôi</a>
+          <a sec:authorize="hasRole('ADMIN')" class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/admin/dashboard}">Dashboard</a>
+          <form method="post" th:action="@{/logout}"><button class="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container" type="submit">Đăng xuất</button></form>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+<div role="banner" class="w-full bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)]" th:fragment="authHeader">
+  <div class="max-w-7xl mx-auto px-6 lg:px-12 h-16 flex items-center justify-between">
+    <a class="flex items-center gap-space-sm text-primary font-title-md text-title-md" th:href="@{/}"><span class="material-symbols-outlined text-secondary">directions_car</span><span class="font-headline-sm text-headline-sm tracking-tight text-primary-container font-bold">CarRent</span></a>
+    <a class="inline-flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" th:href="@{/}"><span class="material-symbols-outlined text-[18px]">arrow_back</span><span>Về trang chủ</span></a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<!--/* messages — dựng mới theo token màu (không có trong prototype): success=secondary-fixed, error=error-container. */-->
+<body>
+<div th:fragment="messages" th:if="${successMessage} or ${errorMessage}" class="max-w-7xl mx-auto px-gutter pt-space-md">
+  <div th:if="${successMessage}" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg bg-secondary-fixed text-on-secondary-fixed font-body-md text-body-md" role="alert">
+    <span class="material-symbols-outlined text-[20px]">check_circle</span>
+    <span th:text="${successMessage}">Thành công</span>
+  </div>
+  <div th:if="${errorMessage}" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg bg-error-container text-on-error-container font-body-md text-body-md" role="alert">
+    <span class="material-symbols-outlined text-[20px]">error</span>
+    <span th:text="${errorMessage}">Lỗi</span>
+  </div>
+</div>
+</body>
+</html>

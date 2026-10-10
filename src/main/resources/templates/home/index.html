@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<!--/*
+  Home — port từ docs/design/stitch/home-trang-chu.html
+  Giữ toàn bộ class Tailwind/body/header/footer/messages; chỉnh:
+  - Form search: action="@{/cars}" (GET), input name="province","startDate","endDate" để khớp CarSearchCriteria (P2).
+  - Grid xe: th:each trên ${cars}; empty state khi list rỗng; Phase 0 list luôn rỗng.
+  - Ảnh/ giá/ link: placeholder (Phase 0 chưa có entity Car).
+*/-->
+<head th:replace="~{fragments/head :: head(title='Trang chủ')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/messages :: messages}"></div>
+
+<main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
+  <div class="flex flex-col w-full">
+
+    <!-- HERO & QUICK SEARCH SECTION -->
+    <section class="relative w-full bg-surface-container-low pt-space-xl pb-space-xl overflow-hidden">
+      <div class="absolute -top-32 -right-32 w-96 h-96 bg-secondary-fixed/30 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-surface-container-high/60 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="relative max-w-7xl mx-auto px-gutter">
+        <div class="max-w-3xl mb-space-lg">
+          <h1 class="font-display-hero text-display-hero text-primary tracking-tight mb-space-sm">
+            Tìm chiếc xe phù hợp cho hành trình của bạn
+          </h1>
+        </div>
+        <!-- Quick Search Widget -->
+        <div class="w-full bg-surface-container-lowest rounded-xl shadow-md p-space-md lg:p-space-lg">
+          <form th:action="@{/cars}" class="grid grid-cols-1 md:grid-cols-12 gap-space-md items-end" method="GET">
+            <div class="md:col-span-4 flex flex-col gap-space-xs">
+              <label class="font-label-md text-label-md text-on-surface flex items-center gap-space-xs" for="pickup-location">
+                <span class="material-symbols-outlined text-secondary text-[20px]">location_on</span>
+                Địa điểm nhận xe
+              </label>
+              <div class="relative">
+                <select class="w-full h-11 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg appearance-none shadow-sm focus:outline-none focus:bg-surface-container-low transition-colors cursor-pointer" id="pickup-location" name="province">
+                  <option value="">Tất cả địa điểm</option>
+                  <option value="Hà Nội">Hà Nội</option>
+                  <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
+                  <option value="Đà Nẵng">Đà Nẵng</option>
+                  <option value="Hải Phòng">Hải Phòng</option>
+                  <option value="Cần Thơ">Cần Thơ</option>
+                </select>
+                <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">expand_more</span>
+              </div>
+            </div>
+            <div class="md:col-span-3 flex flex-col gap-space-xs">
+              <label class="font-label-md text-label-md text-on-surface flex items-center gap-space-xs" for="pickup-time">
+                <span class="material-symbols-outlined text-secondary text-[20px]">calendar_today</span>
+                Ngày nhận xe
+              </label>
+              <input class="w-full h-11 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:bg-surface-container-low transition-colors" id="pickup-time" name="startDate" type="date">
+            </div>
+            <div class="md:col-span-3 flex flex-col gap-space-xs">
+              <label class="font-label-md text-label-md text-on-surface flex items-center gap-space-xs" for="return-time">
+                <span class="material-symbols-outlined text-secondary text-[20px]">event_repeat</span>
+                Ngày trả xe
+              </label>
+              <input class="w-full h-11 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:bg-surface-container-low transition-colors" id="return-time" name="endDate" type="date">
+            </div>
+            <div class="md:col-span-2 flex flex-col justify-end">
+              <button class="w-full h-11 px-space-md bg-secondary text-on-secondary font-label-md text-label-md rounded-lg shadow-sm hover:bg-secondary-container transition-colors flex items-center justify-center gap-space-xs active:scale-[0.99]" type="submit">
+                <span class="material-symbols-outlined text-[20px]">search</span>
+                <span>Tìm xe ngay</span>
+              </button>
+            </div>
+          </form>
+          <div class="mt-space-md pt-space-md bg-surface-container-lowest flex flex-wrap items-center gap-space-sm">
+            <span class="font-caption text-caption text-outline">Gợi ý lọc nhanh:</span>
+            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars?seatCount=7}">SUV 7 chỗ</a>
+            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars?fuelType=ELECTRIC}">Xe điện</a>
+            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars?seatCount=5}">Sedan 5 chỗ</a>
+            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars}">Giao xe tại sân bay</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED CARS SECTION -->
+    <section class="w-full py-space-xl bg-surface">
+      <div class="max-w-7xl mx-auto px-gutter">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-space-lg gap-space-sm">
+          <div><h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">Danh sách xe</h2></div>
+          <a class="inline-flex items-center gap-space-xs font-label-md text-label-md text-secondary hover:text-secondary-container transition-colors" th:href="@{/cars}">
+            <span>Xem tất cả xe</span>
+            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </a>
+        </div>
+
+        <!-- Empty state (Phase 0 always empty; P5.8 will fill) -->
+        <div th:if="${#lists.isEmpty(cars)}" class="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-xl flex flex-col items-center justify-center gap-space-sm">
+          <span class="material-symbols-outlined text-outline text-[40px]">directions_car_off</span>
+          <p class="font-title-md text-title-md text-on-surface">Chưa có xe nào</p>
+          <p class="font-body-md text-body-md text-on-surface-variant">Xe đã duyệt sẽ hiển thị tại đây.</p>
+        </div>
+
+        <!-- Grid (populated from P5.8; keep structure for now, renders 0 rows in Phase 0) -->
+        <div th:unless="${#lists.isEmpty(cars)}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-lg">
+          <article th:each="car : ${cars}" class="bg-surface-container-lowest rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden group">
+            <div class="relative w-full aspect-[16/10] overflow-hidden bg-surface-container">
+              <div class="w-full h-full bg-surface-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-outline text-[36px]">directions_car</span>
+              </div>
+            </div>
+            <div class="p-space-md flex flex-col flex-1 justify-between gap-space-md">
+              <div>
+                <h3 class="font-title-md text-title-md text-primary group-hover:text-secondary transition-colors" th:text="${car.brand + ' ' + car.model}">Tên xe</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-0.5" th:text="${car.province}">Địa điểm</p>
+                <div class="flex flex-wrap items-center gap-space-xs mt-space-sm">
+                  <span class="inline-flex items-center gap-1 px-space-sm py-1 rounded-lg bg-surface-container text-on-surface-variant font-caption text-caption">
+                    <span class="material-symbols-outlined text-[14px]">airline_seat_recline_normal</span>
+                    <span th:text="${car.seatCount + ' chỗ'}">5 chỗ</span>
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-space-sm py-1 rounded-lg bg-surface-container text-on-surface-variant font-caption text-caption">
+                    <span class="material-symbols-outlined text-[14px]">settings</span>
+                    <span th:text="${car.transmission}">Tự động</span>
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-space-sm py-1 rounded-lg bg-surface-container text-on-surface-variant font-caption text-caption">
+                    <span class="material-symbols-outlined text-[14px]">local_gas_station</span>
+                    <span th:text="${car.fuelType}">Xăng</span>
+                  </span>
+                </div>
+              </div>
+              <div class="pt-space-sm flex items-center justify-between gap-space-sm">
+                <div>
+                  <span class="block font-caption text-caption text-on-surface-variant">Giá thuê</span>
+                  <div class="font-headline-sm text-headline-sm text-primary leading-none">
+                    <span th:text="${#numbers.formatDecimal(car.pricePerDay, 0, 'COMMA', 0, 'POINT')}">900.000</span>
+                    <span class="font-caption text-caption text-on-surface-variant font-normal">VNĐ/ngày</span>
+                  </div>
+                </div>
+                <a class="px-space-md py-space-sm bg-secondary text-on-secondary font-label-md text-label-md rounded-lg hover:bg-secondary-container transition-colors shadow-sm" th:href="@{'/cars/' + ${car.id}}">Xem chi tiết</a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

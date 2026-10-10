@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<!--/* Port nguyên footer từ home-trang-chu.html; link tĩnh để nguyên (chưa có route tương ứng ở MVP). */-->
+<body>
+<footer class="w-full bg-surface-container-low shadow-[0_-1px_6px_rgba(0,0,0,0.03)] mt-auto" th:fragment="footer">
+  <div class="max-w-7xl mx-auto px-gutter py-space-xl">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-space-lg mb-space-lg">
+      <div class="md:col-span-2 flex flex-col gap-space-sm">
+        <div class="flex items-center gap-space-sm">
+          <span class="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary text-[18px]">directions_car</span>
+          </span>
+          <span class="font-headline-sm text-headline-sm text-primary tracking-tight">CarRent</span>
+        </div>
+      </div>
+      <div class="flex flex-col gap-space-sm">
+        <span class="font-title-md text-title-md text-on-surface">Hỗ trợ khách hàng</span>
+        <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Hướng dẫn đặt xe</a>
+        <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Quy định thế chấp &amp; giấy tờ</a>
+        <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Giải quyết khiếu nại</a>
+      </div>
+      <div class="flex flex-col gap-space-sm">
+        <span class="font-title-md text-title-md text-on-surface">Chính sách &amp; Đối tác</span>
+        <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Điều khoản sử dụng</a>
+        <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Chính sách bảo mật</a>
+        <a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Hợp tác cho thuê xe</a>
+      </div>
+    </div>
+    <div class="pt-space-md border-t border-outline-variant/40 flex flex-col sm:flex-row items-center justify-between gap-space-sm">
+      <p class="font-caption text-caption text-on-surface-variant">© 2025 CarRent Việt Nam. Bảo lưu mọi quyền.</p>
+      <div class="flex items-center gap-space-md">
+        <span class="font-caption text-caption text-on-surface-variant">Hotline hỗ trợ: 1900 8888</span>
+        <span class="font-caption text-caption text-on-surface-variant">Hà Nội • TP. Hồ Chí Minh • Đà Nẵng</span>
+      </div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

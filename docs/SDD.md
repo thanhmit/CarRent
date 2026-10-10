@@ -1,0 +1,1111 @@
+# CarRent — Software Design Document (SDD)
+
+**Phiên bản:** 2.2
+**Trạng thái:** Schema/seed DB và Phase 1 (Authentication & Authorization) đã triển khai, verify; Phase 2–5 chờ triển khai
+**Ngày:** 2026-10-10
+**Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
+**Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
+**Ngôn ngữ tài liệu:** Tiếng Việt
+**Tài liệu liên quan:** `CarRent.md` (bản thảo v1.0 — giữ nguyên để tham chiếu), `docs/decisions.md` (hồ sơ quyết định), `docs/plans/phase-*.md` (implementation plan, sinh sau khi duyệt SDD này)
+
+> SDD v2.2 kế thừa DB-first của v2.1 và ghi nhận kết quả Phase 1; thay thế CarRent.md v1.0 và quy ước entity tự tạo schema của SDD v2.0. `scriptDB.sql` tại gốc dự án là nguồn chân lý vật lý của DB; entity các phase sau phải map theo schema sẵn có. Nếu plan cũ mâu thuẫn, quy ước DB-first tại §7.6–7.8 thắng. Xem quyết định D-24 trong `decisions.md`.
+
+---
+
+## 1. Tổng quan dự án
+
+### 1.1. Giới thiệu
+
+CarRent là ứng dụng web cho thuê xe hơi. Người thuê (Customer) tìm kiếm, xem thông tin xe, tạo đơn thuê và thanh toán giả lập. Người cho thuê (Owner) quản lý danh sách xe và xử lý yêu cầu thuê. Admin quản lý tài khoản, kiểm duyệt xe và theo dõi hoạt động toàn hệ thống.
+
+Ứng dụng dựng bằng Spring Boot, render HTML phía server bằng Thymeleaf, lưu dữ liệu bằng MySQL.
+
+### 1.2. Mục tiêu
+
+- Quy trình thuê xe trực tuyến đơn giản, hoàn chỉnh từ tìm xe → đặt → duyệt → thanh toán giả lập.
+- Owner tự quản lý xe của mình; Admin kiểm duyệt xe trước khi công khai.
+- Phân quyền chặt giữa `ADMIN` / `CUSTOMER` / `OWNER`, kiểm tra ở backend.
+- Cấu trúc code rõ ràng theo layer, phù hợp học tập/portfolio, dễ mở rộng.
+
+### 1.3. Phạm vi
+
+**Bao gồm:**
+
+- Đăng nhập/đăng ký, phân quyền theo role, khóa/vô hiệu hóa tài khoản.
+- Owner CRUD xe + upload ảnh; Admin duyệt/từ chối/ẩn xe.
+- Category xe (seed sẵn), địa điểm dạng text trên xe.
+- Tìm kiếm, lọc, sắp xếp, phân trang, xem chi tiết xe + kiểm tra khả dụng.
+- Booking đầy đủ vòng đời: PENDING → CONFIRMED/REJECTED/CANCELLED → COMPLETED.
+- Mock payment (giả lập) cho booking đã xác nhận.
+- Notification lưu database, đánh dấu đã đọc.
+- Admin Dashboard thống kê, quản lý User.
+- Profile + đổi mật khẩu.
+
+**Không bao gồm (phiên bản này):**
+
+- Swagger/OpenAPI, Docker, unit test/integration test tự động.
+- Microservices, REST API JSON riêng cho client độc lập.
+- Cổng thanh toán thật, WebSocket/notification realtime.
+- Giao nhận xe, kiểm tra hư hỏng, bảo hiểm, khuyến mãi, yêu thích, review, audit log.
+- i18n song ngữ, upload avatar, quản lý Category qua UI (chỉ seed).
+
+---
+
+## 2. Môi trường phát triển và công nghệ
+
+### 2.1. Công nghệ
+
+| Thành phần | Công nghệ | Ghi chú |
+|---|---|---|
+| Ngôn ngữ | Java 21 (Temurin) | Đã cài trên máy |
+| Backend framework | **Spring Boot 4.1.x** (mặc định mới của start.spring.io) | Web MVC starter = `spring-boot-starter-webmvc` (không phải `spring-boot-starter-web` của dòng 3.x) |
+| UI | Spring MVC + Thymeleaf | Server-side render |
+| CSS/UI | **Tailwind CSS (Play CDN) + design tokens Material Design 3 theo prototype Stitch** + `static/css/custom.css` nhỏ | Xem `docs/design/stitch/README.md` |
+| Security | Spring Security | Session-based + CSRF, BCrypt |
+| ORM | Spring Data JPA + Hibernate | `ddl-auto=none`; map schema từ `scriptDB.sql`, không tự tạo/sửa bảng |
+| Database | MySQL 8.0 (`carrent`, utf8mb4) | Service `MySQL80` đang chạy |
+| Build | Maven Wrapper (`mvnw`) | Không cần cài Maven toàn máy |
+| Validation | Jakarta Bean Validation | Hibernate Validator |
+| Tiện ích | Lombok | Getter/setter/builder |
+
+### 2.2. Môi trường máy (fact đã kiểm tra)
+
+- Hệ điều hành: Windows 11. Terminal chính: PowerShell.
+- Java: Temurin 21.0.11 LTS.
+- MySQL: 8.0.45, service `MySQL80` đang chạy, client tại `C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe`.
+- Maven: không có trên PATH → mọi lệnh build dùng `.\mvnw` trong thư mục dự án.
+- Thư mục gốc dự án: `C:\Users\Admin\Documents\hoc\Car` — code Spring Boot nằm ngay tại gốc; tài liệu nằm trong `docs\`. **Chưa dùng git** (theo yêu cầu; khi cần sẽ `git init` + `.gitignore` cho `target/`, `uploads/`).
+
+### 2.3. Quy ước ngôn ngữ
+
+- **UI:** toàn bộ label, menu, thông báo, trang lỗi → **tiếng Việt**.
+- **Code:** tên class/method/biến, comment, commit message → **tiếng Anh**.
+- **Tiền tệ:** VND, số nguyên (`BIGINT`), không phần thập phân.
+- **Ngày thuê:** `LocalDate`; timestamps: `LocalDateTime` theo múi giờ máy chủ.
+
+---
+
+## 3. Kiến trúc hệ thống
+
+### 3.1. Lựa chọn kiến trúc
+
+- **Monolithic:** một ứng dụng Spring Boot duy nhất.
+- **MVC + 3-layer:** Controller → Service → Repository.
+- **Một MySQL database** tập trung.
+
+### 3.2. Sơ đồ kiến trúc
+
+```mermaid
+flowchart TD
+    U[Browser: Admin / Customer / Owner]
+    U -->|HTTP Request| C[Spring MVC Controllers]
+    C --> S[Service Layer]
+    S --> R[Spring Data JPA Repositories]
+    R --> H[Hibernate / JPA]
+    H --> DB[(MySQL carrent)]
+    C -->|Model + View Name| T[Thymeleaf Templates + Tailwind (Stitch design)]
+    T -->|Rendered HTML| U
+    SEC[Spring Security] -. Protects .-> C
+    FS[StorageService] -. uploads/ .-> S
+```
+
+### 3.3. Trách nhiệm từng layer
+
+**Controller**
+- Nhận request, đọc path variable / query param / form data, bind lên DTO form.
+- Gọi Service; trả về template, redirect hoặc error page.
+- Không chứa business logic.
+
+**Service**
+- Toàn bộ business rules: ownership, trạng thái, tính giá, transaction, tạo notification.
+- Transaction (`@Transactional`) cho các thao tác nhiều bảng (booking + payment + notification).
+
+**Repository**
+- Spring Data JPA interface; query thuần, không business logic.
+
+**Entity**
+- Mapping bảng; không bind trực tiếp lên form Thymeleaf — luôn qua DTO form.
+
+**View (Thymeleaf)**
+- Render HTML, hiển thị validation error, flash message; không tính toán nghiệp vụ.
+
+**Spring Security**
+- Session-based form login, BCrypt, CSRF bật, guard route theo role; ownership kiểm tra thêm trong Service.
+
+**StorageService** (`storage/`)
+- Validate + lưu file ảnh upload vào thư mục `uploads/` của dự án (cùng cấp `src/`, **không** nằm trong `src/main/resources`), trả về web path `/uploads/<uuid>.<ext>` để DB lưu.
+
+### 3.4. Luồng xử lý ví dụ: tạo booking
+
+1. Customer submit form chọn ngày thuê trên xe.
+2. `BookingController` bind form `BookingCreateForm`, validation cơ bản (ngày hợp lệ).
+3. `BookingService` lấy Customer từ security context; kiểm tra xe `APPROVED` + `ACTIVE`.
+4. Service query booking trùng lịch (BR-05) trong transaction.
+5. Service tính `totalAmount` từ `price_per_day` trong DB, lưu snapshot vào booking.
+6. Tạo Booking `PENDING`, tạo notification cho Owner — cùng transaction.
+7. Redirect đến trang chi tiết booking (PRG pattern).
+
+---
+
+## 4. Vai trò và phân quyền
+
+Mỗi tài khoản đúng **một role** (cột enum `users.role`).
+
+### 4.1. Roles
+
+`ADMIN` · `CUSTOMER` · `OWNER`
+
+### 4.2. Ma trận quyền
+
+| Chức năng | ADMIN | CUSTOMER | OWNER |
+|---|:---:|:---:|:---:|
+| Xem Admin Dashboard | Có | Không | Không |
+| Xem + quản lý User (status) | Có | Không | Không |
+| Xem danh sách Car công khai | Có | Có | Có |
+| Xem chi tiết Car công khai | Có | Có | Có |
+| Xem Car chưa duyệt / của mình | Có (admin view) | Không | Có (xe của mình) |
+| Tạo / sửa / ngừng đăng xe | Quản trị | Không | Có (chỉ xe mình) |
+| Xóa cứng Car | Không (chỉ ẩn) | Không | Chỉ khi không có booking nào |
+| Duyệt / từ chối Car | Có | Không | Không |
+| Tạo Booking | Không | Có | Không |
+| Xem Booking | Tất cả | Của mình | Liên quan xe của mình |
+| Confirm / Reject / Complete Booking | Giám sát | Không | Có (xe của mình) |
+| Hủy Booking | Không | Của mình (theo quy tắc) | Không |
+| Mock Payment | Không | Booking của mình (đã CONFIRMED) | Không |
+| Xem Notification | Của mình | Của mình | Của mình |
+| Cập nhật Profile / đổi mật khẩu | Của mình | Của mình | Của mình |
+
+> Ẩn nút trên UI không đủ. **Mọi quyền và ownership phải kiểm tra ở backend** (SecurityConfig + Service). Owner A sửa xe của Owner B bằng cách đổi ID trên URL → 403/404.
+
+### 4.3. Trạng thái tài khoản
+
+- `ACTIVE` / `INACTIVE` / `BANNED`.
+- Đăng nhập bị từ chối kèm thông báo tiếng Việt nếu status ≠ `ACTIVE`.
+- Tài khoản không xóa cứng (có booking/payment lịch sử) — chỉ chuyển trạng thái.
+- Admin không được tự đổi status của chính mình.
+- Người dùng không tự đổi role qua form Profile.
+
+---
+
+## 5. Functional Requirements
+
+### FR-01. Authentication & Authorization
+
+- Đăng nhập bằng **email + password**; password hash BCrypt.
+- Email là **chuỗi định danh đăng nhập duy nhất** — không cần là email thật, không validate định dạng địa chỉ thư, không gửi/xác thực email. Chỉ ràng buộc: không trống + unique.
+- Sau đăng nhập, redirect theo role: `ADMIN → /admin/dashboard`, `OWNER → /owner/dashboard`, `CUSTOMER → /cars`.
+- Chưa đăng nhập truy cập trang cần xác thực → chuyển `/login`. Sau khi đăng nhập thành công, trang đích theo role ở trên được ưu tiên; request đã lưu được xóa để không ghi đè redirect này.
+- Đăng xuất: POST `/logout` (Spring Security), kết thúc session.
+- Đăng ký công khai: chọn role `CUSTOMER` hoặc `OWNER` (radio). **Không cho tự đăng ký ADMIN** — tài khoản Admin tạo bằng seed data.
+- Status ≠ `ACTIVE` → không đăng nhập được, hiển thị thông báo phù hợp.
+
+### FR-02. Admin Dashboard (`/admin/dashboard`)
+
+Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duyệt (`approval_status=PENDING`); tổng Booking, Booking `PENDING`, Booking `COMPLETED` + `CANCELLED`; **doanh thu** = `SUM(payments.amount) WHERE status='PAID'` + doanh thu theo từng tháng của năm hiện tại. Không mặc định coi booking là doanh thu.
+
+### FR-03. Admin User Management
+
+- Danh sách User (`/admin/users`): phân trang, tìm kiếm theo tên/email, lọc theo role/status.
+- Chi tiết User (`/admin/users/{id}`): thông tin + thống kê liên quan (số xe nếu Owner, số booking nếu Customer).
+- POST `/admin/users/{id}/status`: đổi status `ACTIVE`/`INACTIVE`/`BANNED`; cấm đổi status của chính Admin đang đăng nhập.
+- Không xem/hiện mật khẩu hash trong UI.
+
+### FR-04. Admin Car Management
+
+- Danh sách toàn bộ Car (`/admin/cars`): phân trang, tìm kiếm brand/model, lọc approval_status + listing_status.
+- Chi tiết Car + thông tin Owner (`/admin/cars/{id}`).
+- POST `/admin/cars/{id}/approve`: `PENDING → APPROVED`, notification cho Owner.
+- POST `/admin/cars/{id}/reject`: `PENDING → REJECTED` + `rejection_reason` (bắt buộc nhập, ≤500 ký tự), notification cho Owner.
+- Admin chỉ ẩn/hiện xe (listing_status), không xóa cứng.
+
+### FR-05. Car Approval Workflow
+
+- Owner tạo Car → `approval_status = PENDING`, `listing_status = ACTIVE`.
+- `PENDING → APPROVED` / `PENDING → REJECTED` do Admin (kèm lý do khi reject).
+- **Sửa Car sau khi duyệt không cần duyệt lại** (decision D-03). Admin xử lý vi phạm bằng cách ẩn xe.
+- Chỉ `APPROVED` + `listing_status=ACTIVE` mới hiển thị công khai.
+
+### FR-06. Owner Car Management
+
+- `/owner/cars`: danh sách xe của mình (mọi trạng thái), hiện badge approval/listing status.
+- Tạo xe (`/owner/cars/new`): brand, model, manufacture_year (1990–năm hiện tại+1), license_plate, color, seat_count (2–15), transmission (`MANUAL`/`AUTOMATIC`), fuel_type (`GASOLINE`/`DIESEL`/`ELECTRIC`/`HYBRID`), description, price_per_day (>0, VND), category (dropdown từ seed), province (bắt buộc), district, address_detail, ảnh (0–n file).
+- Sửa xe: các trường trên + quản lý ảnh (thêm ảnh mới, xóa ảnh cũ).
+- POST `/owner/cars/{id}/deactivate` — ngừng đăng tin; POST `/owner/cars/{id}/activate` — đăng lại.
+- Xóa cứng **chỉ khi không có booking nào** tham chiếu (kể cả booking đã kết thúc — giữ lịch sử); ngược lại phải deactivate. Xóa xe → xóa cả bản ghi ảnh + file ảnh tương ứng.
+- Mọi thao tác kiểm tra `car.owner_id == currentUser.id`.
+
+### FR-07. Car Category
+
+- Category seed sẵn 6 loại: `SEDAN`, `SUV`, `MPV`, `LUXURY`, `ECONOMY`, `ELECTRIC`.
+- Car bắt buộc có 1 category; dropdown khi tạo/sửa.
+- Không có UI quản lý category trong MVP (decision D-16); không xóa category đang được dùng.
+
+### FR-08. Car Images
+
+- Upload file thật qua multipart trong form tạo/sửa xe.
+- `StorageService`: validate phần mở rộng ∈ {jpg, jpeg, png, webp} + content-type image/*, kích thước ≤ 5MB; đặt tên file = **UUID + đuôi gốc** (không tin tên file user gửi); lưu vào `uploads/` ở gốc dự án.
+- Web config map `/uploads/**` → thư mục `uploads/`.
+- DB (`car_images.image_url`) lưu web path `/uploads/<file>`.
+- **Thumbnail = ảnh có `id` nhỏ nhất của xe** (không có cột is_primary — D-10).
+- Một xe nhiều ảnh; trang detail hiện gallery; danh sách hiện thumbnail.
+
+### FR-09. Search, Filter, Sort, Pagination, Detail
+
+- `/cars` (public, chưa đăng nhập vẫn xem được): chỉ xe `APPROVED` + `ACTIVE`.
+- Tìm kiếm keyword khớp brand hoặc model (không phân biệt hoa thường).
+- Lọc: category, province, minPrice, maxPrice, seatCount, transmission, fuelType.
+- Sắp xếp: giá tăng/giảm, mới nhất (`created_at desc`). Mặc định: mới nhất.
+- Phân trang: 12 xe/trang, dùng Spring Data `Pageable` + Specification (lọc động phía DB, không lọc in-memory).
+- `/cars/{id}`: gallery, thông số, giá, địa điểm, thông tin Owner (tên + SĐT); visible nếu `APPROVED+ACTIVE` **hoặc** user là Admin **hoặc** user là Owner của xe đó.
+- Kiểm tra khả dụng: form nhỏ nhập startDate/endDate trên trang detail → GET lại trang với query params → banner "Xe khả dụng" / "Xe đã có đơn trùng lịch trong khoảng này".
+
+### FR-10. Booking
+
+**Customer:**
+- Form tạo booking (`/bookings/new?carId=`): startDate, endDate, customer_note.
+- Xem giá ước tính trước khi submit (JS nhỏ tính `days × price` hiển thị).
+- Xem danh sách + chi tiết booking của mình.
+- POST `/bookings/{id}/cancel`: hủy khi `PENDING` hoặc `CONFIRMED` (BR-08).
+
+**Owner:**
+- `/owner/bookings`: booking liên quan xe của mình; chi tiết hiện thông tin customer.
+- POST `/owner/bookings/{id}/confirm` — `PENDING → CONFIRMED`.
+- POST `/owner/bookings/{id}/reject` — `PENDING → REJECTED` + owner_note (lý do).
+- POST `/owner/bookings/{id}/complete` — `CONFIRMED → COMPLETED`, chỉ khi `end_date < hôm nay`.
+
+**Admin:** xem toàn bộ booking (`/admin/bookings`, `/admin/bookings/{id}`), không thao tác trạng thái.
+
+### FR-11. Booking Status
+
+`PENDING` → `CONFIRMED` → `COMPLETED`, kèm nhánh reject/cancel:
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING
+    PENDING --> CONFIRMED: Owner confirms
+    PENDING --> REJECTED: Owner rejects (reason)
+    PENDING --> CANCELLED: Customer cancels
+    CONFIRMED --> CANCELLED: Customer cancels (PAID -> REFUNDED)
+    CONFIRMED --> COMPLETED: Owner marks complete (end_date passed)
+    REJECTED --> [*]
+    CANCELLED --> [*]
+    COMPLETED --> [*]
+```
+
+`COMPLETED` là thao tác thủ công của Owner sau khi hết hạn thuê — không tự động (D-07).
+
+### FR-12. Mock Payment
+
+- Chỉ Customer là chủ booking, booking `CONFIRMED`, chưa có Payment `PAID` → mới được thanh toán.
+- Trang `/bookings/{id}/payment`: chọn method (`MOCK_CARD` / `MOCK_BANK_TRANSFER` / `CASH_SIMULATED`) + checkbox "Giả lập thất bại (test)".
+- POST xử lý: tạo Payment `PAID` hoặc `FAILED`; amount = `booking.total_amount` (server-side); `transaction_reference` = `MCK-<epochMillis>-<random6>`; `paid_at` khi PAID.
+- FAILED → được thử lại (tạo Payment mới — bảng không unique booking_id, D-06).
+- Booking giữ nguyên `CONFIRMED` sau khi PAID (trạng thái thanh toán đọc từ payments).
+- Notification: PAID → customer + owner; FAILED → customer.
+- Không thu thập thông tin thẻ/ngân hàng thật.
+
+### FR-13. Notification
+
+- Lưu DB bảng `notifications`; không realtime — người dùng vào `/notifications` hoặc thấy badge trên navbar (số unread, cập nhật khi tải trang qua `@ControllerAdvice`).
+- `/notifications`: danh sách của user hiện tại, phân trang, unread nổi bật.
+- POST `/notifications/{id}/read` — đánh dấu 1 thông báo đã đọc; POST `/notifications/read-all` — đánh dấu tất cả.
+- Sự kiện sinh notification:
+
+| Sự kiện | Người nhận |
+|---|---|
+| Car vừa tạo (chờ duyệt) | Mọi ADMIN |
+| Car APPROVED / REJECTED | Owner của xe |
+| Booking tạo (PENDING) | Owner của xe |
+| Booking CONFIRMED / REJECTED | Customer |
+| Booking CANCELLED (customer hủy) | Owner của xe |
+| Booking COMPLETED | Customer |
+| Payment PAID | Customer + Owner |
+| Payment FAILED | Customer |
+
+### FR-14. Location
+
+- Không có bảng `locations` (D-11). Trên `cars`: `province` (bắt buộc), `district`, `address_detail` dạng text.
+- Lọc danh sách xe công khai theo `province`.
+- Booking nhận xe tại địa điểm của xe: khi tạo booking, server snapshot địa chỉ thành `bookings.pickup_address` (text) để lịch sử không đổi khi owner sửa xe.
+
+### FR-15. Profile Management
+
+- `/profile`: xem thông tin (full_name, email, role, phone, ngày tạo).
+- `/profile/edit` (GET/POST): sửa full_name, phone. Email không đổi (D-17). Role không đổi.
+- `/profile/change-password` (GET/POST): nhập mật khẩu hiện tại (verify BCrypt) + mật khẩu mới + xác nhận; sai mật khẩu hiện tại → lỗi validation.
+- Không làm avatar upload trong MVP (cột `avatar_url` để dự phòng).
+
+---
+
+## 6. Business Rules
+
+### BR-01. Role
+
+Mỗi user đúng 1 role enum: `ADMIN` / `CUSTOMER` / `OWNER`. Không đổi role qua UI.
+
+### BR-02. Car Ownership
+
+Owner chỉ tạo/sửa/deactivate/xóa xe có `owner_id = currentUser.id`. Vi phạm → 403 hoặc 404 (không lộ thông tin xe người khác).
+
+### BR-03. Car Visibility
+
+Công khai ⟺ `approval_status = APPROVED` AND `listing_status = ACTIVE`. Mọi query public phải kèm điều kiện này.
+
+### BR-04. Booking Date
+
+- `startDate < endDate`; `days = ChronoUnit.DAYS.between(start, end) ≥ 1`.
+- `startDate ≥ hôm nay` (được đặt xe bắt đầu hôm nay).
+- Dùng `LocalDate`; so sánh theo múi giờ máy chủ.
+
+### BR-05. Booking Overlap
+
+Hai khoảng trùng nhau khi `existing.start_date < requested.end_date AND existing.end_date > requested.start_date`. Chỉ booking `PENDING` và `CONFIRMED` tính là xung đột; `REJECTED/CANCELLED/COMPLETED` không chặn. `PENDING` giữ chỗ vô thời hạn trong MVP — ghi nhận là giới hạn (D-04). Kiểm tra + insert nằm trong cùng transaction.
+
+### BR-06. Price Calculation
+
+```text
+days          = end_date - start_date          (ngày lịch, ≥ 1)
+total_amount  = car.price_per_day × days        (BIGINT, VND)
+```
+
+Tính 100% ở backend từ `car.price_per_day` trong DB. Lưu `price_per_day_snapshot` vào booking. **Tuyệt đối không tin số tiền client gửi.**
+
+### BR-07. Booking Authorization & Transitions
+
+- Customer: xem/hủy booking của mình. Owner: xem/xử lý booking trên xe của mình. Admin: xem tất cả.
+- Chỉ cho phép transition đúng §FR-11; transition sai → business error, không đổi trạng thái.
+
+### BR-08. Cancellation
+
+- Customer hủy được khi status ∈ {`PENDING`, `CONFIRMED`}. Không giới hạn thời gian trong MVP.
+- Nếu booking có Payment `PAID` → payment đó chuyển `REFUNDED` (giả lập), kèm notification.
+
+### BR-09. Payment
+
+- Payment thuộc 1 booking; amount lấy từ `booking.total_amount` phía server.
+- Chỉ customer của booking đó được thanh toán; booking phải `CONFIRMED`.
+- Tối đa **1 Payment `PAID`** mỗi booking (Service chặn trước khi tạo mới).
+
+### BR-10. Data Integrity
+
+- FK đầy đủ giữa các bảng; email unique.
+- Không xóa cứng dữ liệu được booking/payment tham chiếu (Car, User) — dùng deactivate.
+- Tạo booking + notification, payment + notification → cùng transaction.
+
+---
+
+## 7. Database Design
+
+### 7.1. Danh sách bảng — 7 bảng
+
+| Bảng | Mục đích |
+|---|---|
+| `users` | Tài khoản, profile, role (enum), status |
+| `car_categories` | Category xe (seed) |
+| `cars` | Thông tin xe + owner + location (text) + trạng thái |
+| `car_images` | Ảnh xe (web path) |
+| `bookings` | Đơn thuê + snapshot giá + pickup_address |
+| `payments` | Thanh toán giả lập (nhiều lần thử) |
+| `notifications` | Thông báo trong DB |
+
+> `scriptDB.sql` là nguồn chân lý của schema. Cả 7 bảng được tạo trước Phase 1; Hibernate `ddl-auto=none`. Bảng dưới mô tả hợp đồng mapping cho entity.
+
+Quy ước vật lý: MySQL 8.0.16+ (máy hiện tại 8.0.45), InnoDB, `utf8mb4_unicode_ci`; ID/FK là **BIGINT có dấu**, ID `AUTO_INCREMENT`. Timestamp dùng `DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`; `updated_at` có thêm `ON UPDATE CURRENT_TIMESTAMP(6)`. `users.email` unique theo collation không phân biệt hoa/thường; service dùng cùng quy tắc định danh lúc register và login, không validate định dạng email.
+
+### 7.2. Chi tiết cột
+
+#### `users`
+
+| Cột | Kiểu | Ràng buộc |
+|---|---|---|
+| id | BIGINT PK AI | |
+| full_name | VARCHAR(100) | NOT NULL |
+| email | VARCHAR(150) | NOT NULL, UNIQUE |
+| password_hash | VARCHAR(255) | NOT NULL |
+| phone | VARCHAR(20) | NULL |
+| avatar_url | VARCHAR(255) | NULL (dự phòng, chưa dùng) |
+| role | ENUM('ADMIN','CUSTOMER','OWNER') | NOT NULL |
+| status | ENUM('ACTIVE','INACTIVE','BANNED') | NOT NULL, default ACTIVE |
+| created_at / updated_at | DATETIME | |
+
+#### `car_categories`
+
+| Cột | Kiểu | Ràng buộc |
+|---|---|---|
+| id | BIGINT PK AI | |
+| name | VARCHAR(50) | NOT NULL, UNIQUE |
+| description | VARCHAR(255) | NULL |
+| created_at | DATETIME | |
+
+#### `cars`
+
+| Cột | Kiểu | Ràng buộc |
+|---|---|---|
+| id | BIGINT PK AI | |
+| owner_id | BIGINT FK → users.id | NOT NULL |
+| category_id | BIGINT FK → car_categories.id | NOT NULL |
+| brand | VARCHAR(50) | NOT NULL |
+| model | VARCHAR(50) | NOT NULL |
+| manufacture_year | INT | NOT NULL, 1990..năm hiện tại+1 |
+| license_plate | VARCHAR(20) | NULL |
+| color | VARCHAR(30) | NULL |
+| seat_count | INT | NOT NULL, 2..15 |
+| transmission | ENUM('MANUAL','AUTOMATIC') | NOT NULL |
+| fuel_type | ENUM('GASOLINE','DIESEL','ELECTRIC','HYBRID') | NOT NULL |
+| description | TEXT | NULL |
+| price_per_day | BIGINT | NOT NULL, > 0 (VND) |
+| province | VARCHAR(100) | NOT NULL |
+| district | VARCHAR(100) | NULL |
+| address_detail | VARCHAR(255) | NULL |
+| approval_status | ENUM('PENDING','APPROVED','REJECTED') | NOT NULL, default PENDING |
+| listing_status | ENUM('ACTIVE','INACTIVE') | NOT NULL, default ACTIVE |
+| rejection_reason | VARCHAR(500) | NULL |
+| created_at / updated_at | DATETIME | |
+
+#### `car_images`
+
+| Cột | Kiểu | Ràng buộc |
+|---|---|---|
+| id | BIGINT PK AI | thứ tự id = thứ tự ảnh; id nhỏ nhất = thumbnail |
+| car_id | BIGINT FK → cars.id | NOT NULL, ON DELETE CASCADE |
+| image_url | VARCHAR(255) | NOT NULL, dạng `/uploads/<file>` |
+| created_at | DATETIME | |
+
+#### `bookings`
+
+| Cột | Kiểu | Ràng buộc |
+|---|---|---|
+| id | BIGINT PK AI | |
+| customer_id | BIGINT FK → users.id | NOT NULL |
+| car_id | BIGINT FK → cars.id | NOT NULL |
+| start_date / end_date | DATE | NOT NULL |
+| price_per_day_snapshot | BIGINT | NOT NULL, > 0 — giá tại lúc đặt |
+| total_amount | BIGINT | NOT NULL, > 0; CHECK = snapshot × DATEDIFF(end_date, start_date) |
+| pickup_address | VARCHAR(300) | NOT NULL — snapshot địa điểm xe |
+| status | ENUM('PENDING','CONFIRMED','REJECTED','CANCELLED','COMPLETED') | NOT NULL, default PENDING |
+| customer_note | VARCHAR(500) | NULL |
+| owner_note | VARCHAR(500) | NULL (lý do reject) |
+| created_at / updated_at | DATETIME | |
+
+#### `payments`
+
+| Cột | Kiểu | Ràng buộc |
+|---|---|---|
+| id | BIGINT PK AI | |
+| booking_id | BIGINT FK → bookings.id | NOT NULL — **không unique** (cho retry) |
+| amount | BIGINT | NOT NULL, CHECK > 0 |
+| method | ENUM('MOCK_CARD','MOCK_BANK_TRANSFER','CASH_SIMULATED') | NOT NULL |
+| status | ENUM('PENDING','PAID','FAILED','REFUNDED') | NOT NULL, default PENDING |
+| transaction_reference | VARCHAR(50) | NOT NULL, `MCK-<millis>-<rand6>` |
+| paid_at | DATETIME | NULL |
+| created_at / updated_at | DATETIME | |
+
+#### `notifications`
+
+| Cột | Kiểu | Ràng buộc |
+|---|---|---|
+| id | BIGINT PK AI | |
+| user_id | BIGINT FK → users.id | NOT NULL |
+| title | VARCHAR(150) | NOT NULL |
+| message | VARCHAR(1000) | NOT NULL |
+| type | VARCHAR(50) | NOT NULL — 1 trong: CAR_PENDING_APPROVAL, CAR_APPROVED, CAR_REJECTED, BOOKING_CREATED, BOOKING_CONFIRMED, BOOKING_REJECTED, BOOKING_CANCELLED, BOOKING_COMPLETED, PAYMENT_PAID, PAYMENT_FAILED |
+| is_read | BIT(1) (Java boolean) | NOT NULL, default b'0' |
+| related_entity_type | VARCHAR(30) | NULL ('CAR'/'BOOKING'/'PAYMENT') |
+| related_entity_id | BIGINT | NULL |
+| created_at | DATETIME | |
+
+### 7.3. ERD
+
+```mermaid
+erDiagram
+    USERS ||--o{ CARS : owns
+    CAR_CATEGORIES ||--o{ CARS : categorizes
+    CARS ||--o{ CAR_IMAGES : has
+    USERS ||--o{ BOOKINGS : "creates (customer)"
+    CARS ||--o{ BOOKINGS : "is booked"
+    BOOKINGS ||--o{ PAYMENTS : has
+    USERS ||--o{ NOTIFICATIONS : receives
+```
+
+### 7.4. Index đã tạo trong scriptDB.sql
+
+- `uk_users_email(email)` (unique), `idx_users_role_status(role, status)`.
+- `uk_car_categories_name(name)` (unique).
+- `idx_cars_owner(owner_id)`, `idx_cars_category(category_id)`, `idx_cars_visibility(approval_status, listing_status, province)`.
+- `idx_car_images_car(car_id)`; ID nhỏ nhất trong nhóm là thumbnail.
+- `idx_bookings_car_dates(car_id, status, start_date, end_date)` cho kiểm tra overlap; `idx_bookings_customer(customer_id)`.
+- `idx_payments_booking_status(booking_id, status)` **không unique**, cho phép nhiều lần thử.
+- `idx_notifications_user_read(user_id, is_read, created_at)`.
+
+6 CHECK đã tạo: giá xe > 0, chỗ ngồi 2..15, năm sản xuất ≥1990, ngày kết thúc sau ngày bắt đầu, tổng booking đúng snapshot × số ngày và snapshot/tổng > 0, số tiền payment > 0. Giới hạn năm hiện tại+1 và ngày bắt đầu ≥hôm nay vẫn do Service kiểm tra, để không làm hỏng dữ liệu lịch sử.
+
+### 7.5. Quy tắc xóa dữ liệu
+
+- Car có booking (bất kỳ trạng thái) → không xóa cứng, chỉ `listing_status=INACTIVE`.
+- Car không booking → Owner được xóa; xóa ảnh (bản ghi + file vật lý).
+- User → không bao giờ xóa cứng; đổi status.
+- Payment, Notification, Booking → không xóa trong MVP.
+
+FK `car_images.car_id` dùng `ON DELETE CASCADE`; 6 FK còn lại dùng `ON DELETE RESTRICT`. Cascade chỉ xóa bản ghi ảnh, **không xóa file**: Service vẫn phải dọn file vật lý theo P2/P3. Không tắt foreign-key checks khi bootstrap.
+
+### 7.6. Hợp đồng DB-first cho các phase sau
+
+- Đã provision tất cả bảng bằng `scriptDB.sql`; P1/P2/P3/P4 chỉ viết entity, repository, service, controller và UI trên schema này.
+- Giữ nguyên tên bảng/cột, length, nullability và enum ở §7.2. JPA dùng `@GeneratedValue(strategy=IDENTITY)`, `@Enumerated(EnumType.STRING)`, `@JoinColumn` đúng tên FK; dùng `Long` cho tiền VND, `LocalDate` cho ngày thuê, `LocalDateTime` cho timestamp, `boolean read` map `is_read`.
+- DB timestamp defaults giúp INSERT bằng SQL; Java vẫn có thể dùng `@PrePersist`/`@PreUpdate` như plan. Không thêm bảng `roles`, `user_roles`, `locations`.
+- `application.properties`: `spring.jpa.hibernate.ddl-auto=none`. Không dùng `update/create/create-drop`, không thêm `schema.sql/data.sql` tự chạy ở mỗi lần boot. Khi đã có entity, có thể chạy kiểm tra mapping bằng override `--spring.jpa.hibernate.ddl-auto=validate`; không dùng Hibernate để thay schema.
+- Cấu hình MySQL thật nằm trong `application-local.properties` ở gốc, được import tùy chọn và bị Git bỏ qua. Máy mới sao chép `application-local.properties.example`, điền thông tin kết nối rồi chạy từ gốc dự án; xem `README.md`.
+- **Không cần DataSeeder Java cho admin/categories ở P1.4/P2.1.** Kiểm tra seed sẵn có thay cho tạo dữ liệu lúc boot. Biến `CARRENT_ADMIN_PASSWORD` không thay mật khẩu SQL seed; đổi mật khẩu qua P5.6 khi tính năng có mặt.
+- Mỗi verify ở phase sau phải lọc theo ID/định danh của record vừa tạo hoặc so số lượng trước/sau; không giả định toàn bảng chỉ có 1 record hoặc chỉ có admin + test user.
+- Vì DB đã có PAID/REFUNDED, **thực hiện P4.1 (Payment entity/enums/repository) sau P3.6 và trước P3.7/P3.8**. Booking detail đọc trạng thái thật; P3.8 hủy booking phải chuyển PAID→REFUNDED và notify trong cùng transaction ngay từ Phase 3. P4.6 kiểm chứng lại refund, không chờ Phase 4 mới bổ sung việc hoàn tiền. Không chạy lại P4.1 khi sang Phase 4.
+- Các quy tắc nhiều bảng vẫn nằm ở Service: owner phải có role OWNER, customer phải có role CUSTOMER, ownership, visibility, transition, overlap (D-13), payment amount bằng booking total, tối đa 1 PAID, refund và notification trong cùng transaction. Không có trigger/stored procedure hoặc unique `payments.booking_id` thay thế các quy tắc này.
+- `notifications.related_entity_type/id` là liên kết đa hình; không có FK tới ba bảng CAR/BOOKING/PAYMENT. Service phải truyền đúng loại và ID, enum/string type dùng 10 giá trị đã chốt.
+- Khi đổi schema sau này: sửa SDD, viết ALTER có kiểm soát cho DB hiện hữu và cập nhật bootstrap tương ứng. `CREATE TABLE IF NOT EXISTS` không sửa bảng không tương thích.
+
+### 7.7. Dữ liệu mẫu và cách chạy script
+
+**Dữ liệu mới seed:**
+
+| Bảng | Số record | Phạm vi mẫu |
+|---|---:|---|
+| users | 7 | 1 admin, 2 owner, 2 customer ACTIVE, 1 INACTIVE, 1 BANNED |
+| car_categories | 6 | SEDAN, SUV, MPV, LUXURY, ECONOMY, ELECTRIC |
+| cars | 6 | 3 xe APPROVED+ACTIVE; 1 PENDING; 1 REJECTED; 1 APPROVED+INACTIVE |
+| car_images | 6 | Mỗi xe một file placeholder riêng tại `uploads/seed-car-<id>.png` |
+| bookings | 6 | 1 PENDING, 2 CONFIRMED, 1 COMPLETED, 1 CANCELLED, 1 REJECTED |
+| payments | 6 | 1 PENDING, 2 PAID, 2 FAILED, 1 REFUNDED; có lịch sử retry |
+| notifications | 10 | Đủ 10 loại; có đã đọc/chưa đọc và ID liên quan hợp lệ |
+
+**Tài khoản local:**
+
+| Định danh đăng nhập | Role/status | Mật khẩu mẫu |
+|---|---|---|
+| admin@carrent.local | ADMIN / ACTIVE | `CarRentAdmin@2026!` |
+| owner1, owner2 | OWNER / ACTIVE | `CarRent@2026!` |
+| customer1, customer2 | CUSTOMER / ACTIVE | `CarRent@2026!` |
+| inactive | CUSTOMER / INACTIVE | `CarRent@2026!` (login phải thất bại) |
+| banned | CUSTOMER / BANNED | `CarRent@2026!` (login phải thất bại) |
+
+Password lưu BCrypt cost 10, không lưu plaintext trong DB. Đây là fixture local, cần đổi mật khẩu trước khi công khai ứng dụng.
+
+Booking #1 dùng thử confirm/reject; #3 CONFIRMED chưa có PAID dùng thử thanh toán; #2 có FAILED → PAID; #4 COMPLETED và đã PAID; #5 CANCELLED + REFUNDED. Ngày thuê tính tương đối theo ngày chạy script lần đầu, session SQL `time_zone='+07:00'`. Chạy lại giữ nguyên ngày và trạng thái cũ, không làm mới dữ liệu demo đã xử lý.
+
+Script dùng ID demo cố định, seed trong một transaction, `ON DUPLICATE KEY UPDATE id=<table>.id` để giữ nguyên record đã tồn tại. Chạy lần đầu trên DB trống như môi trường hiện tại; lần sau không xóa/ghi đè tên, mật khẩu, giá, ngày, trạng thái hay dữ liệu ứng dụng. Không phải công cụ sửa/migrate DB bất kỳ hoặc khôi phục seed đã bị thay đổi/xóa. DDL MySQL auto-commit, nên schema không rollback cùng seed khi có lỗi.
+
+Chạy từ PowerShell (nhập mật khẩu MySQL ở prompt; không ghi mật khẩu vào file SQL):
+
+```powershell
+& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" `
+  --protocol=TCP -h localhost -P 3306 -u root -p --default-character-set=utf8mb4 `
+  --execute="source C:/Users/Admin/Documents/hoc/Car/scriptDB.sql"
+```
+
+Khi chuyển máy, đổi đường dẫn `source` và sao chép cả 6 file `uploads/seed-car-1.png` đến `seed-car-6.png`. Mỗi xe có file riêng để việc xóa ảnh một xe không ảnh hưởng xe khác. Web path ảnh chỉ truy cập được sau khi P2.3 triển khai resource handler `/uploads/**`.
+
+### 7.8. Bằng chứng verify DB
+
+Ngày 2026-10-10 trên MySQL 8.0.45, `localhost:3306`, database `carrent`:
+
+- Trước bootstrap: DB có 0 bảng; kiểm tra contract báo thiếu 7 bảng.
+- Sau bootstrap: đủ 7 bảng, tên/thứ tự cột đúng §7.2; tổng 47 record như §7.7.
+- Đủ 7 FK và 6 CHECK; dữ liệu mẫu đúng role, snapshot/tổng tiền, payment/refund, không có booking đang giữ lịch bị overlap.
+- Kiểm tra lặp lại được tại `.scratch/db/verify-db.ps1` (cần đặt `MYSQL_PWD` trong terminal; không ghi mật khẩu vào file). Kiểm tra này dùng SQL thật và rollback các thao tác thử, không phải unit test Java.
+- Constraint test: chặn định danh trùng, FK owner không tồn tại, ngày thuê sai, tổng tiền sai, giá xe bằng 0, xóa customer có lịch sử. Payment retry hợp lệ và cascade ảnh xe không có booking vẫn hoạt động; mọi thay đổi thử được rollback.
+- BCrypt tạo và đối chiếu bằng thư viện Spring Security 7.1.1: đúng mật khẩu match, sai mật khẩu không match. Kiểm tra cấu trúc hash trong DB cho tất cả 7 users.
+
+- Chạy lại bản `scriptDB.sql` cuối: số record giữ nguyên 7/6/6/6/6/6/10; toàn bộ snapshot dữ liệu bằng mysqldump trước/sau giống nhau, gồm hash, giá trị, ngày, timestamp và trạng thái. Tổng doanh thu fixture PAID là 5.100.000 VND (không cộng FAILED/PENDING/REFUNDED).
+- `.\mvnw.cmd -q compile` exit 0; app boot với `ddl-auto=none`, Hikari kết nối MySQL thành công, log `Started CarRentApplication`, `GET /` trả 200. App chạy tạm để kiểm tra đã được dừng; MySQL vẫn chạy. Đây là kiểm tra skeleton Phase 0 với DB mới, chưa phải kiểm chứng entity/nghiệp vụ/UI của Phase 1–5.
+- Đã đối chiếu **hash thực lấy từ MySQL** qua JDBC và BCrypt cho cả 7 tài khoản: mật khẩu mẫu match, mật khẩu sai bị từ chối. 6 file ảnh mẫu tồn tại và là PNG; URL ảnh chờ resource handler P2.3.
+
+---
+
+## 8. Thiết kế giao diện
+
+### 8.1. Trang theo nhóm
+
+**Public:** `/` (home: search box + 8 xe mới nhất), `/login`, `/register`, `/cars`, `/cars/{id}`, `/access-denied`
+
+**Chung (đã đăng nhập):** `/profile`, `/profile/edit`, `/profile/change-password`, `/notifications`
+
+**Customer:** `/bookings/new`, `/bookings`, `/bookings/{id}`, `/bookings/{id}/payment`
+
+**Owner:** `/owner/dashboard`, `/owner/cars`, `/owner/cars/new`, `/owner/cars/{id}/edit`, `/owner/bookings`, `/owner/bookings/{id}`
+
+**Admin:** `/admin/dashboard`, `/admin/users`, `/admin/users/{id}`, `/admin/cars`, `/admin/cars/{id}`, `/admin/bookings`, `/admin/bookings/{id}`
+
+### 8.2. Cấu trúc template
+
+```text
+src/main/resources/
+├── templates/
+│   ├── fragments/
+│   │   ├── header.html        (navbar theo role + badge notification)
+│   │   ├── footer.html
+│   │   └── messages.html      (flash success/error + lỗi validation form)
+│   ├── home/
+│   │   └── index.html
+│   ├── auth/
+│   │   ├── login.html
+│   │   └── register.html
+│   ├── cars/
+│   │   ├── list.html
+│   │   └── detail.html
+│   ├── booking/
+│   │   ├── create.html
+│   │   ├── list.html
+│   │   └── detail.html
+│   ├── payment/
+│   │   └── mock-payment.html
+│   ├── notification/
+│   │   └── list.html
+│   ├── profile/
+│   │   ├── view.html
+│   │   ├── edit.html
+│   │   └── change-password.html
+│   ├── owner/
+│   │   ├── dashboard.html
+│   │   ├── cars.html
+│   │   ├── car-form.html     (dùng chung new/edit)
+│   │   ├── bookings.html
+│   │   └── booking-detail.html
+│   ├── admin/
+│   │   ├── dashboard.html
+│   │   ├── users.html
+│   │   ├── user-detail.html
+│   │   ├── cars.html
+│   │   ├── car-detail.html
+│   │   ├── bookings.html
+│   │   └── booking-detail.html
+│   └── error/
+│       ├── 403.html
+│       ├── 404.html
+│       └── error.html         (500/generic)
+└── static/
+    ├── css/custom.css
+    └── js/booking-price.js    (ước tính giá ở form booking)
+```
+
+### 8.3. Quy ước UI
+
+- **Tailwind CSS Play CDN + design system Material Design 3** (font Inter, Material Symbols) theo prototype Stitch. Config `tailwind.config` + bộ token copy nguyên văn từ prototype — chi tiết ở `docs/design/stitch/README.md`.
+- **UI phải port theo prototype Stitch**: mỗi template có file HTML prototype tương ứng (xem §8.5 mapping). Giữ class Tailwind + cấu trúc, thay phần tĩnh bằng Thymeleaf.
+- Mọi text UI tiếng Việt; trạng thái hiển thị bằng chip/badge màu theo token (`error` đỏ cho REJECTED/CANCELLED/FAILED, xanh cho CONFIRMED/PAID, v.v.).
+- Form error hiển thị dưới field (Thymeleaf `fields.hasErrors`); thao tác thành công → redirect + flash message (PRG).
+- Trang list có empty state tiếng Việt ("Chưa có xe nào...", "Chưa có thông báo nào...").
+- Hành động quan trọng (reject xe, hủy booking, xóa ảnh) có `confirm()` bằng JS.
+- Navbar (layout A — trang public/customer): link theo role + icon chuông + số unread. Sidebar (layout B — trang owner/admin): nav dọc theo role theo §8.5.
+
+---
+
+### 8.5. Prototype Stitch — nguồn thiết kế UI
+
+Prototype giao diện đã thiết kế sẵn trên Google Stitch (project "Giao diện Website CarRent"), **hiện giữ local** tại `docs/design/stitch/` (13 file HTML + 13 screenshot sau khi dọn prototype cũ). Chi tiết design system (màu, typography, spacing), component và quy tắc port HTML → Thymeleaf: xem `docs/design/stitch/README.md`.
+
+**Mapping màn hình → template → task:**
+
+| Prototype file | Route | Template Thymeleaf | Task |
+|---|---|---|---|
+| `home-trang-chu.html` | `/` | `home/index.html` | P0.3 |
+| `cars-tim-xe-2.html` | `/cars` | `cars/list.html` | P2.12 |
+| `cars-chi-tiet-xe-dat-thue.html` | `/cars/{id}` | `cars/detail.html` | P2.13, P3.6 |
+| `booking-xac-nhan-dat-thue.html` | `/bookings/new` | `booking/create.html` | P3.6 |
+| `booking-don-thue-cua-toi.html` | `/bookings` | `booking/list.html` | P3.7 |
+| `booking-chi-tiet-don-thue.html` | `/bookings/{id}` | `booking/detail.html` | P3.7 |
+| `payment-thanh-toan.html` | `/bookings/{id}/payment` | `payment/mock-payment.html` | P4.3 |
+| `auth-dang-nhap.html` / `auth-dang-ky.html` | `/login`, `/register` | `auth/login.html`, `auth/register.html` | P1.6 |
+| `owner-quan-ly-xe.html` | `/owner/cars` | `owner/cars.html` | P2.6 |
+| `owner-them-xe-moi.html` | `/owner/cars/new` + edit | `owner/car-form.html` | P2.7, P2.8 |
+| `admin-duyet-xe.html` | `/admin/cars` | `admin/cars.html` | P2.9, P2.10 |
+| `admin-quan-ly-nguoi-dung.html` | `/admin/users` | `admin/users.html` | P5.3, P5.4 |
+
+**Các trang prototype không cover** (dựng theo cùng design system — dùng layout A hoặc B tương ứng màn hình khác cùng khu vực): `/admin/dashboard`, `/admin/bookings`, `/owner/bookings`, `/owner/dashboard`, `/notifications`, `/profile` + subpages, trang lỗi 403/404/500, mọi empty state.
+
+**Navbar (layout A)** nav items: Trang chủ (`/`), Tìm xe (`/cars`), Đơn thuê của tôi (`/bookings` — customer), Dành cho chủ xe (`/owner/dashboard` — owner), nút Tài khoản (dropdown: Hồ sơ `/profile`, Đăng xuất) — ẩn/hiện theo role.
+**Sidebar (layout B)** nav items theo role: OWNER: Tổng quan (`/owner/dashboard`), Quản lý xe (`/owner/cars`), Đơn thuê (`/owner/bookings`), Xem trang khách; ADMIN: Tổng quan (`/admin/dashboard`), Quản lý xe (`/admin/cars`), Duyệt xe (`/admin/cars?approval=PENDING`), Đơn thuê (`/admin/bookings`), Quản lý người dùng (`/admin/users`), Xem trang khách.
+
+### 8.6. Ghi chú kỹ thuật Tailwind Play CDN
+
+- Play CDN chạy script trong browser — phù hợp dev/portfolio (tốc độ, không cần build). Nếu cần production sau này: chuyển sang Tailwind CLI build ra file tĩnh (ngoài phạm vi MVP).
+- `tailwind.config` chứa tokens từ Stitch — **copy nguyên văn** vào fragment/head; không tự ý đổi màu/font.
+- Font Inter + Material Symbols load từ Google Fonts CDN — cần internet khi chạy app (chấp nhận với MVP học tập; offline thì font fallback nhưng layout vẫn đúng).
+
+## 9. Package Structure
+
+```text
+com.carrent
+├── CarRentApplication.java
+├── config/
+│   ├── SecurityConfig.java          (filter chain, BCrypt, CSRF, role guards)
+│   └── WebConfig.java               (resource handler /uploads/**; seed nằm trong scriptDB.sql)
+├── security/
+│   ├── CustomUserDetailsService.java
+│   └── CustomUserPrincipal.java     (id, email, role — lấy user hiện tại)
+├── auth/
+│   ├── AuthController.java          (login, register)
+│   ├── AuthService.java
+│   └── RegisterForm.java            (DTO)
+├── user/
+│   ├── User.java
+│   ├── Role.java                    (enum)
+│   ├── UserStatus.java              (enum)
+│   ├── ProfileController.java
+│   ├── UserService.java
+│   └── UserRepository.java
+├── car/
+│   ├── Car.java
+│   ├── CarCategory.java
+│   ├── CarImage.java
+│   ├── ApprovalStatus.java          (enum)
+│   ├── ListingStatus.java           (enum)
+│   ├── Transmission.java, FuelType.java (enum)
+│   ├── CarController.java           (public list/detail)
+│   ├── OwnerCarController.java
+│   ├── AdminCarController.java
+│   ├── CarService.java
+│   ├── CarRepository.java
+│   ├── CarCategoryRepository.java
+│   ├── CarImageRepository.java
+│   ├── CarSpecifications.java       (điều kiện lọc động)
+│   └── CarForm.java                 (DTO + validation)
+├── booking/
+│   ├── Booking.java
+│   ├── BookingStatus.java           (enum)
+│   ├── BookingController.java       (customer)
+│   ├── OwnerBookingController.java
+│   ├── AdminBookingController.java
+│   ├── BookingService.java
+│   ├── BookingRepository.java
+│   └── BookingCreateForm.java       (DTO)
+├── payment/
+│   ├── Payment.java
+│   ├── PaymentStatus.java, PaymentMethod.java (enum)
+│   ├── PaymentController.java
+│   ├── PaymentService.java
+│   ├── PaymentRepository.java
+│   └── PaymentForm.java             (DTO)
+├── notification/
+│   ├── Notification.java
+│   ├── NotificationController.java
+│   ├── NotificationService.java
+│   └── NotificationRepository.java
+├── admin/
+│   ├── AdminController.java         (dashboard, users)
+│   └── AdminService.java
+├── storage/
+│   └── StorageService.java          (validate + lưu file upload)
+└── common/
+    └── exception/
+        ├── NotFoundException.java        (→ 404)
+        ├── ForbiddenException.java       (→ 403)
+        └── BusinessException.java        (→ flash error + redirect)
+```
+
+Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ thể (không interface).
+
+---
+
+## 10. Route Design
+
+| Method | Route | Chức năng | Quyền |
+|---|---|---|---|
+| GET | `/` | Home: search + xe mới nhất | Public |
+| GET | `/login` | Trang đăng nhập | Public |
+| POST | `/login` | Xử lý đăng nhập (Spring Security) | Public |
+| GET/POST | `/register` | Đăng ký CUSTOMER/OWNER | Public |
+| GET | `/cars` | Danh sách công khai + filter/sort/page | Public |
+| GET | `/cars/{id}` | Chi tiết xe + check khả dụng (query start/end) | Public nếu APPROVED+ACTIVE; Admin/Owner-of-car luôn xem được |
+| POST | `/logout` | Đăng xuất | Authenticated |
+| GET | `/profile` | Xem profile | Authenticated |
+| GET/POST | `/profile/edit` | Sửa full_name, phone | Authenticated |
+| GET/POST | `/profile/change-password` | Đổi mật khẩu | Authenticated |
+| GET | `/notifications` | Danh sách notification | Authenticated |
+| POST | `/notifications/{id}/read` | Đánh dấu đã đọc | Chủ notification |
+| POST | `/notifications/read-all` | Đánh dấu tất cả đã đọc | Authenticated |
+| GET | `/bookings/new?carId=` | Form tạo booking | CUSTOMER |
+| POST | `/bookings` | Tạo booking | CUSTOMER |
+| GET | `/bookings` | Lịch sử booking của tôi | CUSTOMER |
+| GET | `/bookings/{id}` | Chi tiết booking | Chủ booking / Owner xe / ADMIN |
+| POST | `/bookings/{id}/cancel` | Hủy booking | CUSTOMER (chủ booking) |
+| GET | `/bookings/{id}/payment` | Trang mock payment | CUSTOMER (chủ booking) |
+| POST | `/bookings/{id}/payment` | Xử lý mock payment | CUSTOMER (chủ booking) |
+| GET | `/owner/dashboard` | Thống kê xe/booking/doanh thu của owner | OWNER |
+| GET | `/owner/cars` | Xe của tôi | OWNER |
+| GET/POST | `/owner/cars/new` | Form + tạo xe (multipart ảnh) | OWNER |
+| GET/POST | `/owner/cars/{id}/edit` | Form + cập nhật xe + thêm ảnh | Owner của xe |
+| POST | `/owner/cars/{id}/images/{imageId}/delete` | Xóa 1 ảnh | Owner của xe |
+| POST | `/owner/cars/{id}/deactivate` | Ngừng đăng tin | Owner của xe |
+| POST | `/owner/cars/{id}/activate` | Đăng lại | Owner của xe |
+| POST | `/owner/cars/{id}/delete` | Xóa cứng (nếu không có booking) | Owner của xe |
+| GET | `/owner/bookings` | Booking trên xe của tôi | OWNER |
+| GET | `/owner/bookings/{id}` | Chi tiết booking | Owner của xe |
+| POST | `/owner/bookings/{id}/confirm` | Xác nhận booking | Owner của xe |
+| POST | `/owner/bookings/{id}/reject` | Từ chối + lý do | Owner của xe |
+| POST | `/owner/bookings/{id}/complete` | Hoàn tất (end_date đã qua) | Owner của xe |
+| GET | `/admin/dashboard` | Thống kê hệ thống | ADMIN |
+| GET | `/admin/users` | Danh sách user + search/filter/page | ADMIN |
+| GET | `/admin/users/{id}` | Chi tiết user | ADMIN |
+| POST | `/admin/users/{id}/status` | Đổi status user | ADMIN (không phải chính mình) |
+| GET | `/admin/cars` | Toàn bộ xe + filter | ADMIN |
+| GET | `/admin/cars/{id}` | Chi tiết xe (admin view) | ADMIN |
+| POST | `/admin/cars/{id}/approve` | Duyệt xe | ADMIN |
+| POST | `/admin/cars/{id}/reject` | Từ chối xe + lý do | ADMIN |
+| GET | `/admin/bookings` | Toàn bộ booking | ADMIN |
+| GET | `/admin/bookings/{id}` | Chi tiết booking | ADMIN |
+
+**Ghi chú:**
+- GET hiển thị; POST thay đổi. Mọi POST qua form Thymeleaf có CSRF token.
+- Thành công → redirect + flash; lỗi business → flash error + redirect về trang nguồn.
+- Route guard ở SecurityConfig (theo role) + ownership check ở Service (theo id user).
+
+---
+
+## 11. Sequence Diagrams — nghiệp vụ chính
+
+### 11.1. Owner tạo xe → Admin duyệt
+
+```mermaid
+sequenceDiagram
+    actor O as Owner
+    participant C as OwnerCarController
+    participant S as CarService
+    participant ST as StorageService
+    participant R as CarRepository
+    participant N as NotificationService
+    actor A as Admin
+
+    O->>C: POST /owner/cars/new (form + ảnh)
+    C->>S: createCar(form, files, currentUser)
+    S->>ST: store(files) — validate type/size, UUID name
+    ST-->>S: /uploads/...
+    S->>R: save(Car: PENDING + CarImages)
+    S->>N: notify ADMINs "xe chờ duyệt"
+    C-->>O: redirect /owner/cars
+
+    A->>C: POST /admin/cars/{id}/approve
+    C->>S: approveCar(carId, admin)
+    S->>S: kiểm tra PENDING
+    S->>R: update approval_status=APPROVED
+    S->>N: notify Owner "xe đã duyệt"
+    C-->>A: redirect /admin/cars + flash
+```
+
+### 11.2. Customer tạo booking
+
+```mermaid
+sequenceDiagram
+    actor U as Customer
+    participant C as BookingController
+    participant S as BookingService
+    participant BR as BookingRepository
+    participant N as NotificationService
+
+    U->>C: POST /bookings (carId, start, end, note)
+    C->>S: createBooking(form, currentUser) [@Transactional]
+    S->>S: validate dates (BR-04)
+    S->>S: xe APPROVED + ACTIVE?
+    S->>BR: findConflicts(carId, start, end) — chỉ PENDING/CONFIRMED
+    alt có xung đột
+        S-->>C: BusinessException → flash lỗi + redirect
+    else khả dụng
+        S->>S: total = price_per_day × days (từ DB)
+        S->>BR: save(Booking PENDING + snapshot)
+        S->>N: notify Owner "booking mới"
+        C-->>U: redirect /bookings/{id}
+    end
+```
+
+> Race condition 2 request đặt cùng xe: MVP chấp nhận rủi ro (transaction + check trong transaction, không lock DB) — ghi nhận giới hạn.
+
+### 11.3. Mock payment
+
+```mermaid
+sequenceDiagram
+    actor U as Customer
+    participant C as PaymentController
+    participant S as PaymentService
+    participant PR as PaymentRepository
+    participant N as NotificationService
+
+    U->>C: POST /bookings/{id}/payment (method, simulateFailure)
+    C->>S: processPayment(bookingId, form, currentUser) [@Transactional]
+    S->>S: chủ booking? booking CONFIRMED? chưa có PAID?
+    S->>S: amount = booking.total_amount
+    S->>PR: save(Payment PAID|FAILED, ref MCK-...)
+    S->>N: PAID → customer + owner / FAILED → customer
+    C-->>U: redirect /bookings/{id} + flash kết quả
+```
+
+---
+
+## 12. Non-functional Requirements
+
+### NFR-01. Security
+
+- BCrypt qua `PasswordEncoder`.
+- CSRF bật cho mọi form POST.
+- Role guard ở SecurityConfig; ownership check ở Service.
+- Thymeleaf escape mặc định (chống XSS); không render HTML thô từ user input.
+- Không hiển thị stack trace / SQL error cho user — trang lỗi chung.
+- Không lưu mật khẩu rõ, không thu thập dữ liệu thẻ thật.
+
+### NFR-02. Data Integrity
+
+- PK/FK/unique như §7; transaction cho booking/payment + notification.
+- Chuyển trạng thái chỉ qua method Service đã kiểm tra.
+
+### NFR-03. Performance
+
+- Mọi danh sách (cars, bookings, users, notifications, admin lists) phân trang qua DB.
+- Lọc/sort/search thực hiện bằng Specification + Pageable (không lọc in-memory).
+- Index theo §7.4.
+
+### NFR-04. Maintainability
+
+- Tách layer nghiêm ngặt; không lặp business logic giữa admin/owner/public path.
+- DTO form riêng, không bind entity trực tiếp.
+- Xử lý lỗi tập trung qua 3 exception chuẩn (`NotFound`/`Forbidden`/`Business`) + handler.
+
+### NFR-05. Usability
+
+- Lỗi form hiển thị dưới field; flash message sau thao tác.
+- Empty state tiếng Việt; confirm trước hành động quan trọng.
+- Pagination component dùng chung.
+
+---
+
+## 13. Xử lý lỗi
+
+| Tình huống | Xử lý |
+|---|---|
+| Không tìm thấy entity (car/booking/user/notification) | `NotFoundException` → trang `error/404.html` |
+| Không đủ role / không phải owner dữ liệu | SecurityConfig chặn role; Service ném `ForbiddenException` → `error/403.html` |
+| Validation form sai | Render lại form + lỗi dưới field (200) |
+| Business error (trùng lịch, sai transition, đã có PAID...) | `BusinessException` → flash error + redirect về trang nguồn |
+| Lỗi không xác định | `error/error.html` generic, log full stack ở server |
+
+Không bao giờ lộ thông tin internal (SQL, stack, path server) trong trang lỗi.
+
+---
+
+## 14. Roadmap triển khai & quy ước task
+
+### 14.1. Phases và task outline
+
+Chi tiết từng task (mục tiêu, ngữ cảnh, bước, ràng buộc, verify) nằm trong `docs/plans/phase-*.md` — sinh sau khi SDD này được duyệt. Task chia **theo tầng, hạt mảnh**, đánh số `P<phase>.<thứ tự>`.
+
+**Phase 0 — Init (5 tasks)** — `plans/phase-0-init.md`
+- P0.1 Scaffold Spring Boot (web, thymeleaf, security, data-jpa, validation, mysql, lombok) + `mvnw` + `application.properties`.
+- P0.2 Provision database `carrent` + 7 bảng + seed bằng `scriptDB.sql` (đã hoàn thành trước Phase 1); verify kết nối.
+- P0.3 Fragments (header/footer/messages) + trang home + Tailwind CDN + design tokens Stitch (theo `docs/design/stitch/home-trang-chu.html`).
+- P0.4 Trang lỗi 403/404/error + handler.
+- P0.5 Verify tổng: compile → boot → `GET /` = 200.
+
+**Phase 1 — Foundation (8 tasks, đã triển khai và verify)** — `plans/phase-1-foundation.md`
+- P1.1 Entity `User` + enums + `UserRepository`.
+- P1.2 `CustomUserPrincipal` + `CustomUserDetailsService` (chặn status ≠ ACTIVE).
+- P1.3 `SecurityConfig`: BCrypt, session, CSRF, guard route theo role, login/logout, role-based redirect.
+- P1.4 Verify tài khoản admin SQL seed sẵn; không tạo `DataSeeder` Java.
+- P1.5 `AuthController` + `AuthService` + `RegisterForm` (DTO + validation).
+- P1.6 Template login + register (theo `docs/design/stitch/auth-dang-nhap.html` + `auth-dang-ky.html`, tiếng Việt).
+- P1.7 Verify: compile, boot, register bằng curl (kèm CSRF), login, redirect theo role; SQL check user hash.
+- P1.8 Checkpoint rà soát phase.
+
+**Phase 2 — Car Management (14 tasks)** — `plans/phase-2-car.md`
+- P2.1 `CarCategory` entity + repo, map và verify 6 loại SQL seed sẵn; không seed Java.
+- P2.2 `Car` + `CarImage` entity + enums + repos.
+- P2.3 `StorageService` (validate + UUID + lưu `uploads/`) + `WebConfig` map `/uploads/**` + multipart config.
+- P2.4 `CarService.create()` — ownership, PENDING, lưu ảnh.
+- P2.5 `CarService.update()/deactivate()/activate()/delete()` — quy tắc xóa BR-10.
+- P2.6 `OwnerCarController` + template danh sách xe của tôi (badge trạng thái).
+- P2.7 Form tạo xe (multipart, validation).
+- P2.8 Form sửa xe + quản lý ảnh (thêm/xóa ảnh).
+- P2.9 Admin: danh sách xe + lọc + template.
+- P2.10 Admin: chi tiết xe + approve/reject (lý do) — notification sẽ cắm ở Phase 3.
+- P2.11 `CarSpecifications` + `CarService` search/filter/sort phân trang.
+- P2.12 Public `CarController` + template danh sách xe + filter UI + pagination.
+- P2.13 Public chi tiết xe (gallery, thông số, owner info) + quyền xem (FR-09).
+- P2.14 Check khả dụng trên detail + verify tổng phase.
+
+**Phase 3 — Notification & Booking (13 tasks)** — `plans/phase-3-booking.md`
+- P3.1 `Notification` entity + repo.
+- P3.2 `NotificationService` + `NotificationController` + template list + mark read/read-all + badge navbar (`@ControllerAdvice`).
+- P3.3 Cắm notification cho sự kiện xe: tạo xe (→ ADMINs), approve/reject (→ Owner).
+- P3.4 `Booking` entity + enum + `BookingRepository` (query conflict).
+- P3.5 `BookingService.create()` — validate, overlap, tính giá, snapshot, PENDING, notify Owner.
+- P3.6 Form tạo booking + ước tính giá JS + POST.
+- P3.7 Booking detail + list (customer) + quyền xem 3 role.
+- P3.8 Customer cancel (BR-08: refund PAID → REFUNDED, notify Owner/Customer; P4.1 đã chạy sau P3.6).
+- P3.9 Owner bookings list + detail.
+- P3.10 Owner confirm/reject (transition + owner_note + notify Customer).
+- P3.11 Owner complete (end_date đã qua, notify Customer).
+- P3.12 Verify tổng phase (kịch bản E2E đặt xe).
+
+**Phase 4 — Payment (6 tasks)** — `plans/phase-4-payment.md`
+- P4.1 `Payment` entity + enums + repo.
+- P4.2 `PaymentService.processPayment()` — guard (CONFIRMED, chưa PAID, ownership), PAID/FAILED, notify.
+- P4.3 Trang payment (form method + simulate failure) + POST.
+- P4.4 Hiển thị trạng thái thanh toán + lịch sử payment trong booking detail.
+- P4.5 Admin booking detail hiện payment.
+- P4.6 Verify tổng phase (thanh toán + retry + refund khi cancel).
+
+**Phase 5 — Admin & Hoàn thiện (9 tasks)** — `plans/phase-5-admin-polish.md`
+- P5.1 `AdminService` query thống kê dashboard.
+- P5.2 Template admin dashboard (stat cards + doanh thu theo tháng).
+- P5.3 Admin users: list + search + filter + pagination.
+- P5.4 Admin user detail + đổi status (cấm tự đổi).
+- P5.5 Profile view + edit.
+- P5.6 Change password (verify mật khẩu hiện tại).
+- P5.7 Owner dashboard (xe, booking, doanh thu của mình).
+- P5.8 Rà soát BR toàn hệ thống: ownership mọi route, transition states, empty states, thông báo tiếng Việt.
+- P5.9 Kịch bản E2E tổng + chốt SDD.
+
+Tổng: **55 tasks** trên 6 phase.
+
+### 14.2. Format mỗi task trong plan
+
+```markdown
+### Task P<phase>.<n> — <tên>
+**Mục tiêu:** ...
+**Ngữ cảnh:** FR/BR liên quan; file đã có liên quan.
+**Việc cần làm:** các bước cụ thể theo thứ tự.
+**Ràng buộc:** quy tắc không được vi phạm khi code.
+**Verify:** các lệnh/kịch bản chạy được (xem §14.3), mỗi cái có kết quả mong muốn.
+**Hoàn thành khi:** checklist ngắn.
+```
+
+### 14.3. Chuẩn verify (mọi task dùng chung)
+
+Thang verify theo thứ tự, dừng ở bậc đủ cho task:
+
+1. **Compile:** `.\mvnw -q compile` → BUILD SUCCESS.
+2. **Boot:** `.\mvnw spring-boot:run` (chạy nền) → log "Started CarRentApplication", không exception.
+3. **HTTP GET:** `curl.exe -s -o $null -w "%{http_code}" http://localhost:8080/<route>` → mã mong muốn (200 / 302 / 403 / 404).
+4. **SQL:** đặt `MYSQL_PWD` trong terminal, rồi `& "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" --protocol=TCP -h localhost -P 3306 -u root carrent -e "<query>"` → row/kết quả mong muốn; hoặc dùng `-p` để nhập ở prompt, không ghi mật khẩu vào file.
+5. **POST flow (CSRF + session):** dùng curl với cookie jar + trích CSRF token:
+   ```powershell
+   curl.exe -s -c jar.txt http://localhost:8080/login -o login.html
+   # trích token: regex trên login.html lấy value của input name="_csrf"
+   curl.exe -s -b jar.txt -c jar.txt -X POST http://localhost:8080/login `
+     -d "username=<email>&password=<pass>&_csrf=<token>"
+   curl.exe -s -b jar.txt -c jar.txt -X POST http://localhost:8080/<action> -d "...&_csrf=<token mới>"
+   ```
+   Token mới phải lấy từ trang chứa form của action đó.
+6. **Kịch bản web thủ công (cho flow UI phức tạp):** checklist bước-by-bước để người duyệt bằng trình duyệt — ghi rõ trong task, chỉ dùng khi bậc 5 chưa phủ được.
+
+Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app do mình khởi chạy. Mật khẩu MySQL đặt biến `$env:MYSQL_PWD` khi verify để không dính lệnh trong file; phục hồi/xóa biến sau khi dùng.
+
+### 14.4. Kết quả Phase 1 (2026-10-10)
+
+- Entity `User`/repository map đúng bảng `users`; Hibernate `validate` đã kiểm chứng mapping, cấu hình chạy thường vẫn là `ddl-auto=none`.
+- Đăng nhập từ MySQL bằng BCrypt/session; chỉ ACTIVE được đăng nhập. Redirect cố định theo role; trang cần xác thực chuyển tới login; sai role render HTTP 403.
+- Đăng ký CUSTOMER/OWNER qua DTO có validation tiếng Việt; chặn ADMIN/role lạ, trùng định danh kể cả hai request đồng thời, mật khẩu khác xác nhận và mật khẩu quá 72 byte UTF-8. Định danh được trim, không yêu cầu định dạng email. Không tự đăng nhập sau đăng ký.
+- Login/register port từ Stitch; giữ giá trị thường/role khi lỗi và xóa cả hai mật khẩu. Registration dùng `novalidate` để lỗi server hiện dưới field. Navbar theo role, menu dùng bàn phím được, logout là POST có CSRF và kết thúc session.
+- Compile, nhiều lần boot, HTTP/session/CSRF/SQL và Chromium desktop/mobile đã đạt. Kiểm tra navbar/menu ở 320px/390px, auth desktop 1440px; ảnh auth tải được và mỗi trang chỉ có một banner. Báo cáo chi tiết/giới hạn tại cuối `plans/phase-1-foundation.md`.
+- Sau verify có **9 users**: 7 seed giữ nguyên mọi field/hash/timestamp, thêm `p1_0683edc2_customer` và `p1_0683edc2_owner`. Sáu bảng còn lại giữ số record 6/6/6/6/6/10. `scriptDB.sql` vẫn chứa 47 record seed ban đầu; không tạo seeder Java hay đổi schema.
+- Trang `/cars`, dashboard, profile, notifications và chức năng thuê/thanh toán thuộc Phase 2–5; các link/redirect này có thể trả 404 ở checkpoint hiện tại.
+
+---
+
+## 15. Kết luận
+
+CarRent là web monolithic Spring Boot + Thymeleaf + MySQL, 3 role, 7 bảng, với thiết kế vòng đời thuê xe: duyệt xe → tìm xe → đặt → xác nhận → thanh toán giả lập → hoàn tất, kèm notification trong DB và dashboard quản trị. Schema/seed đã có sẵn qua `scriptDB.sql`; Phase 1 đã triển khai và verify Authentication & Authorization. Bước tiếp theo là Phase 2→5 theo hợp đồng DB-first ở §7.6 để hoàn thiện các nghiệp vụ còn lại.
