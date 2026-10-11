@@ -1,14 +1,14 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.7
-**Trạng thái:** Schema/seed DB, Phase 1 và P2.1–P2.14 đã triển khai; Phase 3–5 chờ triển khai
+**Phiên bản:** 2.13
+**Trạng thái:** Schema/seed DB, Phase 1, Phase 2/P2.1–P2.14, Phase 3/P3.1–P3.13 và P4.1 đã triển khai; P4.2–P4.6 và Phase 5 chờ triển khai
 **Ngày:** 2026-10-11
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
 **Ngôn ngữ tài liệu:** Tiếng Việt
 **Tài liệu liên quan:** `CarRent.md` (bản thảo v1.0 — giữ nguyên để tham chiếu), `docs/decisions.md` (hồ sơ quyết định), `docs/plans/phase-*.md` (implementation plan, sinh sau khi duyệt SDD này)
 
-> SDD v2.7 chốt chức năng Phase 2: quản lý xe Owner/Admin, tìm và xem xe public, quyền xem trước, khóa cập nhật đồng thời và cleanup ảnh theo transaction. Thay thế CarRent.md v1.0 và quy ước entity tự tạo schema của SDD v2.0. `scriptDB.sql` tại gốc dự án là nguồn chân lý vật lý của DB; entity các phase sau phải map theo schema sẵn có. Nếu plan cũ mâu thuẫn, quy ước DB-first tại §7.6–7.8 thắng. Xem quyết định D-24 trong `decisions.md`.
+> SDD v2.13 ghi nhận Phase 3 hoàn tất cả 5 đợt: notification, booking/create/availability/list/detail, cancel/refund atomic, Owner confirm/reject/complete và xóa xe không có lịch sử thuê an toàn DB/file/concurrency. Payment mapping P4.1 đã có; tiếp theo P4.2; payment service/UI thuộc P4.2 trở đi. Thay thế CarRent.md v1.0 và quy ước entity tự tạo schema của SDD v2.0. `scriptDB.sql` tại gốc dự án là nguồn chân lý vật lý của DB; entity các phase sau phải map theo schema sẵn có. Nếu plan cũ mâu thuẫn, quy ước DB-first tại §7.6–7.8 thắng. Xem quyết định D-24 trong `decisions.md`.
 
 ---
 
@@ -139,8 +139,8 @@ flowchart TD
 
 1. Customer submit form chọn ngày thuê trên xe.
 2. `BookingController` bind form `BookingCreateForm`, validation cơ bản (ngày hợp lệ).
-3. `BookingService` lấy Customer từ security context; kiểm tra xe `APPROVED` + `ACTIVE`.
-4. Service query booking trùng lịch (BR-05) trong transaction.
+3. `BookingService` lấy Customer từ security context, kiểm tra role/status DB; khóa và đọc lại Car hiện tại, kiểm tra `APPROVED` + `ACTIVE`.
+4. Service query booking trùng lịch (BR-05) bằng current locking read trong transaction (D-13).
 5. Service tính `totalAmount` từ `price_per_day` trong DB, lưu snapshot vào booking.
 6. Tạo Booking `PENDING`, tạo notification cho Owner — cùng transaction.
 7. Redirect đến trang chi tiết booking (PRG pattern).
@@ -214,8 +214,8 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 
 - Danh sách toàn bộ Car (`/admin/cars`): phân trang, tìm kiếm brand/model, lọc approval_status + listing_status.
 - Chi tiết Car + thông tin Owner (`/admin/cars/{id}`).
-- POST `/admin/cars/{id}/approve`: `PENDING → APPROVED`; notification cho Owner được tích hợp ở P3.3.
-- POST `/admin/cars/{id}/reject`: `PENDING → REJECTED` + `rejection_reason` (bắt buộc nhập, ≤500 ký tự); notification ở P3.3.
+- POST `/admin/cars/{id}/approve`: `PENDING → APPROVED`; notification CAR_APPROVED cho Owner đã tích hợp ở P3.3, cùng transaction.
+- POST `/admin/cars/{id}/reject`: `PENDING → REJECTED` + `rejection_reason` (bắt buộc nhập, ≤500 ký tự); notification CAR_REJECTED kèm lý do cho Owner đã tích hợp ở P3.3, cùng transaction.
 - POST `/admin/cars/{id}/deactivate` và `/activate`: ẩn mọi trạng thái; đăng lại chỉ xe APPROVED, không đổi kết quả duyệt. Admin không xóa cứng hoặc sửa nội dung xe.
 - Danh sách, chi tiết và thao tác Admin kiểm tra role ADMIN/status ACTIVE hiện có trong DB, ngoài quyền trong session. Mọi POST cần CSRF.
 
@@ -265,8 +265,8 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 - Phân trang: mặc định 12 xe/trang, size 1–50, page/offset giới hạn an toàn; Spring Data `Pageable` + Specification lọc/count phía DB. Pager tối đa 5 số trang, giữ query encoded/lặp, chỉ một page và size đã chuẩn hóa.
 - Bộ lọc sai kiểu/giá âm/category không dương/số chỗ ngoài 2–15/chuỗi quá dài trả 400 tiếng Việt; minPrice > maxPrice hợp lệ trả 200 empty. Giá dùng Long, biên inclusive; province khớp toàn bộ chuỗi đã trim.
 - `/cars/{id}`: gallery theo ID ảnh tăng dần, thông số, giá, địa điểm, thông tin Owner (chỉ tên + SĐT). Xe `APPROVED+ACTIVE` công khai; xe khác chỉ Owner sở hữu hoặc Admin có role/status ACTIVE còn đúng trong DB được xem. Người khác hoặc principal cũ không hợp lệ nhận 404; ID sai kiểu nhận 400.
-- Trang chi tiết xe chưa công khai có banner xem trước và không có CTA đặt thuê. CTA xe công khai trỏ tới route đặt thuê Phase 3 và nói rõ tính năng chưa sẵn sàng. Không dựng đánh giá, lịch trống, phí cọc hoặc tiện ích không có dữ liệu.
-- Kiểm tra khả dụng theo start/end và booking conflict thuộc P3.6; ẩn form lịch trên detail đến phase đó. `ACTIVE` chỉ biểu thị đăng tin, không bảo đảm trống lịch. Form tìm xe trang chủ dùng province/q/maxPrice; xe nổi bật trang chủ vẫn thuộc P5.8.
+- Trang chi tiết xe chưa công khai có banner xem trước và không có CTA đặt thuê. CTA xe công khai đã trỏ tới form `/bookings/new?carId=` cho anonymous/Customer; Owner/Admin thấy thông báo chỉ Customer được đặt. Không dựng đánh giá, lịch trống, phí cọc hoặc tiện ích không có dữ liệu.
+- P3.6 đã bật kiểm tra khả dụng theo `start/end` và conflict PENDING/CONFIRMED trên detail. Ngày thiếu/sai/past/đảo/vượt DATE MySQL trả 400 với thông báo tiếng Việt trên trang; đây là kiểm tra tư vấn, không giữ chỗ, submit phải kiểm tra lại dưới khóa. `ACTIVE` chỉ biểu thị đăng tin, không bảo đảm trống lịch. Form tìm xe trang chủ dùng province/q/maxPrice; xe nổi bật trang chủ vẫn thuộc P5.8.
 
 ### FR-10. Booking
 
@@ -275,6 +275,12 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 - Xem giá ước tính trước khi submit (JS nhỏ tính `days × price` hiển thị).
 - Xem danh sách + chi tiết booking của mình.
 - POST `/bookings/{id}/cancel`: hủy khi `PENDING` hoặc `CONFIRMED` (BR-08).
+
+**Checkpoint đợt 3:** P3.6/P3.7 đã triển khai form → POST → detail thật, danh sách riêng Customer có phân trang size 1–50 và link header desktop/mobile. Giá ước tính JS dùng BigInt; server giữ quyền tính tiền/identity/status/snapshot. `/bookings/{id}` chỉ cho Customer của đơn, Owner của xe hoặc Admin có role/status ACTIVE đúng DB; người khác nhận 404. Giá/địa chỉ đã lưu không đổi theo xe, badge payment đọc PAID thật từ P4.1. BOOKING notification đã nối detail. Tại checkpoint đợt 3, cancel và trang riêng Owner/Admin/payment actions/history còn chờ; cancel và Owner list/detail/confirm/reject đã nối ở đợt 4 bên dưới.
+
+**Checkpoint đợt 4:** Customer có nút Hủy đơn thuê cho PENDING/CONFIRMED, xác nhận JS; server kiểm tra lại dưới khóa. PAID→REFUNDED cùng CANCELLED + notification Owner và Customer hoàn tiền, không tạo payment mới, giữ amount/paid_at. Owner có `/owner/bookings` size 1–50, detail thông tin Customer/snapshot/payment thật và nút confirm/reject cho PENDING. Reject có modal lý do trim 1–500 ký tự, validate MVC/Service; không JS vẫn có form. Đơn thuê trên sidebar các trang xe/đơn Owner, generic detail có link Quản lý đơn thuê. Complete/delete/E2E đã nối ở đợt 5 bên dưới; payment UI thuộc Phase 4.
+
+**Checkpoint đợt 5 / Phase 3 hoàn tất:** Owner detail có Hoàn tất đơn thuê chỉ khi CONFIRMED và `end_date < hôm nay`; POST complete kiểm tra lại dưới khóa Car → Booking, không bắt buộc PAID, notify Customer atomic. Xe của tôi có icon xóa, disable nếu có lịch sử bất kỳ status; Service khóa Car rồi đọc current history và current image paths, xóa DB trước và dọn file sau commit. Rollback giữ row/file, lỗi cleanup được log. Đã kiểm chứng complete/cancel, create/delete/hide, upload/delete hai connection cùng snapshot cũ và timeout/deadlock rollback+409; E2E/browser/phân quyền/baseline đầy đủ tại §14.14.
 
 **Owner:**
 - `/owner/bookings`: booking liên quan xe của mình; chi tiết hiện thông tin customer.
@@ -318,6 +324,7 @@ stateDiagram-v2
 - Lưu DB bảng `notifications`; không realtime — người dùng vào `/notifications` hoặc thấy badge trên navbar (số unread, cập nhật khi tải trang qua `@ControllerAdvice`).
 - `/notifications`: danh sách của user hiện tại, phân trang, unread nổi bật.
 - POST `/notifications/{id}/read` — đánh dấu 1 thông báo đã đọc; POST `/notifications/read-all` — đánh dấu tất cả.
+- P3.1–P3.3 đã triển khai: chỉ user ACTIVE xem/đánh dấu thông báo của mình; sai user 404, POST CSRF. Page size mặc định 10, giới hạn 1–50, thứ tự created_at/id giảm dần. Chuông dùng chung public và header Owner/Admin, ẩn anonymous, badge chỉ hiện khi unread >0 (hiển thị tối đa 99+, nhãn truy cập có số thật). CAR link của Admin → review, Owner → form sửa xe; BOOKING link đã nối `/bookings/{id}` ở P3.7; PAYMENT link lịch sử chờ P4.4.
 - Sự kiện sinh notification:
 
 | Sự kiện | Người nhận |
@@ -370,6 +377,8 @@ Công khai ⟺ `approval_status = APPROVED` AND `listing_status = ACTIVE`. Mọi
 
 Hai khoảng trùng nhau khi `existing.start_date < requested.end_date AND existing.end_date > requested.start_date`. Chỉ booking `PENDING` và `CONFIRMED` tính là xung đột; `REJECTED/CANCELLED/COMPLETED` không chặn. `PENDING` giữ chỗ vô thời hạn trong MVP — ghi nhận là giới hạn (D-04). Kiểm tra + insert nằm trong cùng transaction.
 
+Theo D-13 đã duyệt: khóa Car bằng `PESSIMISTIC_WRITE`, đọc lại dữ liệu hiện tại, kiểm tra xe công khai và đọc booking xung đột bằng locking read trước insert. Truy vấn count thông thường có thể dùng snapshot cũ của MySQL REPEATABLE READ nên không dùng để quyết định tạo booking. Hai request đồng thời trùng lịch trên cùng xe chỉ một request thành công; hai khoảng chỉ chạm đầu/cuối không trùng ở cả hai chiều. UI kiểm tra khả dụng không giữ chỗ; submit kiểm tra lại.
+
 ### BR-06. Price Calculation
 
 ```text
@@ -379,10 +388,15 @@ total_amount  = car.price_per_day × days        (BIGINT, VND)
 
 Tính 100% ở backend từ `car.price_per_day` trong DB. Lưu `price_per_day_snapshot` vào booking. **Tuyệt đối không tin số tiền client gửi.**
 
+Nhân tiền bằng `Math.multiplyExact`, overflow trả business error. Địa chỉ snapshot ghép từ province/district/address_detail phải ≤300 ký tự theo cột `bookings.pickup_address`; quá dài trả lỗi rõ ràng, không cắt chuỗi hoặc tự sửa schema.
+
 ### BR-07. Booking Authorization & Transitions
 
 - Customer: xem/hủy booking của mình. Owner: xem/xử lý booking trên xe của mình. Admin: xem tất cả.
 - Chỉ cho phép transition đúng §FR-11; transition sai → business error, không đổi trạng thái.
+- Mutator kiểm tra role/status ACTIVE từ DB và ownership; Admin chỉ xem. Khóa theo thứ tự **Car → Booking → Payment** khi cần, đọc lại entity hiện tại dưới khóa trước kiểm tra transition (kể cả entity đã nằm trong persistence context). Không ghi đè từ snapshot/managed entity cũ. Với entity đã có lock mode trong Hibernate, `refresh(..., PESSIMISTIC_WRITE)` có thể phát SELECT thường; dùng detach đúng Booking/Payment rồi query `FOR UPDATE` lại. Không clear toàn persistence context; flush thay đổi hợp lệ trước reload. Đợt 4 đã tái hiện RED và verify GREEN dưới MySQL REPEATABLE READ.
+- Cancel/refund và notifications cùng transaction; confirm/reject/complete và payment sau này dùng chung protocol D-13. Reject reason sau trim bắt buộc, ≤500 ký tự. Complete khi `end_date < hôm nay`, không yêu cầu PAID theo nghiệp vụ hiện tại.
+- Xóa Car cũng khóa Car, kiểm tra toàn bộ lịch sử booking bằng current read, chỉ xóa file ảnh sau DB commit; rollback giữ file. Lock timeout/deadlock trả lỗi có kiểm soát, không commit dữ liệu/thông báo một phần.
 
 ### BR-08. Cancellation
 
@@ -394,6 +408,7 @@ Tính 100% ở backend từ `car.price_per_day` trong DB. Lưu `price_per_day_sn
 - Payment thuộc 1 booking; amount lấy từ `booking.total_amount` phía server.
 - Chỉ customer của booking đó được thanh toán; booking phải `CONFIRMED`.
 - Tối đa **1 Payment `PAID`** mỗi booking (Service chặn trước khi tạo mới).
+- Theo D-13: khóa Car → Booking → Payment và kiểm tra CONFIRMED/chưa PAID bằng dữ liệu hiện tại trước insert; thanh toán đồng thời hoặc tranh chấp với cancel không tạo PAID trùng hay CANCELLED+PAID.
 
 ### BR-10. Data Integrity
 
@@ -796,6 +811,7 @@ com.carrent
 │   ├── Notification.java
 │   ├── NotificationController.java
 │   ├── NotificationService.java
+│   ├── NotificationDto.java
 │   └── NotificationRepository.java
 ├── admin/
 │   ├── AdminController.java         (dashboard, users)
@@ -822,7 +838,7 @@ Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ th�
 | POST | `/login` | Xử lý đăng nhập (Spring Security) | Public |
 | GET/POST | `/register` | Đăng ký CUSTOMER/OWNER | Public |
 | GET | `/cars` | Danh sách công khai + filter/sort/page | Public |
-| GET | `/cars/{id}` | Chi tiết xe; kiểm tra khả dụng bổ sung P3.6 | Public nếu APPROVED+ACTIVE; Admin/Owner-of-car có role/status ACTIVE trong DB được xem trước |
+| GET | `/cars/{id}` | Chi tiết xe + kiểm tra khả dụng theo start/end (P3.6 đã triển khai) | Public nếu APPROVED+ACTIVE; Admin/Owner-of-car có role/status ACTIVE trong DB được xem trước |
 | POST | `/logout` | Đăng xuất | Authenticated |
 | GET | `/profile` | Xem profile | Authenticated |
 | GET/POST | `/profile/edit` | Sửa full_name, phone | Authenticated |
@@ -907,14 +923,16 @@ sequenceDiagram
     actor U as Customer
     participant C as BookingController
     participant S as BookingService
+    participant CR as CarRepository
     participant BR as BookingRepository
     participant N as NotificationService
 
     U->>C: POST /bookings (carId, start, end, note)
     C->>S: createBooking(form, currentUser) [@Transactional]
     S->>S: validate dates (BR-04)
-    S->>S: xe APPROVED + ACTIVE?
-    S->>BR: findConflicts(carId, start, end) — chỉ PENDING/CONFIRMED
+    S->>CR: findByIdForUpdate(carId), đọc lại Car hiện tại
+    S->>S: role/status DB hợp lệ? xe APPROVED + ACTIVE?
+    S->>BR: findConflictsForUpdate(carId, start, end) — current read PENDING/CONFIRMED
     alt có xung đột
         S-->>C: BusinessException → flash lỗi + redirect
     else khả dụng
@@ -925,7 +943,7 @@ sequenceDiagram
     end
 ```
 
-> Race condition 2 request đặt cùng xe: MVP chấp nhận rủi ro (transaction + check trong transaction, không lock DB) — ghi nhận giới hạn.
+> D-13 đã duyệt: khóa Car giữ đến commit/rollback để serialize mutation cùng xe; conflict query là locking read. Verify bằng hai transaction/kết nối MySQL độc lập, gồm snapshot cũ, tạo trùng, chuyển trạng thái tranh chấp và tạo cùng lúc xóa/ẩn xe. Không dùng Java `synchronized` thay khóa DB; giữ transaction ngắn và xử lý lỗi chờ khóa có kiểm soát.
 
 ### 11.3. Mock payment
 
@@ -939,6 +957,7 @@ sequenceDiagram
 
     U->>C: POST /bookings/{id}/payment (method, simulateFailure)
     C->>S: processPayment(bookingId, form, currentUser) [@Transactional]
+    S->>S: khóa Car → Booking → Payment, đọc trạng thái hiện tại (D-13)
     S->>S: chủ booking? booking CONFIRMED? chưa có PAID?
     S->>S: amount = booking.total_amount
     S->>PR: save(Payment PAID|FAILED, ref MCK-...)
@@ -1038,9 +1057,9 @@ Chi tiết từng task (mục tiêu, ngữ cảnh, bước, ràng buộc, verify
 - P2.14 Verify tổng phase, concurrency, quyền Owner–Admin–Public, upload/URL query và Admin ẩn/đăng lại. Check khả dụng trên detail thuộc P3.6.
 
 **Phase 3 — Notification & Booking (13 tasks)** — `plans/phase-3-booking.md`
-- P3.1 `Notification` entity + repo.
-- P3.2 `NotificationService` + `NotificationController` + template list + mark read/read-all + badge navbar (`@ControllerAdvice`).
-- P3.3 Cắm notification cho sự kiện xe: tạo xe (→ ADMINs), approve/reject (→ Owner).
+- P3.1 `Notification` entity + repo — **đã triển khai**.
+- P3.2 `NotificationService` + `NotificationController` + template list + mark read/read-all + badge navbar (`@ControllerAdvice`) — **đã triển khai**.
+- P3.3 Cắm notification cho sự kiện xe: tạo xe (→ ADMINs), approve/reject (→ Owner) — **đã triển khai**.
 - P3.4 `Booking` entity + enum + `BookingRepository` (query conflict).
 - P3.5 `BookingService.create()` — validate, overlap, tính giá, snapshot, PENDING, notify Owner.
 - P3.6 Form tạo booking + ước tính giá JS + POST.
@@ -1049,7 +1068,20 @@ Chi tiết từng task (mục tiêu, ngữ cảnh, bước, ràng buộc, verify
 - P3.9 Owner bookings list + detail.
 - P3.10 Owner confirm/reject (transition + owner_note + notify Customer).
 - P3.11 Owner complete (end_date đã qua, notify Customer).
-- P3.12 Verify tổng phase (kịch bản E2E đặt xe).
+- P3.12 Owner xóa cứng xe không có bất kỳ lịch sử booking; khóa Car và cleanup file sau commit.
+- P3.13 Verify tổng phase (E2E, concurrency, phân quyền, rollback và bảo toàn seed).
+
+**5 đợt đã duyệt (2026-10-11):**
+
+| Đợt | Thứ tự task | Đầu ra/checkpoint |
+|---|---|---|
+| 1 | P3.1–P3.3 | Notification DB, list/read/badge, sự kiện xe |
+| 2 | P3.4–P3.5 | Booking backend + khóa DB; kiểm chứng rules/concurrency trước UI |
+| 3 | P3.6 → P4.1 → P3.7 | Đặt thuê → detail/list, availability, đọc payment seed thật |
+| 4 | P3.8–P3.10 | Customer cancel/refund, Owner list/detail và confirm/reject |
+| 5 | P3.11–P3.13 | Complete, xóa xe an toàn và E2E/concurrency toàn phase |
+
+Chi tiết checkpoint tại `plans/phase-3-booking.md`. Cả 5 đợt/P3.1–P3.13 và P4.1 đã triển khai, verify đầy đủ checkpoint; Phase 3 hoàn tất, tiếp theo P4.2. P4.1 chỉ entity/enums/repository, thực hiện một lần trong đợt 3; chức năng payment P4.2–P4.6 theo Phase 4.
 
 **Phase 4 — Payment (6 tasks)** — `plans/phase-4-payment.md`
 - P4.1 `Payment` entity + enums + repo.
@@ -1163,12 +1195,55 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - P2.13: `/cars/{id}` có gallery theo ID ảnh, thông số/giá/địa điểm/Owner thật, empty state và preview banner. Xe không public chỉ Owner sở hữu hoặc Admin còn ACTIVE trong DB được xem, người khác 404; preview không có thao tác đặt thuê. Self-check 67 assertions và ma trận HTTP thật đạt, review Approved.
 - P2.14: bỏ `ThreadLocal` upload, mỗi lần gọi giữ danh sách file trong callback rollback riêng; khóa hàng và đọc lại trạng thái hiện tại trước mọi mutation. Hai kết nối duyệt/từ chối chỉ một quyết định thắng; stale managed Admin và Owner update/listing giữ quyết định đã commit; nhiều call trong một transaction giữ đúng trạng thái và dọn đủ ảnh. Checker tập trung cuối 22 checks đạt; mọi fixture commit dùng ID theo dõi riêng, đã dọn và đối chiếu baseline.
 - Admin list kiểm tra ADMIN/ACTIVE thực từ DB; thêm POST ẩn/đăng lại với CSRF, đăng lại chỉ APPROVED, giữ approval. Sửa lỗi JavaScript `openRejectDialog` không tồn tại ở xe đã quyết định; form sửa Owner dùng “Lưu thay đổi” và giải thích giữ trạng thái duyệt. Homepage empty featured copy hướng tới Tìm xe, dữ liệu featured vẫn P5.8.
+- Điều hướng Admin: header public có nút “Duyệt xe” riêng cho ADMIN ở desktop/mobile → `/admin/cars`; nút “Kiểm tra hồ sơ” trên mỗi dòng → `/admin/cars/{id}` để phê duyệt/từ chối xe PENDING. Menu Dashboard giữ route của phase sau.
 - Regression cuối: Admin 212 checks, Owner edit 350, create/storage và multipart form đạt; compile exit0. Root chạy app checkpoint trên 8080 (PID61208), auth smoke và ba-role/upload/logout cùng HTTP65 assertions đạt. Sau chỉnh template cuối, compile lại exit0 và app **PID31176** trên 8080 readiness ACCEPTING_TRAFFIC/HTTP200; bảng Admin có province thật, mobile cuộn riêng và lời nhắc duyệt chính xác. Browser 1440px/390px không tràn ngang, ảnh thật tải được, modal từ chối/quick reason/Escape hoạt động, không pageerror.
 - Mọi row/timestamp/hash/cột/constraint của 7 bảng và sáu tên/hash ảnh gốc khớp baseline; counts **9/6/6/6/6/6/10**, không probe tồn dư. Không thay schema, dependency hoặc seed; không Java unit test theo quy ước dự án. Code giữ trên `feat/phase2-car`, chưa stage/commit/push; `.scratch/` và `.superpowers/` giữ local, bị Git bỏ qua.
 - Review P2.11–P2.14 Approved; review cuối toàn bộ source không Critical/Important, hai Minor hiển thị đã sửa cùng đợt (province Admin và lời nhắc approval không hứa publish xe đang ẩn), focused render RED/GREEN đạt, scoped re-review **Approved**, không finding còn mở. Bằng chứng local tại `.superpowers/sdd/phase-2-car/task-{11,12,13,14}-report.md`, `final-review.md`, `final-fix-report.md`, `final-fix-review.md` và `.scratch/phase2/final/final-checks.md`.
 - Giới hạn: request multipart chunked vượt tổng 30MB có thể bị Tomcat ngắt trước khi render 413 (đường từng file đã đạt); lỗi xóa file sau commit hoặc process dừng đột ngột có thể để lại file, cleanup failure được log. Upload MVP kiểm tra extension/MIME/kích thước, chưa decode nội dung ảnh. AUTO_INCREMENT có thể có khoảng trống sau probe.
 - Booking/lịch khả dụng thuộc P3.6, notification P3.3, xóa cứng xe Owner P3.12, xe nổi bật trang chủ P5.8. Dashboard/profile và redirect Owner/Admin chưa có trang; test bằng `/owner/cars` và `/admin/cars` trực tiếp.
 
+### 14.10. Kết quả Phase 3 — đợt 1 (P3.1–P3.3, 2026-10-11)
+
+- Map Notification và repo vào 9 cột notifications sẵn có (User LAZY, is_read BIT), không DDL/seeder. Service/DTO/controller/advice + trang `/notifications` có empty state, pagination, read/read-all, CSRF và ACTIVE/ownership guard; nội dung escape.
+- Bell/badge dùng chung trên public desktop/mobile và 4 trang xe Owner/Admin; giữ Admin **Duyệt xe**. Tạo xe notify mọi ADMIN, approve/reject notify Owner đúng CAR ID và reason; cùng transaction, rollback không để event/xe/ảnh một phần. CAR links hoạt động; BOOKING/PAYMENT links theo P3.7/P4.4.
+- Kiểm chứng: 52 assertions Spring/MySQL rollback + 58 HTTP checks + 27 kịch bản browser, 1440/390/320px không overflow/pageerror. Regression Car create/storage/rollback đạt; Admin car list/detail/decisions 212 checks đạt. Review độc lập Approved. Fixture HTTP đã cleanup, mọi original rows/timestamps/cột/constraints của 7 bảng và hash sáu ảnh seed khớp baseline.
+- Evidence/commands tại `plans/phase-3-booking.md` và `.scratch/phase3/`, review tại `.superpowers/sdd/phase-3-booking/batch-1-review.md`. App 8080 đã khởi động lại để test; giữ branch/thay đổi hiện có, không stage/commit/push. Tiếp theo **đợt 2 P3.4–P3.5**, D-13 booking concurrency chưa implement.
+
+### 14.11. Kết quả Phase 3 — đợt 2 (P3.4–P3.5, 2026-10-11)
+
+- Map Booking vào 13 cột sẵn có, 5 status seed, customer/car LAZY và không cascade xóa lịch sử. Repository có pagination theo customer/owner/status, advisory conflict và locking queries cho conflict/ID/toàn bộ history. SQL thật dùng `FOR UPDATE`; không đổi schema/seed/dependency.
+- `BookingService.createBooking` kiểm tra form và CUSTOMER/ACTIVE tại Service; ngày từ hôm nay, start < end, note ≤500. Chặn ngày vượt DATE MySQL (end ≤31/12/9999) bằng lỗi nghiệp vụ trước query. Khóa/reload Car hiện tại, kiểm tra APPROVED+ACTIVE và overlap PENDING/CONFIRMED bằng current locking read; tính Long với `Math.multiplyExact`, pickup snapshot bỏ phần trống và ≤300. Booking PENDING + BOOKING_CREATED tới Owner cùng transaction.
+- **149 assertions Spring/MySQL thật đạt**: validation/role/status, 5 trạng thái và overlap/touching hai chiều, snapshot/tiền/địa chỉ/overflow, ngày DATE biên; 2 connection với REPEATABLE READ cũ chỉ tạo một booking/event; stale managed Car bị ẩn bị chặn, giá mới được dùng. Quan sát `performance_schema.data_lock_waits` gắn đúng connection B và khóa Car. Timeout thật trả HTTP 409 tiếng Việt và rollback cả booking/event đã tạo trước đó trong cùng transaction; error text escape/fallback đạt.
+- Build `mvnw.cmd -q package -DskipTests` đạt; app 8080 đã khởi động lại, **16 kiểm tra HTTP chỉ đọc** đạt cho 3 role, notification/xe và Admin **Duyệt xe**. Review độc lập **Approved**, finding ngày vượt DATE đã sửa bằng RED→GREEN. Mọi rows/timestamps/cột/constraints của 7 bảng giữ nguyên theo baseline đầu đợt; sáu ảnh seed giữ nguyên. Fixture rollback hoặc cleanup đúng ID, không Java unit test/stage/commit/push.
+- Evidence tại `.scratch/phase3/batch2/`, review `.superpowers/sdd/phase-3-booking/batch-2-review.md`. Chưa có form/controller/availability hay payment mapping; không kiểm tra browser booking hoặc inject deadlock riêng ở đợt này. **Tiếp theo đợt 3: P3.6 → P4.1 → P3.7.**
+
+### 14.12. Kết quả Phase 3 — đợt 3 (P3.6 → P4.1 → P3.7, 2026-10-11)
+
+- Form đặt thuê, estimate JS BigInt, availability và POST → detail/list hoạt động; dữ liệu khách/giá/trạng thái/địa chỉ do server quyết định. List riêng Customer, detail guard 3 role và status DB; snapshot giữ nguyên, badge payment đọc PAID thật. Header có Đơn thuê desktop/mobile và Duyệt xe Admin; BOOKING notification mở detail.
+- P4.1 map đúng 9 cột payments, đủ enums, FK BIGINT không unique, query Payment `FOR UPDATE`. Fixture rollback chứng minh bulk refund chỉ PAID→REFUNDED, flush Booking đang sửa, không clear context, reload Payment đúng và giữ amount/paid_at; đây là repository, chưa có nghiệp vụ cancel/payment.
+- `mvnw.cmd -q package -DskipTests` exit 0; **118 assertions Spring/MySQL/MVC**, **149 assertions hồi quy backend**, **117 kiểm tra HTTP/MySQL** và **47 checks Playwright** đạt. HTTP/browser tạo PENDING + một BOOKING_CREATED, hai HTTP đặt trùng chỉ một thành công; overlap/chạm mép hai chiều, CSRF, giả mạo, escape, ba role, phân trang và payment seed đạt. Browser 1440/390/320px không tràn ngang/pageerror, Long max hiển thị chính xác, overflow bị chặn; đã xem ảnh form/list/detail.
+- RED→GREEN bổ sung thông báo tiếng Việt cho malformed date; HTTP phát hiện transaction availability thất bại làm view Car bị detach, sửa thứ tự load Car/images sau xử lý availability và verify ngày sai trả trang 400 đầy đủ. Review độc lập **Approved**, không finding code còn mở.
+- Fixture HTTP/browser cleanup theo đúng ID; mọi row/timestamp/hash/cột/constraint của 7 bảng và sáu ảnh seed khớp baseline. Không đổi schema/seed/dependency, không Java unit test; giữ nhánh/checkout, không stage/commit/push. AUTO_INCREMENT có thể có khoảng trống do fixture rollback/cleanup.
+- Evidence/commands tại `plans/phase-3-booking.md`, `.scratch/phase3/batch3/`; review `.superpowers/sdd/phase-3-booking/batch-3-review.md`. App 8080 đã boot lại và test. Cancel/refund nghiệp vụ, Owner transitions, payment service/history/UI chưa triển khai; deadlock riêng chưa inject. **Tiếp theo đợt 4: P3.8 → P3.9 → P3.10.**
+
+### 14.13. Kết quả Phase 3 — đợt 4 (P3.8–P3.10, 2026-10-11)
+
+- Customer cancel PENDING/CONFIRMED; PAID→REFUNDED cùng transaction với CANCELLED và notification, giữ amount/paid_at, FAILED retry không đổi. Owner list/detail scoped, phân trang size 1–50, Customer fullName/phone/email, snapshots/payment thật; confirm/reject chỉ PENDING, reason trim 1–500 tại MVC/Service. UI layout B có Đơn thuê/chuông, modal reject focus/Escape, generic detail có Quản lý đơn thuê; Admin chỉ xem.
+- RED xác nhận thiếu cancelBooking. **232 assertions Spring/MySQL/MVC** đạt: role/status/ownership, transition lặp/terminal, reason null/blank/control-only/501/500, paid/unpaid refund, bảy race transition trên hai connection REPEATABLE READ có snapshot/managed Booking cũ và quan sát chờ khóa Car thật; chỉ transition hợp lệ notify. Payment managed/snapshot cũ vẫn thấy PAID và refund; lỗi notification (cả event thứ hai) rollback booking/payment/events.
+- Review/concurrency bắt `refresh` Hibernate sau locking query phát SELECT thường, cho cancel thứ hai vượt guard. Sửa targeted detach + query FOR UPDATE lại cho Booking/Payment; RED stale-refresh-red.log → GREEN. Sửa guard reason sau trim (ký tự điều khiển chỉ còn rỗng) tại MVC/Service và duplicate flash. Review độc lập **Approved**.
+- Build `mvnw.cmd -q compile` và `mvnw.cmd -q package -DskipTests` exit 0; **118 assertions hồi quy đợt 3**, **139 HTTP/MySQL**, **57 Playwright + 11 đối chiếu DB** đạt. HTTP thực hiện cancel/refund/confirm/reject, CSRF/quyền, snapshot, reason/escape, repeat và race. Browser 1440/390/320px không tràn page/pageerror, modal focus/Escape, một flash, actions sau terminal ẩn, reject khi tắt JS. Native confirm đã quan sát; kiểm tra accept/dismiss dùng window.confirm có kết quả điều khiển để tool trả đầy đủ bằng chứng. Owner table mobile cuộn ngang trong vùng riêng.
+- Fixture commit/browser cleanup đúng ID; mọi row/timestamp/hash/cột/constraint của 7 bảng và sáu ảnh seed khớp baseline đầu đợt. Không đổi schema/seed/dependency, không Java unit test; giữ branch/checkout/thay đổi hiện có, không stage/commit/push. AUTO_INCREMENT có thể có khoảng trống do probe.
+- Evidence `.scratch/phase3/batch4/`, review `.superpowers/sdd/phase-3-booking/batch-4-review.md`, checklist/commands tại plan Phase 3. App 8080 đã restart và test. Chưa complete/hard-delete/E2E cuối Phase 3, payment service/history/UI hoặc inject deadlock riêng; **tiếp theo đợt 5 P3.11 → P3.12 → P3.13**.
+
+### 14.14. Kết quả Phase 3 — đợt 5 (P3.11–P3.13, 2026-10-11)
+
+- Complete Owner/ACTIVE/ownership, CONFIRMED và ngày trả đã qua; UI/date guard và server lock/current read, không cần PAID. COMPLETED và Customer BOOKING_COMPLETED cùng transaction; lỗi notify rollback trạng thái/event, race complete/cancel chỉ một terminal transition/event.
+- Xóa xe chưa từng có booking: quyền Owner/ACTIVE, current history mọi status dưới khóa Car; DB CarImages/Car và afterCommit file cleanup. Query image locking chống snapshot thiếu ảnh vừa upload; đã tái hiện lỗi file mồ côi trước sửa. DeleteImage dùng chung callback, commit/rollback ảnh riêng vẫn đúng. Admin review tên/email dài wrap ở320px.
+- **192 Spring/MySQL/MVC assertions** đạt, gồm 9 race hai connection và stale date/history/image, afterCommit/rollback. **Timeout1205/deadlock1213 thật** trả MVC409 tiếng Việt và rollback toàn bộ Booking/Payment/notifications, kể cả cancel PAID đã chạy trước lỗi khóa; không có probe production. Hồi quy **149 backend + 118 UI/payment + 232 transitions** đạt.
+- **225 HTTP/MySQL**, **65+6 browser** và **5 browser DB checks** đạt. HTTP chốt từng fixture ID CONFIRMED/REJECTED/CANCELLED/CANCELLED+REFUNDED/COMPLETED và recipient/type; browser ba role đi đủ tạo xe có ảnh → Admin header Duyệt xe/approve → tìm/đặt/list/detail → Owner notification/confirm → Customer notification. Complete/delete UI, native confirm/dismiss thật và controlled accept/dismiss; 1440/390/320px không tràn page/pageerror. Đã inspect screenshot.
+- Build/package/boot thành công; sau cleanup exact fixture ID/file, mọi row/timestamp/hash/schema/constraint của7bảng và sáu ảnh seed khớp baseline; **21 HTTP smoke chỉ đọc** với seed users ba role đạt. Review độc lập **Approved**; giữ checkout/nhánh/index, không stage/commit/push/schema/seed/dependency/Java unit test. AUTO_INCREMENT có thể tăng.
+- Evidence/commands/checklist tại `plans/phase-3-booking.md`, `.scratch/phase3/batch5/`, `.superpowers/sdd/phase-3-booking/batch-5-review.md`. RED stderr bị PowerShell promote thành terminating error nên transcript ở `red-evidence.md`; GREEN logs lưu đầy đủ. App8080 đang chạy. **Phase 3 hoàn tất; tiếp theo P4.2**; P4.1 không chạy lại. Payment service/history/UI, Admin booking riêng và dashboard/profile chưa triển khai; refund hiện giả lập.
+
 ## 15. Kết luận
 
-CarRent là web monolithic Spring Boot + Thymeleaf + MySQL, 3 role, 7 bảng, với thiết kế vòng đời thuê xe: duyệt xe → tìm xe → đặt → xác nhận → thanh toán giả lập → hoàn tất, kèm notification trong DB và dashboard quản trị. Schema/seed đã có sẵn qua `scriptDB.sql`; Phase 1 Authentication & Authorization và toàn bộ chức năng Phase 2 quản lý/tìm/xem xe đã triển khai. Tiếp tục Phase 3→5 theo hợp đồng DB-first ở §7.6 để hoàn thiện thuê xe, thanh toán, notification và dashboard.
+CarRent là web monolithic Spring Boot + Thymeleaf + MySQL, 3 role, 7 bảng, với thiết kế vòng đời thuê xe: duyệt xe → tìm xe → đặt → xác nhận → thanh toán giả lập → hoàn tất, kèm notification trong DB và dashboard quản trị. Schema/seed đã có sẵn qua `scriptDB.sql`; Phase 1 Authentication & Authorization, toàn bộ Phase 2 quản lý/tìm/xem xe và Phase 3/P3.1–P3.13 notification/booking toàn vòng đời và xóa xe an toàn, cùng P4.1 Payment mapping đã triển khai. Tiếp tục P4.2→Phase 5 theo hợp đồng DB-first §7.6 và khóa D-13 để hoàn thiện thuê xe, thanh toán và dashboard.

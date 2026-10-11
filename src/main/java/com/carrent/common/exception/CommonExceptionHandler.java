@@ -64,6 +64,14 @@ public class CommonExceptionHandler {
         return "error/404";
     }
 
+    @ExceptionHandler({org.springframework.dao.PessimisticLockingFailureException.class,
+            org.springframework.dao.QueryTimeoutException.class})
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public String concurrentUpdate(Model model) {
+        model.addAttribute("errorMessage", "Dữ liệu đang được xử lý bởi yêu cầu khác. Vui lòng thử lại.");
+        return "error/error";
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String unexpected(Exception ex, Model model) {

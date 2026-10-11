@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/head :: head(title=${car.brand + ' ' + car.model})}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
 <div th:replace="~{fragments/header :: header}"></div>
@@ -82,10 +82,20 @@
       <aside class="lg:col-span-4 lg:sticky lg:top-20">
         <div class="bg-surface-container-lowest rounded-xl shadow-md p-space-lg flex flex-col gap-space-lg">
           <div><strong class="font-headline-md text-headline-md text-primary break-all" th:text="${#numbers.formatDecimal(car.pricePerDay, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong><span class="text-on-surface-variant"> / ngày</span></div>
-          <!-- TODO P3.6: Add date and availability controls when booking availability is implemented. -->
+          <form th:if="${publicListing}" method="get" th:action="@{/cars/{id}(id=${car.id})}" class="flex flex-col gap-space-sm">
+            <label for="availability-start" class="font-label-md text-label-md">Ngày nhận xe</label>
+            <input id="availability-start" name="start" type="date" th:value="${start}" th:min="${today}" max="9999-12-31" required class="w-full min-w-0 h-11 bg-surface-container-low rounded-lg px-space-sm focus:ring-2 focus:ring-secondary/40"/>
+            <label for="availability-end" class="font-label-md text-label-md">Ngày trả xe</label>
+            <input id="availability-end" name="end" type="date" th:value="${end}" th:min="${today}" max="9999-12-31" required class="w-full min-w-0 h-11 bg-surface-container-low rounded-lg px-space-sm focus:ring-2 focus:ring-secondary/40"/>
+            <button type="submit" class="min-h-11 rounded-lg bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-container-high">Kiểm tra khả dụng</button>
+          </form>
+          <p th:if="${availabilityError != null}" th:text="${availabilityError}" role="alert" class="p-space-sm rounded-lg bg-error-container text-on-error-container"></p>
+          <p th:if="${availability != null and availability}" role="status" class="p-space-sm rounded-lg bg-emerald-50 text-emerald-800">Xe còn trống trong khoảng ngày đã chọn.</p>
+          <p th:if="${availability != null and !availability}" role="status" class="p-space-sm rounded-lg bg-error-container text-on-error-container">Xe đã có đơn trùng khoảng ngày đã chọn.</p>
           <div th:if="${publicListing}" class="flex flex-col gap-space-sm">
-            <a th:href="@{/bookings/new(carId=${car.id})}" class="w-full min-h-12 px-space-md py-space-sm rounded-xl bg-secondary hover:bg-secondary-container text-on-secondary font-title-md text-title-md flex items-center justify-center gap-2"><span>Đặt thuê xe</span><span class="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span></a>
-            <p class="font-caption text-caption text-on-surface-variant">Tính năng đặt thuê đang được hoàn thiện. Giá hiển thị là giá thuê mỗi ngày; lịch trống chưa được kiểm tra.</p>
+            <a sec:authorize="isAnonymous() or hasRole('CUSTOMER')" th:href="@{/bookings/new(carId=${car.id})}" class="w-full min-h-12 px-space-md py-space-sm rounded-xl bg-secondary hover:bg-secondary-container text-on-secondary font-title-md text-title-md flex items-center justify-center gap-2"><span>Đặt thuê xe</span><span class="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span></a>
+            <p class="font-caption text-caption text-on-surface-variant">Kiểm tra khả dụng không giữ chỗ. Khi gửi đơn, hệ thống kiểm tra lại lịch và giá hiện tại.</p>
+            <p sec:authorize="hasRole('OWNER') or hasRole('ADMIN')" class="text-caption text-on-surface-variant">Chỉ tài khoản khách hàng được đặt thuê xe.</p>
           </div>
           <p th:unless="${publicListing}" class="text-on-surface-variant">Bản xem trước: chưa thể đặt thuê xe này.</p>
         </div>

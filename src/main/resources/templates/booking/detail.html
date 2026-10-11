@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head(title=${'Đơn thuê #CR-' + booking.id})}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
+  <div class="max-w-7xl mx-auto px-gutter py-space-xl flex flex-col gap-space-lg">
+    <div class="flex flex-wrap items-center justify-between gap-space-md">
+      <div><h1 class="font-headline-lg text-headline-lg text-primary tracking-tight" th:text="${'Chi tiết đơn thuê #CR-' + booking.id}">Chi tiết đơn thuê</h1><p class="text-on-surface-variant mt-1" th:text="${'Tạo lúc ' + #temporals.format(booking.createdAt, 'dd/MM/yyyy HH:mm')}">Ngày tạo</p></div>
+      <span th:replace="~{booking/fragments :: statusBadge(${booking.status})}"></span>
+    </div>
+    <div th:replace="~{fragments/messages :: messages}"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+      <div class="lg:col-span-8 flex flex-col gap-space-lg min-w-0">
+        <section class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md">
+          <h2 class="font-headline-sm text-headline-sm text-primary flex items-center gap-space-xs"><span class="material-symbols-outlined text-secondary text-[22px]" aria-hidden="true">directions_car</span>Thông tin phương tiện</h2>
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-space-md items-center">
+            <div class="md:col-span-5 aspect-[16/10] rounded-lg overflow-hidden bg-surface-container-low shadow-sm"><img th:if="${thumbnail != null}" th:src="${thumbnail}" th:alt="${car.brand + ' ' + car.model}" class="w-full h-full object-cover"/><span th:unless="${thumbnail != null}" role="img" aria-label="Xe chưa có ảnh" class="w-full h-full flex items-center justify-center material-symbols-outlined text-outline text-[48px]">directions_car</span></div>
+            <div class="md:col-span-7 flex flex-col justify-between h-full gap-space-sm min-w-0"><h3 class="font-headline-sm text-headline-sm text-on-surface break-words" th:text="${car.brand + ' ' + car.model}">Tên xe</h3><p th:text="${car.category.name + ' • ' + car.seatCount + ' chỗ • ' + car.manufactureYear}">Thông số</p><p th:text="${car.licensePlate != null ? 'Biển số: ' + car.licensePlate : 'Biển số chưa cập nhật'}">Biển số</p><a th:if="${carPublic}" th:href="@{/cars/{id}(id=${car.id})}" class="text-secondary underline">Thông tin xe</a></div>
+          </div>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-space-md bg-surface-container-low p-space-md rounded-lg"><div><dt class="text-on-surface-variant">Ngày nhận xe</dt><dd class="font-title-md text-title-md" th:text="${#temporals.format(booking.startDate, 'dd/MM/yyyy')}">Ngày nhận</dd></div><div><dt class="text-on-surface-variant">Ngày trả xe</dt><dd class="font-title-md text-title-md" th:text="${#temporals.format(booking.endDate, 'dd/MM/yyyy')}">Ngày trả</dd></div><div class="sm:col-span-2"><dt class="text-on-surface-variant">Địa điểm giao nhận đã xác nhận khi đặt</dt><dd class="break-words [overflow-wrap:anywhere]" th:text="${booking.pickupAddress}">Địa chỉ</dd></div></dl>
+        </section>
+        <section class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md"><h2 class="font-headline-sm text-headline-sm text-primary">Thông tin chủ xe</h2><p class="font-title-md text-title-md break-words" th:text="${car.owner.fullName}">Chủ xe</p><p th:text="${car.owner.phone ?: 'Chưa cập nhật số điện thoại'}">Số điện thoại</p></section>
+        <section class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md"><h2 class="font-headline-sm text-headline-sm text-primary">Ghi chú</h2><div><h3 class="font-title-md text-title-md">Khách hàng</h3><p class="whitespace-pre-line break-words [overflow-wrap:anywhere]" th:text="${booking.customerNote ?: 'Không có ghi chú.'}">Ghi chú khách hàng</p></div><div th:if="${booking.ownerNote != null}"><h3 class="font-title-md text-title-md">Chủ xe</h3><p class="whitespace-pre-line break-words [overflow-wrap:anywhere]" th:text="${booking.ownerNote}">Ghi chú chủ xe</p></div></section>
+      </div>
+      <aside class="lg:col-span-4 flex flex-col gap-space-md lg:sticky lg:top-20 min-w-0">
+        <section class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md"><h2 class="font-headline-sm text-headline-sm text-primary">Chi tiết thanh toán</h2><dl class="flex flex-col gap-space-sm"><div><dt class="text-on-surface-variant">Đơn giá đã lưu khi đặt</dt><dd class="font-title-md text-title-md break-all" th:text="${#numbers.formatInteger(booking.pricePerDaySnapshot, 0, 'POINT') + ' VNĐ/ngày'}">Đơn giá</dd></div><div class="flex justify-between"><dt>Số ngày thuê</dt><dd th:text="${days + ' ngày'}">Số ngày</dd></div><div class="h-px bg-surface-container my-space-xs"></div><div><dt class="font-title-md text-title-md text-primary">Tổng tiền thuê</dt><dd class="font-headline-sm text-headline-sm text-secondary font-bold break-all" th:text="${#numbers.formatInteger(booking.totalAmount, 0, 'POINT') + ' VNĐ'}">Tổng tiền</dd></div></dl><p id="payment-status" class="p-space-sm rounded-lg font-label-md text-label-md" th:classappend="${hasPaid ? 'bg-emerald-50 text-emerald-800' : 'bg-surface-container-low text-on-surface-variant'}" th:text="${hasPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}">Trạng thái thanh toán</p></section>
+        <p th:if="${booking.status.name() == 'PENDING'}" class="p-space-md rounded-lg bg-amber-50 text-amber-900">Đơn đã gửi đến chủ xe và đang chờ xác nhận.</p>
+        <form sec:authorize="hasRole('CUSTOMER')" th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" method="post" th:action="@{/bookings/{id}/cancel(id=${booking.id})}" data-confirm="Bạn chắc chắn muốn hủy đơn thuê? Khoản đã thanh toán sẽ được hoàn tiền (giả lập).">
+          <button type="submit" class="w-full py-space-sm px-space-md rounded-lg bg-error-container text-on-error-container hover:bg-error hover:text-on-error">Hủy đơn thuê</button>
+        </form>
+        <a sec:authorize="hasRole('OWNER')" th:href="@{/owner/bookings/{id}(id=${booking.id})}" class="py-space-sm px-space-md rounded-lg bg-primary text-on-primary text-center">Quản lý đơn thuê</a>
+        <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/bookings}" class="py-space-sm px-space-md rounded-lg bg-surface-container text-primary hover:bg-surface-container-high text-center">Đơn thuê của tôi</a>
+        <a th:href="@{/cars}" class="py-space-sm px-space-md rounded-lg bg-secondary text-on-secondary text-center">Tìm xe</a>
+      </aside>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script th:src="@{/js/booking-actions.js}" defer></script>
+</body></html>

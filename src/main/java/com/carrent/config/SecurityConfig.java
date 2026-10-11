@@ -27,6 +27,8 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/register", "/access-denied").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/owner/**").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/bookings/new", "/bookings").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/bookings", "/bookings/*/cancel").hasRole("CUSTOMER")
                         .requestMatchers("/bookings/**").authenticated()
                         .anyRequest().authenticated())
                 .formLogin(login -> login

@@ -1,5 +1,6 @@
 package com.carrent.car;
 
+import com.carrent.booking.BookingRepository;
 import com.carrent.security.CustomUserPrincipal;
 import com.carrent.common.exception.BusinessException;
 import jakarta.validation.Valid;
@@ -31,11 +32,14 @@ public class OwnerCarController {
     private final CarService cars;
     private final CarImageRepository images;
     private final CarCategoryRepository categories;
+    private final BookingRepository bookings;
 
-    public OwnerCarController(CarService cars, CarImageRepository images, CarCategoryRepository categories) {
+    public OwnerCarController(CarService cars, CarImageRepository images, CarCategoryRepository categories,
+                              BookingRepository bookings) {
         this.cars = cars;
         this.images = images;
         this.categories = categories;
+        this.bookings = bookings;
     }
 
     @GetMapping("/new")
@@ -108,6 +112,18 @@ public class OwnerCarController {
         return "redirect:/owner/cars";
     }
 
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal owner,
+                         RedirectAttributes redirect) {
+        try {
+            cars.deleteCar(id, owner);
+            redirect.addFlashAttribute("successMessage", "Đã xóa xe.");
+        } catch (BusinessException error) {
+            redirect.addFlashAttribute("errorMessage", error.getMessage());
+        }
+        return "redirect:/owner/cars";
+    }
+
     @PostMapping("/{id}/activate")
     public String activate(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal owner,
                            RedirectAttributes redirect) {
@@ -147,6 +163,7 @@ public class OwnerCarController {
         model.addAttribute("cars", result.getContent());
         model.addAttribute("page", result);
         model.addAttribute("thumbnails", thumbnails);
+        model.addAttribute("carsWithHistory", carIds.isEmpty() ? List.of() : bookings.findCarIdsWithHistory(carIds));
         model.addAttribute("publicCount", cars.countPublicCars(owner.getId()));
         model.addAttribute("pendingCount", cars.countPendingCars(owner.getId()));
         model.addAttribute("ownerName", owner.getFullName());
