@@ -1,14 +1,14 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.2
-**Trạng thái:** Schema/seed DB và Phase 1 (Authentication & Authorization) đã triển khai, verify; Phase 2–5 chờ triển khai
-**Ngày:** 2026-10-10
+**Phiên bản:** 2.7
+**Trạng thái:** Schema/seed DB, Phase 1 và P2.1–P2.14 đã triển khai; Phase 3–5 chờ triển khai
+**Ngày:** 2026-10-11
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
 **Ngôn ngữ tài liệu:** Tiếng Việt
 **Tài liệu liên quan:** `CarRent.md` (bản thảo v1.0 — giữ nguyên để tham chiếu), `docs/decisions.md` (hồ sơ quyết định), `docs/plans/phase-*.md` (implementation plan, sinh sau khi duyệt SDD này)
 
-> SDD v2.2 kế thừa DB-first của v2.1 và ghi nhận kết quả Phase 1; thay thế CarRent.md v1.0 và quy ước entity tự tạo schema của SDD v2.0. `scriptDB.sql` tại gốc dự án là nguồn chân lý vật lý của DB; entity các phase sau phải map theo schema sẵn có. Nếu plan cũ mâu thuẫn, quy ước DB-first tại §7.6–7.8 thắng. Xem quyết định D-24 trong `decisions.md`.
+> SDD v2.7 chốt chức năng Phase 2: quản lý xe Owner/Admin, tìm và xem xe public, quyền xem trước, khóa cập nhật đồng thời và cleanup ảnh theo transaction. Thay thế CarRent.md v1.0 và quy ước entity tự tạo schema của SDD v2.0. `scriptDB.sql` tại gốc dự án là nguồn chân lý vật lý của DB; entity các phase sau phải map theo schema sẵn có. Nếu plan cũ mâu thuẫn, quy ước DB-first tại §7.6–7.8 thắng. Xem quyết định D-24 trong `decisions.md`.
 
 ---
 
@@ -74,7 +74,7 @@ CarRent là ứng dụng web cho thuê xe hơi. Người thuê (Customer) tìm k
 - Java: Temurin 21.0.11 LTS.
 - MySQL: 8.0.45, service `MySQL80` đang chạy, client tại `C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe`.
 - Maven: không có trên PATH → mọi lệnh build dùng `.\mvnw` trong thư mục dự án.
-- Thư mục gốc dự án: `C:\Users\Admin\Documents\hoc\Car` — code Spring Boot nằm ngay tại gốc; tài liệu nằm trong `docs\`. **Chưa dùng git** (theo yêu cầu; khi cần sẽ `git init` + `.gitignore` cho `target/`, `uploads/`).
+- Thư mục gốc dự án: `C:\Users\Admin\Documents\hoc\Car` — code Spring Boot nằm ngay tại gốc; tài liệu nằm trong `docs\`. Repo đã được khởi tạo Git; Phase 2 làm trên nhánh `feat/phase2-car`. `.gitignore` loại cấu hình local, build, bằng chứng kiểm tra và ảnh runtime; giữ sáu ảnh seed.
 
 ### 2.3. Quy ước ngôn ngữ
 
@@ -214,9 +214,10 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 
 - Danh sách toàn bộ Car (`/admin/cars`): phân trang, tìm kiếm brand/model, lọc approval_status + listing_status.
 - Chi tiết Car + thông tin Owner (`/admin/cars/{id}`).
-- POST `/admin/cars/{id}/approve`: `PENDING → APPROVED`, notification cho Owner.
-- POST `/admin/cars/{id}/reject`: `PENDING → REJECTED` + `rejection_reason` (bắt buộc nhập, ≤500 ký tự), notification cho Owner.
-- Admin chỉ ẩn/hiện xe (listing_status), không xóa cứng.
+- POST `/admin/cars/{id}/approve`: `PENDING → APPROVED`; notification cho Owner được tích hợp ở P3.3.
+- POST `/admin/cars/{id}/reject`: `PENDING → REJECTED` + `rejection_reason` (bắt buộc nhập, ≤500 ký tự); notification ở P3.3.
+- POST `/admin/cars/{id}/deactivate` và `/activate`: ẩn mọi trạng thái; đăng lại chỉ xe APPROVED, không đổi kết quả duyệt. Admin không xóa cứng hoặc sửa nội dung xe.
+- Danh sách, chi tiết và thao tác Admin kiểm tra role ADMIN/status ACTIVE hiện có trong DB, ngoài quyền trong session. Mọi POST cần CSRF.
 
 ### FR-05. Car Approval Workflow
 
@@ -224,12 +225,16 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 - `PENDING → APPROVED` / `PENDING → REJECTED` do Admin (kèm lý do khi reject).
 - **Sửa Car sau khi duyệt không cần duyệt lại** (decision D-03). Admin xử lý vi phạm bằng cách ẩn xe.
 - Chỉ `APPROVED` + `listing_status=ACTIVE` mới hiển thị công khai.
+- Duyệt/từ chối đồng thời chỉ một quyết định hợp lệ được ghi. Các thao tác sửa/ẩn/đăng lại xe đọc trạng thái hiện hành dưới cùng khóa hàng, kể cả entity đã được quản lý trong persistence context, để không ghi đè kết quả duyệt/lý do từ chối. Không thêm cột version hoặc đổi schema.
 
 ### FR-06. Owner Car Management
 
 - `/owner/cars`: danh sách xe của mình (mọi trạng thái), hiện badge approval/listing status.
+- Danh sách lấy Owner từ principal, mặc định page 0/size 10, size giới hạn 1–50, ID giảm dần. Thống kê tổng xe, xe công khai APPROVED+ACTIVE và xe PENDING tính trên toàn bộ xe của Owner. Thumbnail truy vấn theo batch cho trang hiện tại, chọn ID ảnh nhỏ nhất. Phân trang tối đa 5 số trang, giữ query params và cho phép quay lại từ trang vượt cuối.
 - Tạo xe (`/owner/cars/new`): brand, model, manufacture_year (1990–năm hiện tại+1), license_plate, color, seat_count (2–15), transmission (`MANUAL`/`AUTOMATIC`), fuel_type (`GASOLINE`/`DIESEL`/`ELECTRIC`/`HYBRID`), description, price_per_day (>0, VND), category (dropdown từ seed), province (bắt buộc), district, address_detail, ảnh (0–n file).
+- Service tạo xe kiểm tra principal OWNER và User OWNER/ACTIVE từ DB, validate DTO/category/toàn bộ ảnh trước ghi. Năm tối đa tính động theo năm hiện tại; Owner lấy từ principal. Xe và bản ghi ảnh cùng transaction; rollback dọn file mới, kể cả rollback ở caller hoặc lỗi commit. Lỗi tạo xe yêu cầu thử lại; không lưu xe một phần khi upload thất bại.
 - Sửa xe: các trường trên + quản lý ảnh (thêm ảnh mới, xóa ảnh cũ).
+- `updateCar` kiểm tra principal và User OWNER/ACTIVE từ DB, ownership trước validation; giữ nguyên owner, approval, rejectionReason và listing. Service ẩn xe áp dụng mọi trạng thái duyệt; đăng lại chỉ cho APPROVED. Lặp thao tác giữ trạng thái đích. Quản lý ảnh và HTTP form sửa/ẩn/đăng lại thuộc P2.8.
 - POST `/owner/cars/{id}/deactivate` — ngừng đăng tin; POST `/owner/cars/{id}/activate` — đăng lại.
 - Xóa cứng **chỉ khi không có booking nào** tham chiếu (kể cả booking đã kết thúc — giữ lịch sử); ngược lại phải deactivate. Xóa xe → xóa cả bản ghi ảnh + file ảnh tương ứng.
 - Mọi thao tác kiểm tra `car.owner_id == currentUser.id`.
@@ -246,18 +251,22 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 - `StorageService`: validate phần mở rộng ∈ {jpg, jpeg, png, webp} + content-type image/*, kích thước ≤ 5MB; đặt tên file = **UUID + đuôi gốc** (không tin tên file user gửi); lưu vào `uploads/` ở gốc dự án.
 - Web config map `/uploads/**` → thư mục `uploads/`.
 - DB (`car_images.image_url`) lưu web path `/uploads/<file>`.
+- Lưu lỗi IO phải dọn file ghi dở; xóa chỉ chấp nhận file trực tiếp trong uploads, chặn traversal. Lỗi cleanup được log và tiếp tục thử dọn những ảnh còn lại. DB transaction và filesystem không thể bảo đảm nguyên tử khi process bị dừng đột ngột hoặc filesystem không cho xóa.
+- MVP kiểm tra đuôi/MIME/kích thước, chưa decode nội dung ảnh. Multipart giới hạn 5MB mỗi file, 30MB mỗi request. Vượt giới hạn từng file trả trang `error/413.html` tiếng Việt (P2.7): Tomcat ném lỗi multipart trong `CsrfFilter` trước `DispatcherServlet` nên `@ControllerAdvice` không bắt được, chỉ view cấp container render được. Giới hạn tổng request không quan sát được qua HTTP vì container hủy body trước error dispatch.
 - **Thumbnail = ảnh có `id` nhỏ nhất của xe** (không có cột is_primary — D-10).
 - Một xe nhiều ảnh; trang detail hiện gallery; danh sách hiện thumbnail.
 
 ### FR-09. Search, Filter, Sort, Pagination, Detail
 
 - `/cars` (public, chưa đăng nhập vẫn xem được): chỉ xe `APPROVED` + `ACTIVE`.
-- Tìm kiếm keyword khớp brand hoặc model (không phân biệt hoa thường).
+- Tìm kiếm keyword khớp brand hoặc model (không phân biệt hoa thường); `%`, `_`, `\\` trong từ khóa được khớp literal.
 - Lọc: category, province, minPrice, maxPrice, seatCount, transmission, fuelType.
-- Sắp xếp: giá tăng/giảm, mới nhất (`created_at desc`). Mặc định: mới nhất.
-- Phân trang: 12 xe/trang, dùng Spring Data `Pageable` + Specification (lọc động phía DB, không lọc in-memory).
-- `/cars/{id}`: gallery, thông số, giá, địa điểm, thông tin Owner (tên + SĐT); visible nếu `APPROVED+ACTIVE` **hoặc** user là Admin **hoặc** user là Owner của xe đó.
-- Kiểm tra khả dụng: form nhỏ nhập startDate/endDate trên trang detail → GET lại trang với query params → banner "Xe khả dụng" / "Xe đã có đơn trùng lịch trong khoảng này".
+- Sắp xếp whitelist `priceAsc`, `priceDesc`, `newest`; giá tăng/giảm hoặc `created_at desc`, luôn thêm `id desc` khi bằng nhau. Mặc định hoặc sort không biết: mới nhất. Không nhận trường sort tùy ý từ URL/Pageable.
+- Phân trang: mặc định 12 xe/trang, size 1–50, page/offset giới hạn an toàn; Spring Data `Pageable` + Specification lọc/count phía DB. Pager tối đa 5 số trang, giữ query encoded/lặp, chỉ một page và size đã chuẩn hóa.
+- Bộ lọc sai kiểu/giá âm/category không dương/số chỗ ngoài 2–15/chuỗi quá dài trả 400 tiếng Việt; minPrice > maxPrice hợp lệ trả 200 empty. Giá dùng Long, biên inclusive; province khớp toàn bộ chuỗi đã trim.
+- `/cars/{id}`: gallery theo ID ảnh tăng dần, thông số, giá, địa điểm, thông tin Owner (chỉ tên + SĐT). Xe `APPROVED+ACTIVE` công khai; xe khác chỉ Owner sở hữu hoặc Admin có role/status ACTIVE còn đúng trong DB được xem. Người khác hoặc principal cũ không hợp lệ nhận 404; ID sai kiểu nhận 400.
+- Trang chi tiết xe chưa công khai có banner xem trước và không có CTA đặt thuê. CTA xe công khai trỏ tới route đặt thuê Phase 3 và nói rõ tính năng chưa sẵn sàng. Không dựng đánh giá, lịch trống, phí cọc hoặc tiện ích không có dữ liệu.
+- Kiểm tra khả dụng theo start/end và booking conflict thuộc P3.6; ẩn form lịch trên detail đến phase đó. `ACTIVE` chỉ biểu thị đăng tin, không bảo đảm trống lịch. Form tìm xe trang chủ dùng province/q/maxPrice; xe nổi bật trang chủ vẫn thuộc P5.8.
 
 ### FR-10. Booking
 
@@ -600,7 +609,7 @@ Chạy từ PowerShell (nhập mật khẩu MySQL ở prompt; không ghi mật k
   --execute="source C:/Users/Admin/Documents/hoc/Car/scriptDB.sql"
 ```
 
-Khi chuyển máy, đổi đường dẫn `source` và sao chép cả 6 file `uploads/seed-car-1.png` đến `seed-car-6.png`. Mỗi xe có file riêng để việc xóa ảnh một xe không ảnh hưởng xe khác. Web path ảnh chỉ truy cập được sau khi P2.3 triển khai resource handler `/uploads/**`.
+Khi chuyển máy, đổi đường dẫn `source` và sao chép cả 6 file `uploads/seed-car-1.png` đến `seed-car-6.png`. Mỗi xe có file riêng để việc xóa ảnh một xe không ảnh hưởng xe khác. P2.3 đã triển khai resource handler `/uploads/**`; sáu ảnh seed truy cập được không cần đăng nhập.
 
 ### 7.8. Bằng chứng verify DB
 
@@ -615,7 +624,7 @@ Ngày 2026-10-10 trên MySQL 8.0.45, `localhost:3306`, database `carrent`:
 
 - Chạy lại bản `scriptDB.sql` cuối: số record giữ nguyên 7/6/6/6/6/6/10; toàn bộ snapshot dữ liệu bằng mysqldump trước/sau giống nhau, gồm hash, giá trị, ngày, timestamp và trạng thái. Tổng doanh thu fixture PAID là 5.100.000 VND (không cộng FAILED/PENDING/REFUNDED).
 - `.\mvnw.cmd -q compile` exit 0; app boot với `ddl-auto=none`, Hikari kết nối MySQL thành công, log `Started CarRentApplication`, `GET /` trả 200. App chạy tạm để kiểm tra đã được dừng; MySQL vẫn chạy. Đây là kiểm tra skeleton Phase 0 với DB mới, chưa phải kiểm chứng entity/nghiệp vụ/UI của Phase 1–5.
-- Đã đối chiếu **hash thực lấy từ MySQL** qua JDBC và BCrypt cho cả 7 tài khoản: mật khẩu mẫu match, mật khẩu sai bị từ chối. 6 file ảnh mẫu tồn tại và là PNG; URL ảnh chờ resource handler P2.3.
+- Đã đối chiếu **hash thực lấy từ MySQL** qua JDBC và BCrypt cho cả 7 tài khoản: mật khẩu mẫu match, mật khẩu sai bị từ chối. 6 file ảnh mẫu tồn tại và là PNG; P2.3 đã verify URL ảnh HTTP 200 đúng bytes.
 
 ---
 
@@ -813,7 +822,7 @@ Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ th�
 | POST | `/login` | Xử lý đăng nhập (Spring Security) | Public |
 | GET/POST | `/register` | Đăng ký CUSTOMER/OWNER | Public |
 | GET | `/cars` | Danh sách công khai + filter/sort/page | Public |
-| GET | `/cars/{id}` | Chi tiết xe + check khả dụng (query start/end) | Public nếu APPROVED+ACTIVE; Admin/Owner-of-car luôn xem được |
+| GET | `/cars/{id}` | Chi tiết xe; kiểm tra khả dụng bổ sung P3.6 | Public nếu APPROVED+ACTIVE; Admin/Owner-of-car có role/status ACTIVE trong DB được xem trước |
 | POST | `/logout` | Đăng xuất | Authenticated |
 | GET | `/profile` | Xem profile | Authenticated |
 | GET/POST | `/profile/edit` | Sửa full_name, phone | Authenticated |
@@ -849,6 +858,8 @@ Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ th�
 | GET | `/admin/cars/{id}` | Chi tiết xe (admin view) | ADMIN |
 | POST | `/admin/cars/{id}/approve` | Duyệt xe | ADMIN |
 | POST | `/admin/cars/{id}/reject` | Từ chối xe + lý do | ADMIN |
+| POST | `/admin/cars/{id}/deactivate` | Ẩn xe, giữ kết quả duyệt | ADMIN/ACTIVE |
+| POST | `/admin/cars/{id}/activate` | Đăng lại xe APPROVED | ADMIN/ACTIVE |
 | GET | `/admin/bookings` | Toàn bộ booking | ADMIN |
 | GET | `/admin/bookings/{id}` | Chi tiết booking | ADMIN |
 
@@ -1015,16 +1026,16 @@ Chi tiết từng task (mục tiêu, ngữ cảnh, bước, ràng buộc, verify
 - P2.2 `Car` + `CarImage` entity + enums + repos.
 - P2.3 `StorageService` (validate + UUID + lưu `uploads/`) + `WebConfig` map `/uploads/**` + multipart config.
 - P2.4 `CarService.create()` — ownership, PENDING, lưu ảnh.
-- P2.5 `CarService.update()/deactivate()/activate()/delete()` — quy tắc xóa BR-10.
-- P2.6 `OwnerCarController` + template danh sách xe của tôi (badge trạng thái).
+- P2.5 `CarService.updateCar()/deactivateCar()/activateCar()`; xóa cứng dời P3.12 vì cần BookingRepository.
+- P2.6 `OwnerCarController` + danh sách xe của tôi, thống kê thật, thumbnail và phân trang.
 - P2.7 Form tạo xe (multipart, validation).
-- P2.8 Form sửa xe + quản lý ảnh (thêm/xóa ảnh).
+- P2.8 Form sửa xe + quản lý ảnh (thêm/xóa ảnh) + POST ẩn/đăng lại từ danh sách.
 - P2.9 Admin: danh sách xe + lọc + template.
 - P2.10 Admin: chi tiết xe + approve/reject (lý do) — notification sẽ cắm ở Phase 3.
 - P2.11 `CarSpecifications` + `CarService` search/filter/sort phân trang.
 - P2.12 Public `CarController` + template danh sách xe + filter UI + pagination.
 - P2.13 Public chi tiết xe (gallery, thông số, owner info) + quyền xem (FR-09).
-- P2.14 Check khả dụng trên detail + verify tổng phase.
+- P2.14 Verify tổng phase, concurrency, quyền Owner–Admin–Public, upload/URL query và Admin ẩn/đăng lại. Check khả dụng trên detail thuộc P3.6.
 
 **Phase 3 — Notification & Booking (13 tasks)** — `plans/phase-3-booking.md`
 - P3.1 `Notification` entity + repo.
@@ -1102,10 +1113,62 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - Login/register port từ Stitch; giữ giá trị thường/role khi lỗi và xóa cả hai mật khẩu. Registration dùng `novalidate` để lỗi server hiện dưới field. Navbar theo role, menu dùng bàn phím được, logout là POST có CSRF và kết thúc session.
 - Compile, nhiều lần boot, HTTP/session/CSRF/SQL và Chromium desktop/mobile đã đạt. Kiểm tra navbar/menu ở 320px/390px, auth desktop 1440px; ảnh auth tải được và mỗi trang chỉ có một banner. Báo cáo chi tiết/giới hạn tại cuối `plans/phase-1-foundation.md`.
 - Sau verify có **9 users**: 7 seed giữ nguyên mọi field/hash/timestamp, thêm `p1_0683edc2_customer` và `p1_0683edc2_owner`. Sáu bảng còn lại giữ số record 6/6/6/6/6/10. `scriptDB.sql` vẫn chứa 47 record seed ban đầu; không tạo seeder Java hay đổi schema.
-- Trang `/cars`, dashboard, profile, notifications và chức năng thuê/thanh toán thuộc Phase 2–5; các link/redirect này có thể trả 404 ở checkpoint hiện tại.
+- Tại checkpoint Phase 1, trang `/cars`, dashboard, profile, notifications và chức năng thuê/thanh toán chưa có. `/cars` được triển khai ở P2.12–P2.13; các route còn lại theo phase tương ứng.
 
 ---
 
+### 14.5. Kết quả Phase 2 — đợt 1 (P2.1–P2.2, 2026-10-10)
+
+- Đã map `CarCategory`, `Car`, `CarImage`, 4 enum và 3 repository đúng schema sẵn có. Quan hệ owner/category/car là LAZY, không cascade; giá dùng Long/BIGINT, description dùng TEXT; timestamp có lifecycle callback, xe mặc định PENDING/ACTIVE cho cả constructor và builder.
+- Compile, Hibernate `validate`, đọc toàn bộ field/quan hệ từ dữ liệu thật, repository theo Owner/ảnh, thứ tự và phân trang, callback insert/update và giá vượt 32-bit đã đạt. Chỉ các probe ghi thử rồi rollback; không Java seeder hay sửa schema.
+- Toàn bộ record của 7 bảng giữ nguyên, counts **9/6/6/6/6/6/10**. Khởi động lại vẫn 6 category; cấu hình thường `ddl-auto=none`. AUTO_INCREMENT có thể có khoảng trống sau probe rollback, không có record test tồn dư.
+- App 8080 đã khởi động với mapping mới, HTTP smoke Phase 1 đạt. Review đợt 1: spec đạt, quality Approved; chi tiết tại cuối `plans/phase-2-car.md`. Script/log/review giữ local trong `.scratch/phase2/` và `.superpowers/sdd/phase-2-car/`, bị Git bỏ qua.
+- Tại checkpoint đợt 1, P2.3–P2.14 còn lại; đợt 2 P2.3 + P2.4 được ghi ở mục dưới. Code trên `feat/phase2-car`, chưa stage/commit/push.
+
+### 14.6. Kết quả Phase 2 — đợt 2 (P2.3–P2.4, 2026-10-10)
+
+- `StorageService` validate ảnh, tên UUID, dọn file ghi dở, xóa có giới hạn đường dẫn; `WebConfig` phục vụ `/uploads/**` qua URI tuyệt đối. Sáu ảnh seed HTTP 200 đúng bytes, ảnh thiếu HTTP 404.
+- `CarForm` có validation tiếng Việt, năm tối đa tính động. `CarService.createCar` kiểm tra Owner/ACTIVE từ DB, category tồn tại, validate batch trước ghi; tạo xe PENDING/ACTIVE và ảnh cùng transaction, rollback dọn file mới.
+- Compile và self-check Spring/MySQL/filesystem đạt: giới hạn DTO, quyền/stale principal, tiền Long, trim, tạo không/có ảnh, từ chối batch sai, rollback ở caller và ảnh thứ hai lỗi. Review P2.3/P2.4 Approved, không còn finding Critical/Important.
+- Toàn bộ record/cột/constraint và sáu ảnh gốc khớp baseline. Script kiểm tra từng tạo nhầm một xe probe do assertion sai; đã xóa đúng row đó và verify baseline sau sửa. AUTO_INCREMENT có thể tăng, không có probe tồn dư.
+- Khởi động lại app trên 8080 với code mới; smoke login/register/home/CSS, đăng nhập ba role, role redirect, HTTP 403 sai quyền và logout CSRF/session đạt.
+- Không Java unit test theo quy ước dự án. Giữ ảnh sau commit và cleanup khi commit lỗi chưa được kiểm tra bằng giao dịch commit thật; callback đã được review. Lỗi quyền xóa hoặc process dừng đột ngột có thể để lại file; MVP chưa decode nội dung ảnh.
+- Plan và bằng chứng chi tiết tại `plans/phase-2-car.md`; artifacts local trong `.scratch/phase2/` và `.superpowers/sdd/phase-2-car/`. **Tiếp theo P2.5 + P2.6**; form tạo xe thuộc P2.7, `/cars` public thuộc P2.12–P2.13. Chưa stage/commit/push.
+
+### 14.7. Kết quả Phase 2 — đợt 3 (P2.5–P2.6, 2026-10-10)
+
+- `CarService.updateCar`, `deactivateCar`, `activateCar` đã triển khai. Kiểm tra ownership và Owner/ACTIVE thực từ DB; update giữ trạng thái duyệt/lý do từ chối/listing, ẩn xe mọi trạng thái và đăng lại chỉ xe APPROVED. Self-check 121 assertions đạt, gồm flush/clear và đọc SQL sau chuyển trạng thái đầu tiên/lặp lại; create regression đạt.
+- `/owner/cars` chỉ đọc xe của principal Owner, thống kê thật trên toàn bộ dataset, phân trang ID giảm dần, thumbnail theo ID ảnh nhỏ nhất bằng query batch. Layout Owner từ Stitch, badge trạng thái, lý do từ chối được escape, giá Long định dạng VND, empty state và logout CSRF.
+- HTTP thật đạt anonymous redirect, CUSTOMER/ADMIN 403, hai Owner không thấy xe của nhau, thống kê không đổi theo page, giới hạn page/size, bỏ qua ownerId/sort từ request và giữ query params lặp/encoded. Render trong transaction rollback kiểm tra thứ tự ảnh, giá và escape lý do từ chối.
+- Review P2.5/P2.6 Approved sau bổ sung kiểm tra trạng thái lưu SQL, sửa overflow phân trang ở page2147483647/size1 và khôi phục class stat-card. Compile, app restart 8080, auth/CSRF/upload smoke đạt; desktop 1440px/mobile 390px không tràn ngang toàn trang, bảng cuộn riêng. Mọi row/schema/constraint của 7 bảng và sáu hash ảnh gốc giữ nguyên; không probe tồn dư.
+- Nút tạo/sửa xe chưa có endpoint tại checkpoint này; form tạo/sửa, quản lý ảnh và POST ẩn/đăng lại thuộc P2.7/P2.8. Redirect sau login Owner vẫn `/owner/dashboard`; mở `/owner/cars` trực tiếp để kiểm tra.
+- Bằng chứng giữ local trong `.scratch/phase2/` và `.superpowers/sdd/phase-2-car/`; chi tiết checkpoint cuối tại `plans/phase-2-car.md`. Tiếp theo **P2.7 + P2.8**. Chưa stage/commit/push.
+
+### 14.8. Kết quả Phase 2 — đợt 4 (P2.7–P2.10, 2026-10-11)
+
+Đây là kết quả lịch sử của đợt 4; trạng thái cuối toàn phase được ghi tại §14.9.
+
+- P2.7 form tạo xe: 14 control, multipart, validation tiếng Việt; tạo xe rollback-only 0 và 2 ảnh, giới hạn năm động, `ownerId` giả bị bỏ qua, rollback dọn file. Lỗ hổng đã sửa: upload quá lớn trước đây trả JSON 413 tiếng Anh — Tomcat ném lỗi multipart trong `CsrfFilter` trước `DispatcherServlet` nên không `@ControllerAdvice` nào bắt được; thêm `templates/error/413.html` (nêu rõ 5MB/ảnh, 30MB/request). Sửa thêm lỗi biên dịch do tham số `images` che field repository.
+- P2.8 form sửa xe: 348 assertion, 14 nhóm PASS. Sửa lỗi thật — form xóa ảnh nằm lồng trong form cập nhật ở `owner/car-form.html` (HTML không hợp lệ, trình duyệt bỏ form trong); tách ra section riêng sau `</form>`. Cập nhật atomic giữ nguyên trạng thái duyệt/listing/lý do từ chối, ảnh mới nối thêm; xóa ảnh chỉ xóa file sau commit; ẩn/đăng lại idempotent, đăng lại xe PENDING bị từ chối.
+- P2.9 danh sách Admin: lọc `q` theo hãng/model (escape `%`/`_`), lọc approval/listing kết hợp AND, thumbnail là ảnh id nhỏ nhất, badge đếm PENDING toàn cục, phân trang chặn size/page/âm/vượt. Lỗi thật đã sửa: enum sai trong query (`?approval=NOPE`) trả 500 vì `@ExceptionHandler(Exception.class)` dùng chung che mapping 400 sẵn có của Spring cho `MethodArgumentTypeMismatchException`; thêm handler riêng trả `error/400` đặt trước catch-all — ảnh hưởng mọi tham số enum/số không parse được, không riêng trang này.
+- P2.10 chi tiết + duyệt/từ chối: gallery và empty state, thiếu id 404 và id không phải số 400, xe đã xử lý ẩn control; duyệt xóa lý do từ chối cũ, giữ nguyên listing/metadata; từ chối trim lý do, chặn rỗng/>500 ký tự, lý do hiển thị lại cho Owner; chuyển trạng thái sai và lặp lại bị từ chối; guard role/CSRF/404 giữ nguyên.
+- Tổng kiểm chứng đợt 4: `VerifyCreateForm` exit0, `VerifyOwnerCarEdit` exit0 (348 checks), `VerifyAdminCars` exit0 (186 checks), chạy lại `VerifyOwnerCarsRender` và `VerifyCarCreate` exit0 để xác nhận handler 400 mới không gây regression. `verify-db.py` exit0 sau mọi lần chạy; sáu ảnh gốc byte-identical; app 8080 PID33704 không bị đụng.
+- Giới hạn ghi nhận: đường giới hạn tổng request multipart (33MB/8 file) không quan sát được vì Tomcat hủy body trước error dispatch (đường giới hạn từng file đã chứng minh); chưa có test đồng thời cho duyệt/từ chối — kiểm tra chuyển trạng thái nằm cùng transaction với ghi; mọi fixture ghi đều rollback-only nên AUTO_INCREMENT có thể tăng.
+- Báo cáo chi tiết tại `.superpowers/sdd/phase-2-car/task-{7,8,9,10}-report.md`; các bước P2.7–P2.10 trong `plans/phase-2-car.md` đã đánh dấu xong. Còn lại của root: xem diff, ảnh chụp desktop 1440px/mobile 390px, khởi động lại app 8080. Tiếp theo **P2.11 + P2.12**. Chưa stage/commit/push.
+
+### 14.9. Kết quả Phase 2 — đợt cuối (P2.11–P2.14, 2026-10-11)
+
+- P2.11: `CarSearchCriteria`, các Specification và search service dùng lại clause Admin; public luôn APPROVED+ACTIVE, lọc thực tại DB, giá Long, sort whitelist kèm ID tie-breaker. Self-check Spring/MySQL 39 assertions đạt, review Approved.
+- P2.12: `/cars` với dữ liệu/thumbnail thật, bộ lọc, sort và pager giới hạn an toàn; giữ query encoded/lặp, lỗi typed/âm trả 400 tiếng Việt, minPrice > maxPrice trả empty 200. Self-check 65 assertions và HTTP thật đạt, review Approved. Form tìm xe trang chủ dùng `q`/province/maxPrice; chưa quảng cáo lọc lịch.
+- P2.13: `/cars/{id}` có gallery theo ID ảnh, thông số/giá/địa điểm/Owner thật, empty state và preview banner. Xe không public chỉ Owner sở hữu hoặc Admin còn ACTIVE trong DB được xem, người khác 404; preview không có thao tác đặt thuê. Self-check 67 assertions và ma trận HTTP thật đạt, review Approved.
+- P2.14: bỏ `ThreadLocal` upload, mỗi lần gọi giữ danh sách file trong callback rollback riêng; khóa hàng và đọc lại trạng thái hiện tại trước mọi mutation. Hai kết nối duyệt/từ chối chỉ một quyết định thắng; stale managed Admin và Owner update/listing giữ quyết định đã commit; nhiều call trong một transaction giữ đúng trạng thái và dọn đủ ảnh. Checker tập trung cuối 22 checks đạt; mọi fixture commit dùng ID theo dõi riêng, đã dọn và đối chiếu baseline.
+- Admin list kiểm tra ADMIN/ACTIVE thực từ DB; thêm POST ẩn/đăng lại với CSRF, đăng lại chỉ APPROVED, giữ approval. Sửa lỗi JavaScript `openRejectDialog` không tồn tại ở xe đã quyết định; form sửa Owner dùng “Lưu thay đổi” và giải thích giữ trạng thái duyệt. Homepage empty featured copy hướng tới Tìm xe, dữ liệu featured vẫn P5.8.
+- Regression cuối: Admin 212 checks, Owner edit 350, create/storage và multipart form đạt; compile exit0. Root chạy app checkpoint trên 8080 (PID61208), auth smoke và ba-role/upload/logout cùng HTTP65 assertions đạt. Sau chỉnh template cuối, compile lại exit0 và app **PID31176** trên 8080 readiness ACCEPTING_TRAFFIC/HTTP200; bảng Admin có province thật, mobile cuộn riêng và lời nhắc duyệt chính xác. Browser 1440px/390px không tràn ngang, ảnh thật tải được, modal từ chối/quick reason/Escape hoạt động, không pageerror.
+- Mọi row/timestamp/hash/cột/constraint của 7 bảng và sáu tên/hash ảnh gốc khớp baseline; counts **9/6/6/6/6/6/10**, không probe tồn dư. Không thay schema, dependency hoặc seed; không Java unit test theo quy ước dự án. Code giữ trên `feat/phase2-car`, chưa stage/commit/push; `.scratch/` và `.superpowers/` giữ local, bị Git bỏ qua.
+- Review P2.11–P2.14 Approved; review cuối toàn bộ source không Critical/Important, hai Minor hiển thị đã sửa cùng đợt (province Admin và lời nhắc approval không hứa publish xe đang ẩn), focused render RED/GREEN đạt, scoped re-review **Approved**, không finding còn mở. Bằng chứng local tại `.superpowers/sdd/phase-2-car/task-{11,12,13,14}-report.md`, `final-review.md`, `final-fix-report.md`, `final-fix-review.md` và `.scratch/phase2/final/final-checks.md`.
+- Giới hạn: request multipart chunked vượt tổng 30MB có thể bị Tomcat ngắt trước khi render 413 (đường từng file đã đạt); lỗi xóa file sau commit hoặc process dừng đột ngột có thể để lại file, cleanup failure được log. Upload MVP kiểm tra extension/MIME/kích thước, chưa decode nội dung ảnh. AUTO_INCREMENT có thể có khoảng trống sau probe.
+- Booking/lịch khả dụng thuộc P3.6, notification P3.3, xóa cứng xe Owner P3.12, xe nổi bật trang chủ P5.8. Dashboard/profile và redirect Owner/Admin chưa có trang; test bằng `/owner/cars` và `/admin/cars` trực tiếp.
+
 ## 15. Kết luận
 
-CarRent là web monolithic Spring Boot + Thymeleaf + MySQL, 3 role, 7 bảng, với thiết kế vòng đời thuê xe: duyệt xe → tìm xe → đặt → xác nhận → thanh toán giả lập → hoàn tất, kèm notification trong DB và dashboard quản trị. Schema/seed đã có sẵn qua `scriptDB.sql`; Phase 1 đã triển khai và verify Authentication & Authorization. Bước tiếp theo là Phase 2→5 theo hợp đồng DB-first ở §7.6 để hoàn thiện các nghiệp vụ còn lại.
+CarRent là web monolithic Spring Boot + Thymeleaf + MySQL, 3 role, 7 bảng, với thiết kế vòng đời thuê xe: duyệt xe → tìm xe → đặt → xác nhận → thanh toán giả lập → hoàn tất, kèm notification trong DB và dashboard quản trị. Schema/seed đã có sẵn qua `scriptDB.sql`; Phase 1 Authentication & Authorization và toàn bộ chức năng Phase 2 quản lý/tìm/xem xe đã triển khai. Tiếp tục Phase 3→5 theo hợp đồng DB-first ở §7.6 để hoàn thiện thuê xe, thanh toán, notification và dashboard.

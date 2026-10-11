@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title=${car.brand + ' ' + car.model})}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/messages :: messages}"></div>
+<main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-gutter w-full py-space-lg">
+    <nav aria-label="Đường dẫn" class="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md mb-space-md min-w-0">
+      <a class="hover:text-primary transition-colors shrink-0" th:href="@{/}">Trang chủ</a>
+      <span class="material-symbols-outlined text-[16px] text-outline" aria-hidden="true">chevron_right</span>
+      <a class="hover:text-primary transition-colors shrink-0" th:href="@{/cars}">Tìm xe</a>
+      <span class="material-symbols-outlined text-[16px] text-outline" aria-hidden="true">chevron_right</span>
+      <span class="text-on-surface font-title-md text-title-md truncate" th:text="${car.brand + ' ' + car.model}">Tên xe</span>
+    </nav>
+
+    <div th:unless="${publicListing}" class="mb-space-lg p-space-md rounded-xl bg-surface-container-high text-primary" role="status">
+      Bản xem trước dành cho chủ xe hoặc quản trị viên. Xe này chưa hiển thị công khai.
+      <span>Trạng thái:</span>
+      <span th:switch="${car.approvalStatus.name()}"><span th:case="'PENDING'">Chờ duyệt</span><span th:case="'REJECTED'">Đã từ chối</span><span th:case="'APPROVED'">Đã duyệt</span></span>
+      <span th:text="${car.listingStatus.name() == 'ACTIVE' ? '/ Đang đăng' : '/ Tạm ẩn'}"></span>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md pb-space-lg">
+      <div class="flex flex-col gap-space-xs min-w-0">
+        <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight break-words" th:text="${car.brand + ' ' + car.model + ' (' + car.manufactureYear + ')'}">Tên xe</h1>
+        <p class="flex items-center gap-1 text-on-surface-variant"><span class="material-symbols-outlined text-secondary text-[18px]" aria-hidden="true">location_on</span><span th:text="${car.province + (car.district != null ? ', ' + car.district : '')}">Địa điểm</span></p>
+      </div>
+      <div class="bg-surface-container-low md:bg-transparent p-space-sm md:p-0 rounded-xl md:text-right">
+        <span class="block font-caption text-caption text-on-surface-variant uppercase tracking-wider">Đơn giá niêm yết</span>
+        <strong class="font-headline-lg text-headline-lg text-primary break-all" th:text="${#numbers.formatDecimal(car.pricePerDay, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
+        <span class="font-body-md text-body-md text-on-surface-variant">/ ngày</span>
+      </div>
+    </div>
+
+    <section aria-label="Ảnh xe" class="grid grid-cols-1 md:grid-cols-12 gap-space-sm mb-space-xl">
+      <div class="md:col-span-8 relative overflow-hidden rounded-xl bg-surface-container-high h-[300px] sm:h-[420px] md:h-[480px]">
+        <a th:if="${!carImages.empty}" th:href="${carImages[0].imageUrl}" target="_blank" rel="noopener noreferrer" class="block w-full h-full" aria-label="Mở ảnh chính ở tab mới">
+          <img th:src="${carImages[0].imageUrl}" th:alt="${'Ảnh ' + car.brand + ' ' + car.model}" class="w-full h-full object-cover"/>
+        </a>
+        <div th:if="${carImages.empty}" class="w-full h-full flex flex-col items-center justify-center gap-space-sm text-on-surface-variant" role="img" aria-label="Xe chưa có ảnh">
+          <span class="material-symbols-outlined text-[56px]" aria-hidden="true">directions_car</span><span>Xe chưa có ảnh</span>
+        </div>
+      </div>
+      <div th:if="${carImages.size() > 1}" class="md:col-span-4 grid grid-cols-3 md:grid-cols-1 gap-space-sm">
+        <a th:each="image, iter : ${carImages}" th:if="${iter.index > 0 && iter.index < 4}" th:href="${image.imageUrl}" target="_blank" rel="noopener noreferrer" class="block overflow-hidden rounded-xl bg-surface-container-high h-[95px] sm:h-[135px] md:h-[154px]" th:aria-label="${'Mở ảnh ' + (iter.index + 1) + ' ở tab mới'}">
+          <img th:src="${image.imageUrl}" th:alt="${'Ảnh ' + (iter.index + 1) + ' của ' + car.brand + ' ' + car.model}" class="w-full h-full object-cover"/>
+        </a>
+      </div>
+      <div th:if="${carImages.size() > 4}" class="md:col-span-12 flex flex-wrap gap-space-sm">
+        <a th:each="image, iter : ${carImages}" th:if="${iter.index >= 4}" th:href="${image.imageUrl}" target="_blank" rel="noopener noreferrer" th:text="${'Xem ảnh ' + (iter.index + 1)}" class="font-label-md text-label-md text-secondary underline"></a>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
+      <div class="lg:col-span-8 flex flex-col gap-space-xl min-w-0">
+        <section class="flex flex-col gap-space-md">
+          <h2 class="font-headline-sm text-headline-sm text-primary flex items-center gap-space-xs"><span class="material-symbols-outlined text-secondary" aria-hidden="true">info</span>Thông số kỹ thuật chính</h2>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+            <div><dt class="text-on-surface-variant">Loại xe</dt><dd class="font-title-md text-title-md" th:text="${car.category.name}">Loại xe</dd></div>
+            <div><dt class="text-on-surface-variant">Năm sản xuất</dt><dd class="font-title-md text-title-md" th:text="${car.manufactureYear}">2024</dd></div>
+            <div><dt class="text-on-surface-variant">Số chỗ</dt><dd class="font-title-md text-title-md" th:text="${car.seatCount + ' chỗ'}">5 chỗ</dd></div>
+            <div><dt class="text-on-surface-variant">Hộp số</dt><dd class="font-title-md text-title-md" th:text="${car.transmission.name() == 'AUTOMATIC' ? 'Tự động' : 'Số sàn'}">Hộp số</dd></div>
+            <div><dt class="text-on-surface-variant">Nhiên liệu</dt><dd class="font-title-md text-title-md" th:switch="${car.fuelType.name()}"><span th:case="'GASOLINE'">Xăng</span><span th:case="'DIESEL'">Dầu</span><span th:case="'ELECTRIC'">Điện</span><span th:case="'HYBRID'">Hybrid</span></dd></div>
+            <div><dt class="text-on-surface-variant">Biển số</dt><dd class="font-title-md text-title-md" th:text="${car.licensePlate != null ? car.licensePlate : 'Chưa cập nhật'}">Chưa cập nhật</dd></div>
+            <div><dt class="text-on-surface-variant">Màu xe</dt><dd class="font-title-md text-title-md" th:text="${car.color != null ? car.color : 'Chưa cập nhật'}">Chưa cập nhật</dd></div>
+            <div><dt class="text-on-surface-variant">Địa điểm xe</dt><dd class="font-title-md text-title-md break-words" th:text="${car.addressDetail != null ? car.addressDetail + ', ' + (car.district != null ? car.district + ', ' : '') + car.province : (car.district != null ? car.district + ', ' : '') + car.province}">Địa điểm</dd></div>
+          </dl>
+        </section>
+        <section class="flex flex-col gap-space-md">
+          <h2 class="font-headline-sm text-headline-sm text-primary flex items-center gap-space-xs"><span class="material-symbols-outlined text-secondary" aria-hidden="true">description</span>Mô tả từ chủ xe</h2>
+          <p class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm whitespace-pre-line break-words" th:text="${car.description != null ? car.description : 'Chủ xe chưa thêm mô tả.'}">Mô tả</p>
+        </section>
+        <section class="flex flex-col gap-space-md">
+          <h2 class="font-headline-sm text-headline-sm text-primary flex items-center gap-space-xs"><span class="material-symbols-outlined text-secondary" aria-hidden="true">person_check</span>Thông tin chủ xe</h2>
+          <div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex items-center gap-space-md">
+            <span class="w-16 h-16 shrink-0 rounded-full bg-primary text-on-primary flex items-center justify-center"><span class="material-symbols-outlined text-[32px]" aria-hidden="true">person</span></span>
+            <div class="min-w-0"><p class="font-headline-sm text-headline-sm text-primary break-words" th:text="${car.owner.fullName}">Chủ xe</p><p class="text-on-surface-variant" th:text="${car.owner.phone != null ? car.owner.phone : 'Chưa cập nhật số điện thoại'}">Số điện thoại</p></div>
+          </div>
+        </section>
+      </div>
+      <aside class="lg:col-span-4 lg:sticky lg:top-20">
+        <div class="bg-surface-container-lowest rounded-xl shadow-md p-space-lg flex flex-col gap-space-lg">
+          <div><strong class="font-headline-md text-headline-md text-primary break-all" th:text="${#numbers.formatDecimal(car.pricePerDay, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong><span class="text-on-surface-variant"> / ngày</span></div>
+          <!-- TODO P3.6: Add date and availability controls when booking availability is implemented. -->
+          <div th:if="${publicListing}" class="flex flex-col gap-space-sm">
+            <a th:href="@{/bookings/new(carId=${car.id})}" class="w-full min-h-12 px-space-md py-space-sm rounded-xl bg-secondary hover:bg-secondary-container text-on-secondary font-title-md text-title-md flex items-center justify-center gap-2"><span>Đặt thuê xe</span><span class="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span></a>
+            <p class="font-caption text-caption text-on-surface-variant">Tính năng đặt thuê đang được hoàn thiện. Giá hiển thị là giá thuê mỗi ngày; lịch trống chưa được kiểm tra.</p>
+          </div>
+          <p th:unless="${publicListing}" class="text-on-surface-variant">Bản xem trước: chưa thể đặt thuê xe này.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

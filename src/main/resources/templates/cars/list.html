@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Tìm xe')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<div th:replace="~{fragments/header :: header}"></div>
+<div th:replace="~{fragments/messages :: messages}"></div>
+<main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
+  <div class="w-full bg-surface-container-lowest shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-gutter py-space-lg">
+      <h1 class="font-headline-lg text-headline-lg text-primary mb-space-md">Tìm xe</h1>
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
+        <div class="flex-1 max-w-2xl">
+          <label for="q" class="block font-label-md text-label-md mb-space-xs">Tên xe hoặc hãng xe</label>
+          <div class="flex items-center gap-space-xs bg-surface-container-low p-1.5 rounded-xl shadow-inner">
+            <span class="material-symbols-outlined text-outline pl-space-sm" aria-hidden="true">search</span>
+            <input id="q" name="q" form="car-filters" maxlength="200" th:value="${criteria.q}" placeholder="Tìm theo tên xe hoặc hãng xe" class="w-full min-w-0 bg-transparent border-0 px-space-xs py-space-sm text-on-surface focus:outline-none"/>
+            <button form="car-filters" class="px-space-md py-space-sm bg-secondary text-on-secondary font-label-md text-label-md rounded-lg" type="submit">Tìm kiếm</button>
+          </div>
+        </div>
+        <div>
+          <label for="sort" class="block font-label-md text-label-md mb-space-xs">Sắp xếp</label>
+          <select id="sort" name="sort" form="car-filters" class="w-full bg-surface-container-low text-on-surface py-space-sm px-space-md rounded-lg">
+            <option value="newest" th:selected="${criteria.sort == 'newest'}">Mới nhất</option>
+            <option value="priceAsc" th:selected="${criteria.sort == 'priceAsc'}">Giá thấp đến cao</option>
+            <option value="priceDesc" th:selected="${criteria.sort == 'priceDesc'}">Giá cao đến thấp</option>
+          </select>
+        </div>
+      </div>
+      <p class="mt-space-md font-title-md text-title-md">Tìm thấy <span class="text-secondary" th:text="${cars.totalElements}">0</span> xe</p>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-gutter py-space-lg w-full">
+    <div class="flex flex-col lg:flex-row gap-space-lg items-start">
+      <aside class="w-full lg:w-[280px] shrink-0 bg-surface-container-lowest p-space-md rounded-xl shadow-sm">
+        <div class="flex items-center justify-between pb-space-sm mb-space-md border-b border-surface-container">
+          <h2 class="flex items-center gap-space-xs text-primary font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-[20px]" aria-hidden="true">tune</span>Bộ lọc xe</h2>
+          <a class="font-label-sm text-label-sm text-secondary hover:underline" th:href="@{/cars}">Đặt lại</a>
+        </div>
+        <form id="car-filters" th:action="@{/cars}" method="get" class="space-y-space-md">
+          <div>
+            <label for="categoryId" class="block font-title-md text-title-md mb-space-xs">Loại xe</label>
+            <select id="categoryId" name="categoryId" class="w-full bg-surface-container-low rounded-lg px-space-sm py-space-sm">
+              <option value="">Tất cả loại xe</option>
+              <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}" th:selected="${criteria.categoryId == category.id}">Loại xe</option>
+            </select>
+          </div>
+          <div>
+            <label for="province" class="block font-title-md text-title-md mb-space-xs">Tỉnh hoặc thành phố</label>
+            <input id="province" name="province" maxlength="100" th:value="${criteria.province}" placeholder="Nhập tỉnh hoặc thành phố" class="w-full bg-surface-container-low rounded-lg px-space-sm py-space-sm"/>
+          </div>
+          <fieldset class="pt-space-sm border-t border-surface-container">
+            <legend class="font-title-md text-title-md mb-space-xs">Giá thuê / ngày (VNĐ)</legend>
+            <div class="grid grid-cols-2 gap-space-xs">
+              <div><label for="minPrice" class="block font-label-md text-label-md">Từ</label><input id="minPrice" name="minPrice" type="number" min="0" th:value="${criteria.minPrice}" class="w-full bg-surface-container-low rounded-lg px-space-sm py-space-sm"/></div>
+              <div><label for="maxPrice" class="block font-label-md text-label-md">Đến</label><input id="maxPrice" name="maxPrice" type="number" min="0" th:value="${criteria.maxPrice}" class="w-full bg-surface-container-low rounded-lg px-space-sm py-space-sm"/></div>
+            </div>
+          </fieldset>
+          <div class="pt-space-sm border-t border-surface-container">
+            <label for="seatCount" class="block font-title-md text-title-md mb-space-xs">Số chỗ ngồi</label>
+            <input id="seatCount" name="seatCount" type="number" min="2" max="15" th:value="${criteria.seatCount}" placeholder="Tất cả số chỗ" class="w-full bg-surface-container-low rounded-lg px-space-sm py-space-sm"/>
+          </div>
+          <div class="pt-space-sm border-t border-surface-container">
+            <label for="transmission" class="block font-title-md text-title-md mb-space-xs">Hộp số</label>
+            <select id="transmission" name="transmission" class="w-full bg-surface-container-low rounded-lg px-space-sm py-space-sm">
+              <option value="">Tất cả hộp số</option><option value="AUTOMATIC" th:selected="${criteria.transmission?.name() == 'AUTOMATIC'}">Tự động</option><option value="MANUAL" th:selected="${criteria.transmission?.name() == 'MANUAL'}">Số sàn</option>
+            </select>
+          </div>
+          <div class="pt-space-sm border-t border-surface-container">
+            <label for="fuelType" class="block font-title-md text-title-md mb-space-xs">Nhiên liệu</label>
+            <select id="fuelType" name="fuelType" class="w-full bg-surface-container-low rounded-lg px-space-sm py-space-sm">
+              <option value="">Tất cả nhiên liệu</option><option value="GASOLINE" th:selected="${criteria.fuelType?.name() == 'GASOLINE'}">Xăng</option><option value="DIESEL" th:selected="${criteria.fuelType?.name() == 'DIESEL'}">Dầu</option><option value="ELECTRIC" th:selected="${criteria.fuelType?.name() == 'ELECTRIC'}">Điện</option><option value="HYBRID" th:selected="${criteria.fuelType?.name() == 'HYBRID'}">Hybrid</option>
+            </select>
+          </div>
+          <button class="w-full py-space-sm bg-secondary text-on-secondary font-label-md text-label-md rounded-lg" type="submit">Áp dụng bộ lọc</button>
+        </form>
+      </aside>
+      <section class="flex-1 w-full flex flex-col gap-space-lg" aria-label="Danh sách xe">
+        <div th:if="${cars.empty}" class="bg-surface-container-lowest rounded-xl shadow-sm p-space-xl text-center">
+          <span class="material-symbols-outlined text-outline text-[40px]" aria-hidden="true">directions_car_off</span>
+          <h2 class="font-headline-sm text-headline-sm text-primary">Không tìm thấy xe phù hợp</h2>
+          <p class="text-on-surface-variant mt-space-sm">Hãy thay đổi bộ lọc hoặc xem lại từ trang đầu.</p>
+          <a class="inline-block mt-space-md px-space-md py-space-sm bg-surface-container text-primary rounded-lg" th:href="@{/cars}">Xem tất cả xe</a>
+        </div>
+        <div th:unless="${cars.empty}" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md">
+          <article th:each="car : ${cars.content}" class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
+            <div class="relative w-full aspect-video bg-surface-container overflow-hidden">
+              <img th:if="${thumbnails.containsKey(car.id)}" th:src="${thumbnails[car.id]}" th:alt="${car.brand + ' ' + car.model}" class="w-full h-full object-cover"/>
+              <div th:unless="${thumbnails.containsKey(car.id)}" class="w-full h-full flex items-center justify-center" aria-label="Xe chưa có ảnh"><span class="material-symbols-outlined text-outline text-[44px]" aria-hidden="true">directions_car</span></div>
+            </div>
+            <div class="p-space-md flex flex-col flex-1 justify-between gap-space-md">
+              <div class="space-y-space-xs">
+                <h2 class="font-headline-sm text-headline-sm text-primary" th:text="${car.brand + ' ' + car.model}">Tên xe</h2>
+                <p class="text-on-surface-variant" th:text="${car.manufactureYear + ' · ' + car.category.name}">Năm · Loại xe</p>
+                <p class="text-on-surface-variant"><span th:text="${car.seatCount + ' chỗ'}">5 chỗ</span> · <span th:text="${car.transmission.name() == 'AUTOMATIC' ? 'Tự động' : 'Số sàn'}">Hộp số</span> · <span th:switch="${car.fuelType.name()}"><span th:case="'GASOLINE'">Xăng</span><span th:case="'DIESEL'">Dầu</span><span th:case="'ELECTRIC'">Điện</span><span th:case="'HYBRID'">Hybrid</span></span></p>
+                <p class="flex items-center gap-1 text-on-surface-variant"><span class="material-symbols-outlined text-[16px] text-outline" aria-hidden="true">location_on</span><span th:text="${car.province}">Địa điểm</span></p>
+              </div>
+              <div class="pt-space-sm border-t border-surface-container flex items-center justify-between gap-space-xs">
+                <div><strong class="block font-headline-sm text-headline-sm text-secondary" th:text="${#numbers.formatDecimal(car.pricePerDay, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong><span class="font-caption text-caption text-outline">/ ngày</span></div>
+                <a class="px-space-sm py-space-sm bg-surface-container text-primary font-label-md text-label-md rounded-lg" th:href="@{'/cars/' + ${car.id}}">Xem chi tiết</a>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div th:replace="~{fragments/pagination :: pagination(page=${page},baseUrl=${paginationBaseUrl})}"></div>
+      </section>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

@@ -6,6 +6,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -41,6 +42,18 @@ public class CommonExceptionHandler {
         redirect.addFlashAttribute("errorMessage", ex.getMessage());
         String referer = request.getHeader("Referer");
         return "redirect:" + (referer != null ? referer : "/");
+    }
+
+    /**
+     * A query string that cannot be bound to a handler parameter (an unknown enum in a filter,
+     * for instance) is the client's bad request, not a server fault. Handled before the catch-all
+     * below so it does not turn into a 500.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String badParameter(MethodArgumentTypeMismatchException ex, Model model) {
+        model.addAttribute("errorMessage", "Điều kiện lọc bạn gửi không hợp lệ. Vui lòng kiểm tra lại.");
+        return "error/400";
     }
 
     /** Unmapped URL — without this it would fall into the generic 500 handler below. */

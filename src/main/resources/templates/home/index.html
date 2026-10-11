@@ -3,7 +3,7 @@
 <!--/*
   Home — port từ docs/design/stitch/home-trang-chu.html
   Giữ toàn bộ class Tailwind/body/header/footer/messages; chỉnh:
-  - Form search: action="@{/cars}" (GET), input name="province","startDate","endDate" để khớp CarSearchCriteria (P2).
+  - Form search: action="@{/cars}" (GET), input name="province","q","maxPrice" khớp CarSearchCriteria.
   - Grid xe: th:each trên ${cars}; empty state khi list rỗng; Phase 0 list luôn rỗng.
   - Ảnh/ giá/ link: placeholder (Phase 0 chưa có entity Car).
 */-->
@@ -46,18 +46,18 @@
               </div>
             </div>
             <div class="md:col-span-3 flex flex-col gap-space-xs">
-              <label class="font-label-md text-label-md text-on-surface flex items-center gap-space-xs" for="pickup-time">
-                <span class="material-symbols-outlined text-secondary text-[20px]">calendar_today</span>
-                Ngày nhận xe
+              <label class="font-label-md text-label-md text-on-surface flex items-center gap-space-xs" for="quick-q">
+                <span class="material-symbols-outlined text-secondary text-[20px]">search</span>
+                Tên xe hoặc hãng xe
               </label>
-              <input class="w-full h-11 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:bg-surface-container-low transition-colors" id="pickup-time" name="startDate" type="date">
+              <input class="w-full h-11 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:bg-surface-container-low transition-colors" id="quick-q" name="q" maxlength="200" placeholder="Ví dụ: VinFast" type="text">
             </div>
             <div class="md:col-span-3 flex flex-col gap-space-xs">
-              <label class="font-label-md text-label-md text-on-surface flex items-center gap-space-xs" for="return-time">
-                <span class="material-symbols-outlined text-secondary text-[20px]">event_repeat</span>
-                Ngày trả xe
+              <label class="font-label-md text-label-md text-on-surface flex items-center gap-space-xs" for="quick-max-price">
+                <span class="material-symbols-outlined text-secondary text-[20px]">payments</span>
+                Giá tối đa / ngày (VNĐ)
               </label>
-              <input class="w-full h-11 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:bg-surface-container-low transition-colors" id="return-time" name="endDate" type="date">
+              <input class="w-full h-11 px-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:bg-surface-container-low transition-colors" id="quick-max-price" name="maxPrice" min="0" placeholder="Ví dụ: 1000000" type="number">
             </div>
             <div class="md:col-span-2 flex flex-col justify-end">
               <button class="w-full h-11 px-space-md bg-secondary text-on-secondary font-label-md text-label-md rounded-lg shadow-sm hover:bg-secondary-container transition-colors flex items-center justify-center gap-space-xs active:scale-[0.99]" type="submit">
@@ -68,10 +68,9 @@
           </form>
           <div class="mt-space-md pt-space-md bg-surface-container-lowest flex flex-wrap items-center gap-space-sm">
             <span class="font-caption text-caption text-outline">Gợi ý lọc nhanh:</span>
-            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars?seatCount=7}">SUV 7 chỗ</a>
+            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars?seatCount=7}">Xe 7 chỗ</a>
             <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars?fuelType=ELECTRIC}">Xe điện</a>
-            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars?seatCount=5}">Sedan 5 chỗ</a>
-            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars}">Giao xe tại sân bay</a>
+            <a class="px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-caption text-caption transition-colors" th:href="@{/cars?seatCount=5}">Xe 5 chỗ</a>
           </div>
         </div>
       </div>
@@ -91,8 +90,8 @@
         <!-- Empty state (Phase 0 always empty; P5.8 will fill) -->
         <div th:if="${#lists.isEmpty(cars)}" class="w-full bg-surface-container-lowest rounded-xl shadow-sm p-space-xl flex flex-col items-center justify-center gap-space-sm">
           <span class="material-symbols-outlined text-outline text-[40px]">directions_car_off</span>
-          <p class="font-title-md text-title-md text-on-surface">Chưa có xe nào</p>
-          <p class="font-body-md text-body-md text-on-surface-variant">Xe đã duyệt sẽ hiển thị tại đây.</p>
+          <p class="font-title-md text-title-md text-on-surface">Chưa có danh sách xe nổi bật</p>
+          <p class="font-body-md text-body-md text-on-surface-variant">Mở Tìm xe để xem các xe đang được đăng.</p>
         </div>
 
         <!-- Grid (populated from P5.8; keep structure for now, renders 0 rows in Phase 0) -->
