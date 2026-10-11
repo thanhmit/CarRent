@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Ảnh tải lên quá lớn')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
+  <div class="max-w-3xl mx-auto px-gutter py-space-xl flex flex-col items-center justify-center gap-space-md text-center">
+    <span class="material-symbols-outlined text-outline text-[64px]">cloud_off</span>
+    <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Ảnh tải lên quá lớn</h1>
+    <p class="font-body-lg text-body-lg text-on-surface-variant">Máy chủ đã từ chối lượt gửi vì tổng dung lượng vượt giới hạn. Mỗi ảnh tối đa 5 MB và mỗi lượt gửi tối đa 30 MB. Vui lòng chọn lại ít ảnh hơn hoặc ảnh nhỏ hơn rồi gửi lại biểu mẫu.</p>
+    <div class="flex flex-col sm:flex-row items-center gap-space-sm">
+      <button class="px-space-md py-space-sm bg-secondary text-on-secondary font-label-md text-label-md rounded-lg hover:bg-secondary-container transition-colors shadow-sm" onclick="history.back()" type="button">Quay lại biểu mẫu</button>
+      <a class="px-space-md py-space-sm text-on-surface-variant hover:text-primary font-label-md text-label-md" th:href="@{/}">Về trang chủ</a>
+    </div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

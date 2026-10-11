@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Kiểm tra hồ sơ xe')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<aside class="md:fixed md:left-0 md:top-0 md:h-full md:w-64 bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+  <div class="h-16 px-space-md flex items-center gap-space-sm bg-surface-container-low">
+    <span class="material-symbols-outlined text-primary text-[28px]">directions_car</span>
+    <div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary leading-tight">CarRent</span><span class="font-caption text-caption text-on-surface-variant leading-none">Quản trị hệ thống</span></div>
+  </div>
+  <nav class="flex flex-wrap md:flex-col gap-space-xs py-space-sm px-space-sm" aria-label="Điều hướng quản trị">
+    <a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-colors bg-primary text-on-primary font-title-md text-title-md rounded-lg" th:href="@{/admin/cars}"><span class="material-symbols-outlined text-[20px]">verified</span><span>Duyệt xe</span></a>
+    <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container" th:href="@{/}"><span class="material-symbols-outlined text-[20px]">home</span><span>Trang chủ</span></a>
+  </nav>
+  <form class="mt-auto p-space-sm bg-surface-container-low" th:action="@{/logout}" method="post">
+    <button type="submit" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-error hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">logout</span><span>Đăng xuất</span></button>
+  </form>
+</aside>
+<div class="md:pl-64">
+  <header class="h-16 bg-surface-container-lowest/90 shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-space-sm px-gutter-mobile md:px-gutter">
+    <span class="font-title-md text-title-md text-primary truncate">Cổng thông tin Điều hành &amp; Quản trị</span>
+    <div class="flex items-center gap-space-sm min-w-0"><span class="font-label-md text-label-md truncate" th:text="${adminName}">Quản trị viên</span><div class="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div>
+  </header>
+  <div th:replace="~{fragments/messages :: messages}"></div>
+  <main class="relative w-full px-gutter-mobile md:px-gutter min-h-screen bg-surface">
+    <div class="flex flex-col w-full pb-margin">
+      <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm py-space-md"><a class="hover:text-primary transition-colors" th:href="@{/admin/cars}">Duyệt xe</a><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span class="text-on-surface font-label-md text-label-md" th:text="${'Hồ sơ #' + car.id}">Hồ sơ</span></div>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-space-sm bg-surface-container-lowest p-space-lg rounded-xl shadow-sm mb-space-lg">
+        <div class="flex flex-col gap-space-xs min-w-0">
+          <div class="flex items-center gap-space-xs flex-wrap">
+            <span class="px-2 py-0.5 rounded-lg bg-surface-container text-primary font-caption text-caption uppercase tracking-wider font-semibold">Quy trình thẩm định</span>
+            <span th:if="${car.approvalStatus.name() == 'PENDING'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-yellow-100 text-yellow-800">Chờ duyệt</span>
+            <span th:if="${car.approvalStatus.name() == 'APPROVED'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-green-100 text-green-800">Đã duyệt</span>
+            <span th:if="${car.approvalStatus.name() == 'REJECTED'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-red-100 text-red-800">Từ chối</span>
+            <span th:if="${car.listingStatus.name() == 'ACTIVE'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-surface-container-low text-on-tertiary-container">Đang đăng</span>
+            <span th:if="${car.listingStatus.name() == 'INACTIVE'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant">Đã ẩn</span>
+          </div>
+          <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight" th:text="${car.brand + ' ' + car.model + ' (' + car.manufactureYear + ')'}">Xe</h1>
+          <p class="font-body-md text-body-md text-on-surface-variant" th:text="${'Đăng ngày ' + #temporals.format(car.createdAt, 'dd/MM/yyyy HH:mm')}">Ngày gửi hồ sơ</p>
+        </div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col lg:flex-row">
+        <div class="lg:w-5/12 bg-surface-container-low p-space-lg flex flex-col gap-space-md">
+          <div class="flex items-center justify-between gap-space-sm">
+            <div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[20px]">photo_library</span><span class="font-title-md text-title-md text-primary">Hình ảnh thực tế</span></div>
+            <span class="font-caption text-caption px-2 py-0.5 rounded bg-surface-container text-on-surface-variant" th:text="${carImages.size() + ' ảnh tải lên'}">0 ảnh tải lên</span>
+          </div>
+          <div th:if="${carImages.isEmpty()}" class="flex flex-col items-center justify-center gap-space-sm rounded-xl aspect-[16/10] bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[32px]">no_photography</span><span class="font-body-md text-body-md">Chủ xe chưa tải ảnh lên</span></div>
+          <div th:unless="${carImages.isEmpty()}" class="flex flex-col gap-space-sm">
+            <div class="relative rounded-xl overflow-hidden aspect-[16/10] bg-surface-container shadow-sm"><img class="w-full h-full object-cover" th:src="${carImages[0].imageUrl}" th:alt="${'Ảnh chính xe ' + car.brand + ' ' + car.model}"/><span class="absolute top-3 left-3 bg-primary/90 text-on-primary font-caption text-caption px-2.5 py-1 rounded-lg backdrop-blur-sm flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">star</span>Ảnh chính</span></div>
+            <div th:if="${carImages.size() > 1}" class="grid grid-cols-2 gap-space-sm">
+              <div th:each="image, iter : ${carImages}" th:if="${iter.index > 0}" class="relative rounded-lg overflow-hidden aspect-[16/10] bg-surface-container shadow-sm"><img class="w-full h-full object-cover" th:src="${image.imageUrl}" th:alt="${'Ảnh xe ' + car.brand + ' ' + car.model + ' số ' + (iter.index + 1)}"/><span class="absolute bottom-1.5 left-1.5 bg-primary/80 text-on-primary font-caption text-caption px-1.5 py-0.5 rounded backdrop-blur-sm" th:text="${'Ảnh ' + (iter.index + 1)}">Ảnh</span></div>
+            </div>
+          </div>
+          <div th:if="${car.approvalStatus.name() == 'REJECTED' and car.rejectionReason != null}" class="bg-error-container text-on-error-container p-space-md rounded-xl flex flex-col gap-space-xs">
+            <span class="font-label-md text-label-md font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">report</span>Lý do đã từ chối</span>
+            <p class="font-body-md text-body-md" th:text="${car.rejectionReason}">Lý do</p>
+          </div>
+        </div>
+        <div class="lg:w-7/12 p-space-lg flex flex-col justify-between gap-space-lg">
+          <div class="flex flex-col gap-space-lg">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-space-sm">
+              <div class="min-w-0">
+                <div class="flex items-center gap-space-xs mb-1 flex-wrap"><span class="font-caption text-caption font-semibold px-2.5 py-0.5 rounded bg-surface-container-high text-primary" th:text="${car.category.name}">Phân khúc</span><span class="font-caption text-caption font-semibold px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed-variant" th:text="${'Đời ' + car.manufactureYear}">Đời</span></div>
+                <h2 class="font-headline-md text-headline-md text-primary" th:text="${car.brand + ' ' + car.model}">Xe</h2>
+                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                  <span class="font-label-md text-label-md px-2.5 py-0.5 rounded-lg bg-primary text-on-primary tracking-wider font-semibold" th:text="${car.licensePlate != null and !car.licensePlate.isBlank() ? car.licensePlate : 'Chưa cập nhật biển số'}">Biển số</span>
+                  <span th:if="${car.color != null and !car.color.isBlank()}" class="text-caption text-on-surface-variant font-caption" th:text="${'Màu ' + car.color}">Màu</span>
+                </div>
+              </div>
+              <div class="bg-surface-container-low p-space-md rounded-xl flex flex-col sm:items-end shrink-0">
+                <span class="font-caption text-caption text-on-surface-variant uppercase tracking-wider">Giá thuê đề xuất</span>
+                <div class="flex items-baseline gap-1 mt-0.5"><span class="font-headline-sm text-headline-sm text-secondary font-bold" th:text="${#numbers.formatInteger(car.pricePerDay, 1, 'COMMA')}">0</span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">VNĐ / ngày</span></div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+              <div class="bg-surface p-space-md rounded-xl flex flex-col gap-space-sm shadow-sm">
+                <span class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[18px] text-secondary">tune</span>Thông số kỹ thuật</span>
+                <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+                  <div class="bg-surface-container-lowest p-2 rounded-lg"><span class="font-caption text-caption text-on-surface-variant block">Chỗ ngồi</span><span class="font-title-md text-title-md text-primary" th:text="${car.seatCount + ' chỗ'}">5 chỗ</span></div>
+                  <div class="bg-surface-container-lowest p-2 rounded-lg"><span class="font-caption text-caption text-on-surface-variant block">Hộp số</span><span class="font-title-md text-title-md text-primary" th:switch="${car.transmission.name()}"><span th:case="'AUTOMATIC'">Tự động</span><span th:case="*">Số sàn</span></span></div>
+                  <div class="bg-surface-container-lowest p-2 rounded-lg"><span class="font-caption text-caption text-on-surface-variant block">Nhiên liệu</span><span class="font-title-md text-title-md text-primary" th:switch="${car.fuelType.name()}"><span th:case="'GASOLINE'">Xăng</span><span th:case="'DIESEL'">Dầu Diesel</span><span th:case="'ELECTRIC'">Điện</span><span th:case="*">Hybrid</span></span></div>
+                </div>
+              </div>
+              <div class="bg-surface p-space-md rounded-xl flex flex-col gap-space-sm shadow-sm">
+                <span class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[18px] text-secondary">location_on</span>Địa điểm giao nhận xe</span>
+                <div class="bg-surface-container-lowest p-2.5 rounded-lg flex flex-col justify-center h-full gap-0.5">
+                  <span class="font-title-md text-title-md text-primary" th:text="${car.district != null and !car.district.isBlank() ? car.district + ', ' + car.province : car.province}">Địa điểm</span>
+                  <span class="font-caption text-caption text-on-surface-variant" th:text="${car.addressDetail != null and !car.addressDetail.isBlank() ? car.addressDetail : 'Không có địa chỉ chi tiết'}">Chi tiết</span>
+                </div>
+              </div>
+            </div>
+            <div class="bg-surface p-space-md rounded-xl flex flex-col gap-space-sm shadow-sm">
+              <span class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[18px] text-secondary">person_check</span>Thông tin chủ sở hữu phương tiện</span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm pt-1">
+                <div class="bg-surface-container-lowest p-2.5 rounded-lg min-w-0"><span class="font-caption text-caption text-on-surface-variant block">Họ và tên</span><span class="font-title-md text-title-md text-primary truncate" th:text="${car.owner.fullName}">Chủ xe</span></div>
+                <div class="bg-surface-container-lowest p-2.5 rounded-lg min-w-0"><span class="font-caption text-caption text-on-surface-variant block">Số điện thoại</span><span class="font-title-md text-title-md text-primary truncate" th:text="${car.owner.phone != null and !car.owner.phone.isBlank() ? car.owner.phone : 'Chưa cập nhật'}">SĐT</span></div>
+                <div class="bg-surface-container-lowest p-2.5 rounded-lg min-w-0"><span class="font-caption text-caption text-on-surface-variant block">Hộp thư điện tử</span><span class="font-title-md text-title-md text-primary truncate" th:text="${car.owner.email}">Email</span></div>
+              </div>
+            </div>
+            <div class="bg-surface p-space-md rounded-xl flex flex-col gap-space-xs shadow-sm">
+              <span class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[18px] text-secondary">notes</span>Mô tả của chủ xe</span>
+              <p class="font-body-md text-body-md text-on-surface bg-surface-container-lowest p-3 rounded-lg leading-relaxed whitespace-pre-line" th:text="${car.description != null and !car.description.isBlank() ? car.description : 'Chủ xe không cung cấp mô tả.'}">Mô tả</p>
+            </div>
+          </div>
+          <div th:if="${car.approvalStatus.name() == 'PENDING'}" class="pt-space-md mt-space-sm bg-surface-container-low -mx-space-lg -mb-space-lg p-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-md">
+            <div class="flex items-center gap-2 text-on-surface-variant text-caption font-caption"><span class="material-symbols-outlined text-[18px] text-secondary">policy</span><span>Xe đã duyệt chỉ hiển thị trong tìm kiếm khi trạng thái đang đăng; xe đã ẩn vẫn tiếp tục ẩn.</span></div>
+            <div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+              <button class="px-space-md py-2.5 rounded-lg bg-surface-container-lowest text-error hover:bg-error-container hover:text-on-error-container font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5 shadow-sm" id="openRejectDialog" type="button"><span class="material-symbols-outlined text-[18px]">cancel</span><span>Từ chối xe</span></button>
+              <form method="post" th:action="@{/admin/cars/{id}/approve(id=${car.id})}"><button class="px-space-lg py-2.5 rounded-lg bg-on-tertiary-container hover:bg-tertiary-container text-on-tertiary font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5 shadow-sm" type="submit"><span class="material-symbols-outlined text-[18px]">check_circle</span><span>Phê duyệt xe</span></button></form>
+            </div>
+          </div>
+          <div th:unless="${car.approvalStatus.name() == 'PENDING'}" class="pt-space-md mt-space-sm bg-surface-container-low -mx-space-lg -mb-space-lg p-space-lg flex items-center gap-2 text-on-surface-variant text-caption font-caption">
+            <span class="material-symbols-outlined text-[18px] text-secondary">history</span><span>Hồ sơ này đã được xử lý, không thể duyệt hoặc từ chối lại.</span>
+          </div>
+          <div class="pt-space-md flex justify-end">
+            <form th:if="${car.listingStatus.name() == 'ACTIVE'}" method="post" th:action="@{/admin/cars/{id}/deactivate(id=${car.id})}"><button class="px-space-md py-2 rounded-lg bg-error-container text-on-error-container font-label-md" type="submit">Ẩn xe</button></form>
+            <form th:if="${car.approvalStatus.name() == 'APPROVED' and car.listingStatus.name() == 'INACTIVE'}" method="post" th:action="@{/admin/cars/{id}/activate(id=${car.id})}"><button class="px-space-md py-2 rounded-lg bg-primary text-on-primary font-label-md" type="submit">Đăng lại xe</button></form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<dialog aria-labelledby="rejectDialogTitle" class="w-[calc(100%-2rem)] max-w-lg rounded-xl shadow-xl p-0 bg-surface-container-lowest text-on-surface backdrop:bg-primary/50" id="rejectDialog">
+  <form method="post" th:action="@{/admin/cars/{id}/reject(id=${car.id})}" class="flex flex-col">
+    <div class="px-space-lg py-space-md bg-surface-container flex items-center justify-between gap-space-sm">
+      <div class="flex items-center gap-2"><span class="material-symbols-outlined text-error text-[22px]">gpp_bad</span><span class="font-headline-sm text-headline-sm text-primary" id="rejectDialogTitle">Lý do từ chối hồ sơ xe</span></div>
+      <button class="p-1 rounded hover:bg-surface-container-highest text-on-surface-variant" id="closeRejectDialog" type="button" aria-label="Đóng"><span class="material-symbols-outlined text-[20px]">close</span></button>
+    </div>
+    <div class="p-space-lg flex flex-col gap-space-md">
+      <p class="font-body-md text-body-md text-on-surface-variant">Vui lòng chỉ rõ lý do hồ sơ chưa hợp lệ. Chủ xe sẽ thấy lý do này khi xem lại xe.</p>
+      <div class="flex flex-col gap-2">
+        <span class="font-label-md text-label-md text-primary font-medium">Lý do mẫu thường gặp:</span>
+        <div class="flex flex-wrap gap-2">
+          <button class="quick-reason px-3 py-1 rounded bg-surface text-on-surface-variant hover:bg-surface-container font-caption text-caption transition-colors" type="button">Ảnh chụp xe chưa rõ biển số</button>
+          <button class="quick-reason px-3 py-1 rounded bg-surface text-on-surface-variant hover:bg-surface-container font-caption text-caption transition-colors" type="button">Giá đề xuất quá cao</button>
+          <button class="quick-reason px-3 py-1 rounded bg-surface text-on-surface-variant hover:bg-surface-container font-caption text-caption transition-colors" type="button">Thông tin xe chưa đầy đủ</button>
+          <button class="quick-reason px-3 py-1 rounded bg-surface text-on-surface-variant hover:bg-surface-container font-caption text-caption transition-colors" type="button">Ảnh xe không đúng phương tiện</button>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="font-label-md text-label-md text-primary font-medium" for="reason">Chi tiết phản hồi cho chủ xe:</label>
+        <textarea class="w-full p-space-sm rounded-lg bg-surface text-on-surface font-body-md text-body-md outline-none focus:ring-2 focus:ring-secondary transition-colors" id="reason" maxlength="500" name="reason" required rows="3" th:text="${reason}" placeholder="Nhập chi tiết yêu cầu bổ sung hoặc chọn lý do ở trên..."></textarea>
+      </div>
+    </div>
+    <div class="p-space-md bg-surface-container-low flex items-center justify-end gap-space-sm">
+      <button class="px-space-md py-2 rounded-lg bg-surface text-on-surface-variant hover:bg-surface-container font-label-md text-label-md" id="cancelRejectDialog" type="button">Đóng</button>
+      <button class="px-space-md py-2 rounded-lg bg-error hover:bg-on-error-container text-on-error font-label-md text-label-md flex items-center gap-1 shadow-sm" type="submit"><span class="material-symbols-outlined text-[16px]">send</span>Xác nhận từ chối</button>
+    </div>
+  </form>
+</dialog>
+<script>
+  const rejectDialog = document.getElementById('rejectDialog');
+  const reasonField = document.getElementById('reason');
+  document.getElementById('openRejectDialog')?.addEventListener('click', () => rejectDialog.showModal());
+  document.getElementById('closeRejectDialog').addEventListener('click', () => rejectDialog.close());
+  document.getElementById('cancelRejectDialog').addEventListener('click', () => rejectDialog.close());
+  document.querySelectorAll('.quick-reason').forEach(button => button.addEventListener('click', () => {
+    const current = reasonField.value.trim();
+    reasonField.value = current ? current + '; ' + button.textContent.trim() : button.textContent.trim();
+  }));
+  // A rejected submission re-renders the page with the reason kept, so reopen the dialog on it.
+  if (reasonField.value.trim()) rejectDialog.showModal();
+</script>
+</body>
+</html>

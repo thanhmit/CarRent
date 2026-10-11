@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="pagination(page,baseUrl)" th:if="${page.totalPages > 0}" aria-label="Phân trang"
+     th:with="first=${page.number > page.totalPages - 3 ? (page.totalPages > 5 ? page.totalPages - 5 : 0) : (page.number > 2 ? page.number - 2 : 0)}, last=${first + 4 < page.totalPages ? first + 4 : page.totalPages - 1}, separator=${baseUrl.contains('?') ? '&amp;' : '?'}"
+     class="flex flex-wrap items-center justify-center gap-1">
+  <a th:if="${page.hasPrevious()}" th:href="${baseUrl + separator + 'page=0'}" class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary" aria-label="Trang đầu">Đầu</a>
+  <span th:unless="${page.hasPrevious()}" class="px-2.5 py-1 rounded bg-surface-container-lowest text-outline-variant" aria-disabled="true">Đầu</span>
+  <a th:if="${page.hasPrevious()}" th:href="${baseUrl + separator + 'page=' + (page.number < page.totalPages ? page.number - 1 : page.totalPages - 1)}" class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary">Trước</a>
+  <span th:unless="${page.hasPrevious()}" class="px-2.5 py-1 rounded bg-surface-container-lowest text-outline-variant" aria-disabled="true">Trước</span>
+  <a th:each="number : ${#numbers.sequence(first, last)}" th:href="${baseUrl + separator + 'page=' + number}" th:text="${number + 1}"
+     th:attr="aria-current=${number == page.number ? 'page' : null}"
+     th:class="${number == page.number ? 'px-2.5 py-1 rounded bg-primary text-on-primary font-medium' : 'px-2.5 py-1 rounded bg-surface-container-lowest text-primary'}">1</a>
+  <a th:if="${page.hasNext()}" th:href="${baseUrl + separator + 'page=' + (page.number + 1)}" class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary">Sau</a>
+  <span th:unless="${page.hasNext()}" class="px-2.5 py-1 rounded bg-surface-container-lowest text-outline-variant" aria-disabled="true">Sau</span>
+  <a th:if="${page.hasNext()}" th:href="${baseUrl + separator + 'page=' + (page.totalPages - 1)}" class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary" aria-label="Trang cuối">Cuối</a>
+  <span th:unless="${page.hasNext()}" class="px-2.5 py-1 rounded bg-surface-container-lowest text-outline-variant" aria-disabled="true">Cuối</span>
+</nav>
+</body>
+</html>

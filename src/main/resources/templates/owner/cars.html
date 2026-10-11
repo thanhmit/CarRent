@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Xe của tôi')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<aside class="md:fixed md:left-0 md:top-0 md:h-full md:w-64 bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+  <div class="h-16 px-space-md flex items-center gap-space-sm bg-surface-container-low">
+    <span class="material-symbols-outlined text-primary text-[28px]">directions_car</span>
+    <div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary leading-tight">CarRent</span><span class="font-caption text-caption text-on-surface-variant leading-none">Kênh đối tác</span></div>
+  </div>
+  <nav class="flex flex-wrap md:flex-col gap-space-xs py-space-sm px-space-sm" aria-label="Điều hướng chủ xe">
+    <a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-colors bg-primary text-on-primary font-title-md text-title-md rounded-lg" th:href="@{/owner/cars}"><span class="material-symbols-outlined text-[20px]">directions_car</span><span>Xe của tôi</span></a>
+    <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container" th:href="@{/}"><span class="material-symbols-outlined text-[20px]">home</span><span>Trang chủ</span></a>
+  </nav>
+  <form class="mt-auto p-space-sm bg-surface-container-low" th:action="@{/logout}" method="post">
+    <button type="submit" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-error hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">logout</span><span>Đăng xuất</span></button>
+  </form>
+</aside>
+<div class="md:pl-64">
+  <header class="h-16 bg-surface-container-lowest/90 shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-space-sm px-gutter-mobile md:px-gutter">
+    <span class="font-title-md text-title-md text-primary truncate">Cổng thông tin chủ xe</span>
+    <div class="flex items-center gap-space-sm min-w-0"><span class="font-label-md text-label-md truncate" th:text="${ownerName}">Chủ xe</span><div class="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div>
+  </header>
+  <div th:replace="~{fragments/messages :: messages}"></div>
+  <main class="relative w-full px-gutter-mobile md:px-gutter min-h-screen bg-surface">
+    <div class="flex flex-col w-full pb-margin">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md py-space-lg">
+        <div class="flex flex-col"><h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Xe của tôi</h1><p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Danh sách và trạng thái xe bạn đăng cho thuê.</p></div>
+        <a class="inline-flex items-center justify-center gap-space-xs px-space-lg py-2.5 bg-secondary hover:bg-secondary-container text-on-secondary font-title-md text-title-md rounded-xl shadow-sm transition-all" th:href="@{/owner/cars/new}"><span class="material-symbols-outlined text-[20px]">add_circle</span><span>Đăng thêm xe mới</span></a>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md mb-space-lg">
+        <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md relative overflow-hidden group">
+          <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors"><span class="material-symbols-outlined text-[26px]">directions_car</span></div>
+          <div class="flex flex-col min-w-0"><span class="font-caption text-caption text-on-surface-variant font-medium">Tổng số xe</span><div class="flex items-baseline gap-space-xs"><span class="font-headline-md text-headline-md text-primary tracking-tight" th:text="${page.totalElements}">0</span><span class="font-body-md text-body-md text-on-surface-variant">xe</span></div></div>
+          <div class="absolute right-0 bottom-0 translate-x-2 translate-y-2 opacity-5 pointer-events-none"><span class="material-symbols-outlined text-[72px]">directions_car</span></div>
+        </div>
+        <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md relative overflow-hidden group">
+          <div class="w-12 h-12 rounded-lg bg-surface-container-low text-on-tertiary-container flex items-center justify-center group-hover:bg-tertiary-fixed group-hover:text-on-tertiary-fixed transition-colors"><span class="material-symbols-outlined text-[26px]">check_circle</span></div>
+          <div class="flex flex-col min-w-0"><span class="font-caption text-caption text-on-surface-variant font-medium">Xe đang công khai</span><div class="flex items-baseline gap-space-xs"><span class="font-headline-md text-headline-md text-primary tracking-tight" th:text="${publicCount}">0</span><span class="font-body-md text-body-md text-on-surface-variant">xe</span></div></div>
+          <div class="absolute right-0 bottom-0 translate-x-2 translate-y-2 opacity-5 pointer-events-none"><span class="material-symbols-outlined text-[72px]">check_circle</span></div>
+        </div>
+        <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center gap-space-md relative overflow-hidden group">
+          <div class="w-12 h-12 rounded-lg bg-surface-container-high text-secondary flex items-center justify-center group-hover:bg-secondary group-hover:text-on-secondary transition-colors"><span class="material-symbols-outlined text-[26px]">hourglass_top</span></div>
+          <div class="flex flex-col min-w-0"><span class="font-caption text-caption text-on-surface-variant font-medium">Xe chờ duyệt</span><div class="flex items-baseline gap-space-xs"><span class="font-headline-md text-headline-md text-secondary tracking-tight" th:text="${pendingCount}">0</span><span class="font-body-md text-body-md text-on-surface-variant">xe</span></div></div>
+          <div class="absolute right-0 bottom-0 translate-x-2 translate-y-2 opacity-5 pointer-events-none"><span class="material-symbols-outlined text-[72px]">hourglass_top</span></div>
+        </div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+        <div class="p-space-md border-b border-outline-variant/40"><h2 class="font-headline-sm text-headline-sm text-primary">Danh sách xe</h2></div>
+        <div th:if="${page.totalElements == 0}" class="p-space-xl text-center"><p class="mb-space-md">Bạn chưa đăng xe nào</p><a class="text-secondary underline" th:href="@{/owner/cars/new}">Đăng xe đầu tiên</a></div>
+        <div th:if="${page.totalElements > 0 and cars.isEmpty()}" class="p-space-xl text-center"><p>Không có xe ở trang này</p></div>
+        <div th:if="${!cars.isEmpty()}" class="overflow-x-auto"><table class="w-full min-w-[850px] text-left"><thead class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm"><tr><th scope="col" class="py-space-sm px-space-md">Xe</th><th scope="col" class="py-space-sm px-space-md">Biển số</th><th scope="col" class="py-space-sm px-space-md">Thông số</th><th scope="col" class="py-space-sm px-space-md">Giá thuê</th><th scope="col" class="py-space-sm px-space-md">Trạng thái</th><th scope="col" class="py-space-sm px-space-md text-right">Thao tác</th></tr></thead>
+          <tbody class="divide-y divide-outline-variant/30"><tr th:each="car : ${cars}" class="hover:bg-surface-container-low/60 transition-colors">
+            <td class="py-space-md px-space-md"><div class="flex items-center gap-space-md"><div class="w-20 h-14 rounded-lg bg-surface-container overflow-hidden flex-shrink-0 flex items-center justify-center"><img th:if="${thumbnails.containsKey(car.id)}" th:src="${thumbnails[car.id]}" th:alt="${car.brand + ' ' + car.model}" class="w-full h-full object-cover"/><span th:unless="${thumbnails.containsKey(car.id)}" class="material-symbols-outlined text-outline">directions_car</span></div><div class="flex flex-col min-w-0"><span class="font-title-md text-title-md text-primary" th:text="${car.brand + ' ' + car.model + ' (' + car.manufactureYear + ')'}">Xe</span><span class="font-caption text-caption text-on-surface-variant" th:text="${car.category.name}">Phân khúc</span></div></div></td>
+            <td class="py-space-md px-space-md"><span class="inline-block px-2.5 py-1 bg-surface-container font-label-md text-label-md font-semibold text-primary rounded" th:text="${car.licensePlate != null and !car.licensePlate.isBlank() ? car.licensePlate : 'Chưa cập nhật'}">Biển số</span></td>
+            <td class="py-space-md px-space-md text-on-surface-variant font-label-sm text-label-sm"><span th:text="${car.seatCount + ' chỗ'}">5 chỗ</span><span class="mx-1">|</span><span th:text="${car.transmission.name() == 'AUTOMATIC' ? 'Tự động' : 'Số sàn'}">Tự động</span></td>
+            <td class="py-space-md px-space-md"><span class="font-title-md text-title-md text-primary font-bold" th:text="${#numbers.formatInteger(car.pricePerDay, 1, 'COMMA') + ' VND'}">0 VND</span><span class="block font-caption text-caption text-on-surface-variant">/ ngày</span></td>
+            <td class="py-space-md px-space-md"><div class="flex flex-col items-start gap-1"><span th:if="${car.approvalStatus.name() == 'PENDING'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-yellow-100 text-yellow-800">Chờ duyệt</span><span th:if="${car.approvalStatus.name() == 'APPROVED'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-green-100 text-green-800">Đã duyệt</span><span th:if="${car.approvalStatus.name() == 'REJECTED'}" th:title="${car.rejectionReason}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-red-100 text-red-800">Từ chối</span><span th:if="${car.listingStatus.name() == 'ACTIVE'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-surface-container-low text-on-tertiary-container">Đang đăng</span><span th:if="${car.listingStatus.name() == 'INACTIVE'}" class="inline-flex px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant">Đã ẩn</span></div></td>
+            <td class="py-space-md px-space-md text-right"><div class="flex items-center justify-end gap-space-xs"><a class="inline-flex p-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-secondary hover:text-on-secondary" th:href="@{/owner/cars/{id}/edit(id=${car.id})}" th:aria-label="${'Chỉnh sửa ' + car.brand + ' ' + car.model}" title="Chỉnh sửa thông tin"><span class="material-symbols-outlined text-[18px]">edit</span></a><form th:if="${car.listingStatus.name() == 'ACTIVE'}" method="post" th:action="@{/owner/cars/{id}/deactivate(id=${car.id})}"><button class="inline-flex p-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-error hover:text-on-error transition-colors" type="submit" th:aria-label="${'Ẩn ' + car.brand + ' ' + car.model}" title="Ẩn xe khỏi danh sách công khai"><span class="material-symbols-outlined text-[18px]">visibility_off</span></button></form><form th:if="${car.listingStatus.name() == 'INACTIVE'}" method="post" th:action="@{/owner/cars/{id}/activate(id=${car.id})}"><button class="inline-flex p-1.5 rounded-lg bg-surface-container text-on-surface hover:bg-secondary hover:text-on-secondary transition-colors" type="submit" th:aria-label="${'Đăng lại ' + car.brand + ' ' + car.model}" title="Đăng lại xe"><span class="material-symbols-outlined text-[18px]">visibility</span></button></form></div></td>
+          </tr></tbody></table></div>
+        <div th:if="${page.totalElements > 0}" class="flex flex-col sm:flex-row items-center justify-between gap-space-sm px-space-md py-space-sm bg-surface-container-low font-caption text-caption text-on-surface-variant"><span th:text="${'Hiển thị ' + cars.size() + ' trên tổng số ' + page.totalElements + ' xe'}">Số xe</span><div th:replace="~{fragments/pagination :: pagination(${page}, ${paginationBaseUrl})}"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
