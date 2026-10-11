@@ -11,14 +11,17 @@
       <nav class="hidden md:flex items-center gap-space-xs" aria-label="Điều hướng chính">
         <a class="px-space-md py-space-sm transition-colors bg-surface-container-high text-on-surface rounded-lg font-title-md text-title-md" th:href="@{/}">Trang chủ</a>
         <a class="px-space-md py-space-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors rounded-lg font-label-md text-label-md" th:href="@{/cars}">Tìm xe</a>
+        <a sec:authorize="hasRole('ADMIN')" class="px-space-md py-space-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors rounded-lg font-label-md text-label-md" th:href="@{/admin/cars}">Duyệt xe</a>
         <a sec:authorize="hasRole('CUSTOMER')" class="px-space-md py-space-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors rounded-lg font-label-md text-label-md" th:href="@{/bookings}">Đơn thuê của tôi</a>
       </nav>
     </div>
     <div class="flex items-center gap-1 sm:gap-space-sm shrink-0">
       <a class="md:hidden px-2 py-space-sm text-on-surface-variant font-label-md text-label-md" th:href="@{/cars}">Tìm xe</a>
+      <a sec:authorize="hasRole('CUSTOMER')" class="md:hidden px-2 py-space-sm text-on-surface-variant font-label-md text-label-md whitespace-nowrap" th:href="@{/bookings}" aria-label="Đơn thuê của tôi">Đơn thuê</a>
+      <a sec:authorize="hasRole('ADMIN')" class="md:hidden px-2 py-space-sm text-on-surface-variant font-label-md text-label-md whitespace-nowrap" th:href="@{/admin/cars}">Duyệt xe</a>
       <a sec:authorize="isAnonymous()" class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface whitespace-nowrap" th:href="@{/login}">Đăng nhập</a>
       <a sec:authorize="isAnonymous()" class="font-label-md text-label-md text-white bg-secondary px-2 sm:px-space-md py-space-sm rounded-lg whitespace-nowrap" th:href="@{/register}">Đăng ký</a>
-      <a sec:authorize="isAuthenticated()" class="w-8 h-8 flex items-center justify-center text-on-surface-variant" th:href="@{/notifications}" aria-label="Thông báo"><span class="material-symbols-outlined">notifications</span></a>
+      <a th:replace="~{fragments/header :: notificationBell}"></a>
       <details sec:authorize="isAuthenticated()" class="relative group">
         <summary class="flex items-center gap-space-xs cursor-pointer text-on-surface-variant hover:text-on-surface list-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary rounded-lg" aria-label="Menu tài khoản">
           <span class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></span>
@@ -37,6 +40,12 @@
     </div>
   </div>
 </header>
+<a th:fragment="notificationBell" sec:authorize="isAuthenticated()" class="relative w-9 h-9 shrink-0 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"
+   th:href="@{/notifications}" th:aria-label="${'Thông báo, ' + unreadCount + ' chưa đọc'}">
+  <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+  <span th:if="${unreadCount > 0}" th:text="${unreadCount > 99 ? '99+' : unreadCount}" aria-hidden="true"
+        class="absolute -top-0.5 -right-1 min-w-4 h-4 px-1 bg-error text-on-error rounded-full text-[10px] leading-4 text-center font-semibold">0</span>
+</a>
 <div role="banner" class="w-full bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)]" th:fragment="authHeader">
   <div class="max-w-7xl mx-auto px-6 lg:px-12 h-16 flex items-center justify-between">
     <a class="flex items-center gap-space-sm text-primary font-title-md text-title-md" th:href="@{/}"><span class="material-symbols-outlined text-secondary">directions_car</span><span class="font-headline-sm text-headline-sm tracking-tight text-primary-container font-bold">CarRent</span></a>

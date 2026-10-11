@@ -7,7 +7,7 @@
   <div class="max-w-3xl mx-auto px-gutter py-space-xl flex flex-col items-center justify-center gap-space-md text-center">
     <span class="material-symbols-outlined text-outline text-[64px]">error</span>
     <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Đã xảy ra lỗi</h1>
-    <p class="font-body-lg text-body-lg text-on-surface-variant">Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.</p>
+    <p class="font-body-lg text-body-lg text-on-surface-variant" th:text="${errorMessage ?: 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.'}">Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.</p>
     <a class="px-space-md py-space-sm bg-secondary text-on-secondary font-label-md text-label-md rounded-lg hover:bg-secondary-container transition-colors shadow-sm" th:href="@{/}">Về trang chủ</a>
   </div>
 </main>

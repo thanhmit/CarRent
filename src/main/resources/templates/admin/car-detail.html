@@ -18,10 +18,10 @@
 <div class="md:pl-64">
   <header class="h-16 bg-surface-container-lowest/90 shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-space-sm px-gutter-mobile md:px-gutter">
     <span class="font-title-md text-title-md text-primary truncate">Cổng thông tin Điều hành &amp; Quản trị</span>
-    <div class="flex items-center gap-space-sm min-w-0"><span class="font-label-md text-label-md truncate" th:text="${adminName}">Quản trị viên</span><div class="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div>
+    <div class="flex items-center gap-space-sm min-w-0 shrink-0"><a th:replace="~{fragments/header :: notificationBell}"></a><span class="hidden sm:inline font-label-md text-label-md truncate" th:text="${adminName}">Quản trị viên</span><div class="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div>
   </header>
   <div th:replace="~{fragments/messages :: messages}"></div>
-  <main class="relative w-full px-gutter-mobile md:px-gutter min-h-screen bg-surface">
+  <main class="relative w-full px-gutter-mobile md:px-gutter min-h-screen bg-surface [overflow-wrap:anywhere]">
     <div class="flex flex-col w-full pb-margin">
       <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm py-space-md"><a class="hover:text-primary transition-colors" th:href="@{/admin/cars}">Duyệt xe</a><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span class="text-on-surface font-label-md text-label-md" th:text="${'Hồ sơ #' + car.id}">Hồ sơ</span></div>
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-space-sm bg-surface-container-lowest p-space-lg rounded-xl shadow-sm mb-space-lg">

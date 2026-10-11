@@ -1,6 +1,10 @@
 package com.carrent.car;
 
 import com.carrent.security.CustomUserPrincipal;
+import com.carrent.booking.BookingService;
+import com.carrent.common.exception.BusinessException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -24,15 +28,36 @@ public class CarController {
     private final CarService cars;
     private final CarImageRepository images;
     private final CarCategoryRepository categories;
+    private final BookingService bookings;
 
-    public CarController(CarService cars, CarImageRepository images, CarCategoryRepository categories) {
+    public CarController(CarService cars, CarImageRepository images, CarCategoryRepository categories, BookingService bookings) {
         this.cars = cars;
         this.images = images;
         this.categories = categories;
+        this.bookings = bookings;
     }
 
     @GetMapping("/cars/{id}")
-    public String detail(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal, Model model) {
+    public String detail(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal,
+                         @RequestParam(required = false) String start, @RequestParam(required = false) String end,
+                         HttpServletResponse response, Model model) {
+        model.addAttribute("today", LocalDate.now());
+        model.addAttribute("start", start);
+        model.addAttribute("end", end);
+        if (start != null || end != null) {
+            try {
+                model.addAttribute("availability", bookings.checkAvailability(id,
+                        start == null || start.isBlank() ? null : LocalDate.parse(start),
+                        end == null || end.isBlank() ? null : LocalDate.parse(end)));
+            } catch (DateTimeParseException ex) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                model.addAttribute("availabilityError", "Ngày thuê không hợp lệ. Vui lòng chọn lại.");
+            } catch (BusinessException ex) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                model.addAttribute("availabilityError", ex.getMessage());
+            }
+        }
+        // Load view entities after a failed availability transaction may have detached them.
         Car car = cars.getPublicCar(id, principal);
         model.addAttribute("car", car);
         model.addAttribute("carImages", images.findByCarIdOrderByIdAsc(car.getId()));

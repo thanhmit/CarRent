@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head(title='Thông báo')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="w-full pt-16 min-h-[calc(100vh-16rem)]">
+  <div th:replace="~{fragments/messages :: messages}"></div>
+  <div class="max-w-4xl mx-auto px-gutter-mobile sm:px-gutter py-space-xl">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md mb-space-lg">
+      <div>
+        <h1 class="font-headline-lg-mobile sm:font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-primary tracking-tight">Thông báo</h1>
+        <p class="mt-space-xs text-on-surface-variant" th:text="${unreadCount + ' thông báo chưa đọc'}">0 thông báo chưa đọc</p>
+      </div>
+      <form th:if="${unreadCount > 0}" method="post" th:action="@{/notifications/read-all}">
+        <button type="submit" class="inline-flex items-center justify-center gap-space-xs px-space-md py-space-sm bg-secondary text-on-secondary rounded-lg font-label-md text-label-md hover:bg-secondary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary">
+          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">done_all</span>Đánh dấu tất cả đã đọc
+        </button>
+      </form>
+    </div>
+    <div th:if="${page.totalElements == 0}" class="bg-surface-container-lowest rounded-xl shadow-sm p-space-xl text-center">
+      <span class="material-symbols-outlined text-outline text-[48px]" aria-hidden="true">notifications_none</span>
+      <h2 class="font-title-md text-title-md text-primary mt-space-md">Bạn chưa có thông báo</h2>
+      <p class="text-on-surface-variant mt-space-xs">Thông báo về xe và đơn thuê sẽ xuất hiện tại đây.</p>
+    </div>
+    <p th:if="${page.totalElements > 0 and notifications.isEmpty()}" class="p-space-xl bg-surface-container-lowest rounded-xl text-center text-on-surface-variant">Không có thông báo ở trang này. Chọn một trang bên dưới.</p>
+    <ul th:unless="${notifications.isEmpty()}" class="flex flex-col gap-space-sm" aria-label="Danh sách thông báo">
+      <li th:each="notification : ${notifications}" class="bg-surface-container-lowest rounded-xl shadow-sm p-space-md sm:p-space-lg flex gap-space-md min-w-0"
+          th:classappend="${!notification.read ? 'border-l-4 border-secondary' : ''}">
+        <span class="w-10 h-10 shrink-0 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true" th:text="${#strings.startsWith(notification.type, 'CAR_') ? 'directions_car' : (#strings.startsWith(notification.type, 'PAYMENT_') ? 'payments' : 'event_note')}">notifications</span>
+        </span>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-space-sm">
+            <h2 class="font-title-md text-title-md text-primary break-words" th:text="${notification.title}">Thông báo</h2>
+            <span th:unless="${notification.read}" class="bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full font-label-sm text-label-sm whitespace-nowrap">Chưa đọc</span>
+          </div>
+          <p class="text-on-surface-variant mt-space-sm whitespace-pre-line break-words [overflow-wrap:anywhere]" th:text="${notification.message}">Nội dung</p>
+          <div class="mt-space-md flex flex-wrap items-center gap-space-md">
+            <time class="font-caption text-caption text-outline" th:datetime="${notification.createdAt}" th:text="${#temporals.format(notification.createdAt, 'dd/MM/yyyy HH:mm')}">Ngày giờ</time>
+            <a sec:authorize="hasRole('ADMIN')" th:if="${notification.relatedEntityType == 'CAR' and notification.relatedEntityId != null}"
+               th:href="@{/admin/cars/{id}(id=${notification.relatedEntityId})}" class="text-secondary font-label-md text-label-md underline underline-offset-2">Kiểm tra hồ sơ xe</a>
+            <a sec:authorize="hasRole('OWNER')" th:if="${notification.relatedEntityType == 'CAR' and notification.relatedEntityId != null}"
+               th:href="@{/owner/cars/{id}/edit(id=${notification.relatedEntityId})}" class="text-secondary font-label-md text-label-md underline underline-offset-2">Xem xe của tôi</a>
+            <a th:if="${notification.relatedEntityType == 'BOOKING' and notification.relatedEntityId != null}"
+               th:href="@{/bookings/{id}(id=${notification.relatedEntityId})}" class="text-secondary font-label-md text-label-md underline underline-offset-2">Xem đơn thuê</a>
+            <!--/* shortcut: Payment links wait for their page in P4.4. */-->
+            <form th:unless="${notification.read}" method="post" th:action="@{/notifications/{id}/read(id=${notification.id})}">
+              <button type="submit" class="inline-flex items-center gap-space-xs text-secondary font-label-md text-label-md hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">
+                <span class="material-symbols-outlined text-[18px]" aria-hidden="true">done</span>Đánh dấu đã đọc
+              </button>
+            </form>
+          </div>
+        </div>
+      </li>
+    </ul>
+    <div class="mt-space-lg" th:replace="~{fragments/pagination :: pagination(${page}, ${paginationBaseUrl})}"></div>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

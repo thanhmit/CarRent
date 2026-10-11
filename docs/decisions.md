@@ -46,8 +46,17 @@ Không có cột `is_primary` trên `car_images`. Ảnh đầu tiên (id nhỏ n
 ### D-12. Payment REFUNDED khi hủy booking đã PAID
 Hủy booking CONFIRMED mà có payment PAID → payment chuyển REFUNDED (giả lập) + notification. *(Người chuẩn hóa từ §16)*
 
-### D-13. Race condition overlap không xử lý bằng lock
-MVP: kiểm tra conflict + insert trong cùng transaction, chấp nhận rủi ro race khi 2 request đồng thời. Ghi nhận để nâng cấp (pessimistic lock / unique constraint) nếu cần.
+### D-13. Chống đặt trùng và cập nhật booking đồng thời bằng khóa DB
+**Chủ dự án duyệt thay đổi ngày 2026-10-11:** thay quyết định cũ chấp nhận race bằng pessimistic locking trong transaction, không thêm cột/bảng/unique constraint.
+
+- Tạo booking: khóa hàng Car bằng `PESSIMISTIC_WRITE` trước khi kiểm tra visibility, giá/địa điểm và lịch; đọc xung đột PENDING/CONFIRMED bằng locking read theo trạng thái hiện tại, rồi insert booking + notification trong cùng transaction. Hai request trùng lịch trên cùng xe phải chỉ tạo được một booking. `@Transactional` và truy vấn count thông thường không đủ khi transaction đã có snapshot cũ.
+- Mutator booking: dùng thứ tự khóa **Car → Booking → Payment** khi cần; sau khi giữ khóa, đọc lại entity hiện tại và kiểm tra role/status/ownership/transition. Owner confirm/reject/complete, Customer cancel/refund và Payment Phase 4 tuân thủ cùng protocol, tránh ghi đè từ entity đã được quản lý nhưng cũ. Car delete cũng khóa Car và kiểm tra lịch sử hiện tại trước xóa.
+- **Ghi nhận kỹ thuật đợt 4 (2026-10-11):** Hibernate có thể phát SELECT thường khi `refresh(..., PESSIMISTIC_WRITE)` trên entity đã có lock mode, đọc snapshot REPEATABLE READ cũ. Booking/Payment dùng targeted detach rồi query FOR UPDATE lại dưới khóa; flush thay đổi hợp lệ trước reload, không clear toàn context. Đã tái hiện RED duplicate cancel và GREEN bảy race transition/current Payment. Đây là cách thực hiện hợp đồng current read đã duyệt.
+- **Ghi nhận kỹ thuật đợt 5 (2026-10-11):** Car hard-delete khóa/read toàn lịch sử và image membership hiện tại. Dùng `CarImageRepository.findByCarIdForUpdate` sau khóa Car; SELECT ảnh thường ở REPEATABLE READ có thể bỏ sót upload vừa commit, FK cascade xóa row nhưng bỏ lại file. Đã RED→GREEN snapshot ảnh và hai race upload/delete cả hai thứ tự; file chỉ dọn afterCommit. Complete/cancel và create/delete/hide, timeout1205/deadlock1213 thật đã verify rollback Booking/Payment/notify +409.
+- Khả dụng trên UI là thông tin tại lúc đọc, không giữ chỗ; submit luôn kiểm tra lại dưới khóa. Chỉ PENDING/CONFIRMED chặn lịch; hai khoảng chỉ chạm ngày kết thúc/bắt đầu không trùng ở cả hai chiều.
+- Kiểm chứng bằng hai transaction/kết nối MySQL độc lập: tạo trùng, confirm/reject/cancel tranh chấp, stale managed entity và tạo booking cùng lúc xóa/ẩn xe. Không dùng Java `synchronized` thay khóa DB. Chi phí: các mutation cùng xe phải chờ nhau; transaction giữ ngắn, lock timeout/deadlock trả lỗi có kiểm soát, không tạo booking/thông báo một phần.
+
+**Cách triển khai Phase 3 đã duyệt:** 5 đợt — P3.1–P3.3; P3.4–P3.5; P3.6 → P4.1 → P3.7; P3.8–P3.10; P3.11–P3.13. P4.1 chỉ mapping/repository, các chức năng thanh toán còn lại theo Phase 4. Đầu ra và checkpoint từng đợt tại `plans/phase-3-booking.md`.
 
 ### D-14. Notification chuyển lên Phase 3, trước Booking
 Vì booking tạo phải notify Owner ngay, notification phải có trước. Khác roadmap CarRent.md v1.0 (để Phase 4).
@@ -71,8 +80,8 @@ Bản đầu chốt Bootstrap 5; **đổi thành Tailwind CSS (Play CDN) + desig
 ### D-23. Prototype Stitch là nguồn chân lý cho UI
 Prototype đã tải local vào `docs/design/stitch/` (hiện giữ 13 HTML + 13 screenshot sau khi dọn bản cũ theo lựa chọn của chủ dự án ngày 2026-10-10); design system + quy tắc port + mapping màn hình→template→task ở `docs/design/stitch/README.md` và SDD §8.5. Khi implement bất kỳ template nào, port từ file prototype tương ứng. Trang prototype không cover (notification, profile, admin dashboard, error pages, empty states) → dựng theo cùng design system, dùng layout A (public/customer) hoặc B (owner/admin). MCP server `stitch` đã cấu hình ở user scope để tải lại/reference khi cần. **Lựa chọn của người dùng.**
 
-### D-19. Thư mục dự án & không dùng git (tại thời điểm hiện tại)
-Gốc: `C:\Users\Admin\Documents\hoc\Car`. Code Spring Boot nằm tại gốc, docs trong `docs\`. **Chưa `git init`** theo yêu cầu — khi muốn dùng git, `git init` + `.gitignore` (`target/`, `uploads/`, `*.log`).
+### D-19. Thư mục dự án & quy ước Git hiện tại
+Gốc: `C:\Users\Admin\Documents\hoc\Car`. Code Spring Boot nằm tại gốc, docs trong `docs\`. Quy ước chưa dùng Git là lịch sử trước khi chủ dự án khởi tạo repo. Hiện giữ checkout/nhánh và thay đổi đang có; không tự stage/commit/push. `.scratch/`, `.superpowers/`, build, config local và ảnh runtime bị Git bỏ qua; giữ sáu ảnh seed trong repo theo lựa chọn chủ dự án. Không xóa bằng chứng local khi chốt đợt.
 
 ### D-20. Đăng nhập bằng email — email chỉ là chuỗi định danh
 Username = email (cột `users.email`, unique). **Không cần email thật**: không validate định dạng `@`, không gửi thư, không xác thực email. Chỉ kiểm tra không trống + unique. Mặc định Spring Security form login. Session-based, CSRF bật. Không JWT. *(Chủ dự án chốt khi duyệt SDD.)*
@@ -104,13 +113,13 @@ Ngày 2026-10-10, chủ dự án yêu cầu provision ngay tất cả bảng và
 | D-10 | Thumbnail = ảnh id nhỏ nhất |
 | D-11 | Location = text trên cars, không bảng riêng |
 | D-12 | Hủy sau PAID → REFUNDED |
-| D-13 | Chấp nhận race risk ở overlap |
+| D-13 | Khóa DB chống đặt trùng/chuyển trạng thái đồng thời; Phase 3 chia 5 đợt |
 | D-14 | Notification ở Phase 3 |
 | D-15 | Pickup tại chỗ xe |
 | D-16 | Upload ảnh thật, UUID, uploads/ |
 | D-17 | UI tiếng Việt, code tiếng Anh |
 | D-18 | UI: Tailwind + design system Stitch |
-| D-19 | Gốc Documents\hoc\Car, chưa git |
+| D-19 | Gốc Documents\hoc\Car, giữ repo/nhánh; không tự stage/commit/push |
 | D-20 | Login bằng email |
 | D-21 | Admin SQL seed, đổi mật khẩu trước khi công khai |
 | D-22 | Task mảnh theo tầng + verify tự động |

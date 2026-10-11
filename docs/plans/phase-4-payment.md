@@ -1,18 +1,18 @@
 # CarRent — Phase 4: Payment — Implementation Plan
 
-> **For agentic workers:** Chạy task-by-task. Checkbox `- [ ]` tracking. Không git (D-19). Quy ước verify chung ở `phase-0-init.md`.
+> **For agentic workers:** Chạy task-by-task. Checkbox `- [ ]` tracking. Giữ checkout/nhánh/thay đổi đang có; không stage/commit/push (D-19 hiện tại). Quy ước compile/boot/HTTP/SQL ở `phase-0-init.md`.
 
 **Goal:** Mock payment hoàn chỉnh (FR-12) + refund khi hủy booking đã PAID (BR-08) + hiển thị trạng thái thanh toán.
 
-> **D-24 / SDD v2.1:** Bảng payments và seed đã có từ `scriptDB.sql`; Hibernate `ddl-auto=none`, entity map đúng §7.2/7.6, không tạo lại bảng. `booking_id` không unique. Verify theo booking/payment ID, không tổng cả bảng. Booking mẫu #3 CONFIRMED chưa có PAID dùng được cho payment; #2 đã PAID phải bị chặn thanh toán lại; #5 CANCELLED có REFUNDED. Không reset seed khi boot.
+> **D-24 / SDD §7.6:** Bảng payments và seed đã có từ `scriptDB.sql`; Hibernate `ddl-auto=none`, không tạo lại bảng. `booking_id` không unique. Seed #2 có PAID, #3 CONFIRMED chưa PAID, #5 CANCELLED có REFUNDED dùng để đọc/đối chiếu; không thanh toán/hủy/sửa seed gốc. Verify mutation trên fixture riêng, ghi đúng ID và baseline; rollback hoặc cleanup đúng fixture theo FK, so seed/ảnh sau kiểm tra.
 
-> **Thứ tự:** P4.1 được thực hiện ngay sau P3.6, trước P3.7/P3.8 (SDD §7.6), vì DB đã có payment mẫu. Nếu kịch bản P3.8 đã hủy #2 thì #2 hiện REFUNDED, không còn là fixture PAID; dùng booking mới CONFIRMED+PAID cho bài kiểm tra chặn thanh toán lại. P4.6 rà soát/verify refund đã implement tại P3.8.
+> **Thứ tự đã duyệt 2026-10-11:** P4.1 chỉ entity/enums/repository, thực hiện trong đợt 3 Phase 3: **P3.6 → P4.1 → P3.7**, trước P3.8, vì DB đã có payment mẫu. Không chạy lại P4.1 khi bắt đầu Phase 4. P4.2–P4.6 triển khai sau Phase 3; P4.6 rà soát/verify refund từ P3.8.
 
 **Architecture:** `PaymentService.processPayment` guard (chủ booking, CONFIRMED, chưa có PAID) → tạo Payment PAID/FAILED + notify; refund đã triển khai tại P3.8, task cuối rà soát và verify.
 
 **Tech Stack:** Spring Data JPA, @Transactional, Thymeleaf.
 
-**Spec:** `docs/SDD.md` §5 FR-12, §6 BR-09, §7.2 payments, §11.3; `docs/decisions.md` D-06, D-12.
+**Spec:** `docs/SDD.md` §5 FR-12, §6 BR-09, §7.2 payments, §11.3; `docs/decisions.md` D-06, D-12, D-13; hợp đồng khóa tại `phase-3-booking.md`.
 
 ---
 
@@ -23,6 +23,8 @@
 - Notification: PAID → customer + owner; FAILED → customer.
 - Mọi POST CSRF. UI tiếng Việt. Tiền VND BIGINT.
 - **UI port từ prototype Stitch** (`docs/design/stitch/payment-thanh-toan.html`, quy tắc ở `README.md`): giữ class Tailwind, layout A.
+- D-13: mọi payment mutation khóa **Car → Booking → Payment**, reload trạng thái hiện tại trước kiểm tra chủ/role CUSTOMER/status ACTIVE/CONFIRMED/chưa PAID. Serialize cả khi chưa có payment bằng khóa Car/Booking, không cần unique/schema mới. Ordinary `existsByBookingIdAndStatus` chỉ dùng hiển thị, không quyết định insert sau snapshot cũ.
+- Bulk refund chạy trong transaction cancel; flush pending booking update trước query, reload/detach managed Payment liên quan sau update. Không `clearAutomatically` toàn context làm mất thay đổi Booking; rollback giữ cả booking/payment/notify. Lock timeout/deadlock trả lỗi có kiểm soát.
 
 ## Review Focus
 
@@ -43,13 +45,15 @@
 - Produces: `Payment` per SDD §7.2 payments: `@ManyToOne Booking` (FK booking_id, KHÔNG unique — D-06); amount Long; method enum; status enum; transactionReference String ≤50; paidAt LocalDateTime nullable; timestamps.
 - Produces: `PaymentStatus` = {PENDING, PAID, FAILED, REFUNDED}; `PaymentMethod` = {MOCK_CARD, MOCK_BANK_TRANSFER, CASH_SIMULATED}.
 - Produces: `PaymentRepository`:
-  - `@Modifying @Query("update Payment p set p.status = com.carrent.payment.PaymentStatus.REFUNDED where p.booking.id = :bookingId and p.status = com.carrent.payment.PaymentStatus.PAID") int refundByBookingId(@Param("bookingId") Long bookingId)` — dùng tại P3.8 trong transaction của BookingService.
+  - `@Modifying(flushAutomatically = true) @Query("update Payment p set p.status = com.carrent.payment.PaymentStatus.REFUNDED where p.booking.id = :bookingId and p.status = com.carrent.payment.PaymentStatus.PAID") int refundByBookingId(@Param("bookingId") Long bookingId)` — dùng tại P3.8 sau khóa Car/Booking/Payment, reload managed Payment sau bulk update, không clear toàn context.
+  - `@Lock(PESSIMISTIC_WRITE)` + `@Query("select p from Payment p where p.booking.id = :bookingId order by p.id") List<Payment> findByBookingIdForUpdate(@Param("bookingId") Long bookingId)` — current read cho guard PAID/refund, khóa Payment sau Car/Booking; refresh/reload entity đã managed theo D-13.
   - `List<Payment> findByBookingIdOrderByCreatedAtDesc(Long bookingId)`
-  - `boolean existsByBookingIdAndStatus(Long bookingId, PaymentStatus status)` (check đã PAID)
-  - `Optional<Payment> findByIdAndBookingId(Long id, Long bookingId)` (nếu cần — không dùng MVP)
+  - `boolean existsByBookingIdAndStatus(Long bookingId, PaymentStatus status)` (hiển thị đã PAID; mutation dùng current locking read ở trên).
 
-- [ ] **Step 1: Viết entity + 2 enum + repo.**
-- [ ] **Step 2: Verify** — boot → `DESCRIBE payments;` đủ cột, booking_id FK không unique (xem CREATE TABLE qua `SHOW CREATE TABLE payments;` — cột booking_id KHÔNG có `UNIQUE KEY`).
+- [x] **Step 1: Viết entity + 2 enum + repo.**
+- [x] **Step 2: Verify** — boot đọc đúng PAID/REFUNDED seed; DESCRIBE/SHOW CREATE TABLE khớp schema, booking_id FK không unique; query current lock là FOR UPDATE. Trên fixture trong transaction rollback: giữ pending Booking update, bulk refund đổi PAID→REFUNDED, managed Payment reload thấy REFUNDED, amount/paid_at giữ nguyên; rollback giữ baseline. Đánh dấu P4.1 sau checkpoint đợt 3, không triển khai PaymentService/UI ở task này.
+
+**Đã thực hiện/verify ngày 2026-10-11 trong đợt 3 Phase 3.** 118 assertions mapping/repository/MVC + 117 HTTP + 47 browser đọc đúng payment seed, bulk refund rollback và baseline đạt; SHOW CREATE TABLE FK BIGINT không unique, SQL lock `FOR UPDATE`. Xem mục kết quả đợt 3 trong [plan Phase 3](phase-3-booking.md). P4.1 không chạy lại; Phase 3 đã hoàn tất cả 5 đợt, tiếp theo P4.2–P4.6 (chưa triển khai).
 
 ### Task P4.2: PaymentService.processPayment
 
@@ -59,15 +63,15 @@
 **Interfaces:**
 - Produces: `PaymentForm`: method `@NotNull` (enum); simulateFailure boolean (checkbox).
 - Produces: `PaymentService.processPayment(Long bookingId, PaymentForm form, CustomUserPrincipal principal) → Payment` — `@Transactional`:
-  1. Load booking → không thấy → NotFoundException.
-  2. Guard: principal.id == booking.customer.id (khác → ForbiddenException).
+  1. Đọc carId để định tuyến; khóa Car → Booking → Payment theo D-13, reload current entities; không thấy booking → NotFoundException. Không đổi trạng thái entity trước khi giữ khóa.
+  2. Guard: user DB CUSTOMER/ACTIVE, principal.id == booking.customer.id (khác → ForbiddenException).
   3. Guard: booking.status == CONFIRMED (khác → BusinessException "Chỉ có thể thanh toán đơn đã được xác nhận").
-  4. Guard: `!existsByBookingIdAndStatus(bookingId, PAID)` (đã PAID → BusinessException "Đơn này đã được thanh toán").
+  4. Guard: current `findByBookingIdForUpdate(bookingId)` không có PAID (đã PAID → BusinessException "Đơn này đã được thanh toán"); không dùng ordinary exists snapshot query. Giữ khóa tới commit/rollback.
   5. Build Payment: amount = booking.totalAmount (server-side — BR-09); status = simulateFailure ? FAILED : PAID; paidAt = status==PAID ? now : null; ref = `"MCK-" + System.currentTimeMillis() + "-" + random 6 ký tự (String.format("%06d", new Random().nextInt(1000000)))`.
   6. Save + notify: PAID → customer (PAYMENT_PAID) + owner (PAYMENT_PAID); FAILED → customer (PAYMENT_FAILED, message kèm "vui lòng thử lại").
 
 - [ ] **Step 1: Viết form + service.**
-- [ ] **Step 2: Verify** — compile (runtime gộp P4.3).
+- [ ] **Step 2: Verify** — compile + Spring/MySQL service check trước UI: two-connection cùng booking chỉ một PAID/đúng notify; transaction snapshot hoặc managed Booking/Payment cũ không bỏ qua PAID/CANCELLED. Payment-vs-cancel: payment trước thì cancel refund; cancel trước thì payment blocked, không CANCELLED+PAID. Rollback/lock failure không payment/notify một phần. Fixture riêng và baseline seed.
 
 ### Task P4.3: Trang payment + POST
 
@@ -123,4 +127,5 @@ Booking PENDING → GET payment page → flash lỗi (không vào form được)
 - [ ] **Step 2: Verify — kịch bản**
   - Booking CONFIRMED + PAID → curl POST cancel → SQL: booking CANCELLED + payment REFUNDED; notification customer "hoàn tiền".
   - Booking PENDING (không payment) → cancel → chỉ booking CANCELLED (không đụng payment).
+  - Hai payment hoặc payment-vs-cancel đồng thời tuân thủ D-13; current read/managed entity không stale, chỉ một PAID trước cancel, cuối không CANCELLED+PAID; notify đúng transition thành công. Fixture cleanup + seed/ảnh baseline không đổi.
 - [ ] **Verify tổng phase 4:** checklist (1) FR-12 mọi bullet có bằng chứng; (2) BR-09; (3) 3 method payment render label tiếng Việt đúng; (4) history payment hiển thị đủ 3 role view. Ghi "Kết quả verify" cuối file.

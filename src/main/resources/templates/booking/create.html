@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Xác nhận đặt thuê xe')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
+  <div class="max-w-7xl mx-auto px-gutter py-space-xl">
+    <a th:href="@{/cars/{id}(id=${car.id})}" class="inline-flex items-center gap-space-xs text-secondary mb-space-lg"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>Thông tin xe</a>
+    <div class="mb-space-lg flex flex-col md:flex-row md:items-end justify-between gap-space-md"><div>
+      <h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">Xác nhận thông tin đặt thuê xe</h1>
+      <p class="font-body-md text-body-md text-on-surface-variant mt-1">Chọn ngày thuê và kiểm tra thông tin trước khi gửi yêu cầu đến chủ xe.</p>
+    </div></div>
+    <div th:replace="~{fragments/messages :: messages}"></div>
+    <form method="post" th:action="@{/bookings}" th:object="${form}" data-booking-price th:data-price="${car.pricePerDay}" class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+      <input type="hidden" th:field="*{carId}"/>
+      <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-space-lg min-w-0">
+        <section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <div class="flex items-center justify-between mb-space-md"><span class="font-label-sm text-label-sm tracking-wide text-secondary uppercase font-semibold">Xe đang chọn</span></div>
+          <div class="flex flex-col sm:flex-row gap-space-md">
+            <div class="w-full sm:w-56 h-36 rounded-lg overflow-hidden bg-surface-container-low flex-shrink-0 relative"><img th:if="${thumbnail != null}" th:src="${thumbnail}" th:alt="${car.brand + ' ' + car.model}" class="w-full h-full object-cover"/><span th:unless="${thumbnail != null}" class="w-full h-full flex items-center justify-center material-symbols-outlined text-outline text-[48px]" role="img" aria-label="Xe chưa có ảnh">directions_car</span></div>
+            <div class="flex-1 min-w-0 flex flex-col justify-between">
+              <h2 class="font-headline-md text-headline-md text-primary break-words" th:text="${car.brand + ' ' + car.model}">Tên xe</h2>
+              <p class="font-body-md text-body-md text-on-surface-variant" th:text="${'Đời xe: ' + car.manufactureYear}">Đời xe</p>
+              <div class="grid grid-cols-2 gap-space-sm pt-space-sm mt-space-sm bg-surface-container-low/60 rounded-lg p-space-sm">
+                <p th:text="${car.category.name + ' • ' + car.seatCount + ' chỗ'}">Loại xe</p>
+                <p th:text="${car.transmission.name() == 'AUTOMATIC' ? 'Tự động' : 'Số sàn'}">Hộp số</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <h2 class="font-title-md text-title-md text-primary flex items-center gap-space-xs mb-space-md"><span class="material-symbols-outlined text-secondary text-[20px]" aria-hidden="true">calendar_month</span>Lịch trình &amp; Địa điểm giao nhận</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md bg-surface-container-low p-space-md rounded-lg">
+            <div class="flex flex-col gap-1 min-w-0"><label for="startDate" class="font-label-md text-label-md">Ngày nhận xe</label>
+              <input type="date" th:field="*{startDate}" th:min="${today}" max="9999-12-31" required aria-describedby="startDate-error" th:attr="aria-invalid=${#fields.hasErrors('startDate')}" class="w-full min-w-0 h-11 bg-surface-container-lowest rounded-lg px-space-sm focus:ring-2 focus:ring-secondary/40"/>
+              <p id="startDate-error" th:errors="*{startDate}" class="text-error text-caption"></p>
+            </div>
+            <div class="flex flex-col gap-1 min-w-0"><label for="endDate" class="font-label-md text-label-md">Ngày trả xe</label>
+              <input type="date" th:field="*{endDate}" th:min="${today}" max="9999-12-31" required aria-describedby="endDate-error" th:attr="aria-invalid=${#fields.hasErrors('endDate')}" class="w-full min-w-0 h-11 bg-surface-container-lowest rounded-lg px-space-sm focus:ring-2 focus:ring-secondary/40"/>
+              <p id="endDate-error" th:errors="*{endDate}" class="text-error text-caption"></p>
+            </div>
+          </div>
+          <div class="mt-space-md flex items-center justify-between p-space-sm bg-surface-container rounded-lg text-primary"><span>Tổng thời lượng thuê:</span><output id="rental-days" class="font-title-md text-title-md text-secondary">—</output></div>
+          <div class="mt-space-md flex gap-space-md items-start"><span class="material-symbols-outlined text-secondary" aria-hidden="true">pin_drop</span><div class="min-w-0"><h3 class="font-title-md text-title-md">Địa điểm giao nhận xe</h3><p class="text-on-surface-variant mt-1 break-words [overflow-wrap:anywhere]" th:text="${(car.addressDetail != null ? car.addressDetail + ', ' : '') + (car.district != null ? car.district + ', ' : '') + car.province}">Địa chỉ</p></div></div>
+        </section>
+        <section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <h2 class="font-title-md text-title-md text-primary flex items-center gap-space-xs mb-space-md"><span class="material-symbols-outlined text-secondary text-[20px]" aria-hidden="true">badge</span>Thông tin người thuê xe</h2>
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+            <div class="p-space-sm rounded-lg bg-surface-container-low"><dt class="text-caption text-on-surface-variant">Họ và tên</dt><dd class="font-title-md text-title-md break-words" th:text="${customer.fullName}">Khách hàng</dd></div>
+            <div class="p-space-sm rounded-lg bg-surface-container-low"><dt class="text-caption text-on-surface-variant">Số điện thoại</dt><dd th:text="${customer.phone ?: 'Chưa cập nhật'}">Số điện thoại</dd></div>
+            <div class="p-space-sm rounded-lg bg-surface-container-low sm:col-span-2"><dt class="text-caption text-on-surface-variant">Tài khoản</dt><dd class="break-words [overflow-wrap:anywhere]" th:text="${customer.email}">Tài khoản</dd></div>
+          </dl>
+        </section>
+        <section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <label class="font-title-md text-title-md text-primary flex items-center gap-space-xs mb-space-xs" for="customerNote"><span class="material-symbols-outlined text-secondary text-[20px]" aria-hidden="true">edit_note</span>Ghi chú cho chủ xe (Tùy chọn)</label>
+          <p class="font-caption text-caption text-on-surface-variant mb-space-sm">Tối đa 500 ký tự.</p>
+          <textarea th:field="*{customerNote}" rows="3" maxlength="500" aria-describedby="customerNote-error" th:attr="aria-invalid=${#fields.hasErrors('customerNote')}" class="w-full bg-surface-container-low rounded-lg p-space-md font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-secondary/40 transition-all resize-none" placeholder="Ghi chú về chuyến đi hoặc giao nhận xe"></textarea>
+          <p id="customerNote-error" th:errors="*{customerNote}" class="text-error text-caption"></p>
+        </section>
+      </div>
+      <aside class="lg:col-span-5 xl:col-span-4 flex flex-col gap-space-lg lg:sticky lg:top-20 min-w-0">
+        <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <h2 class="font-title-md text-title-md text-primary mb-space-md">Chi tiết thanh toán</h2>
+          <div class="flex flex-col gap-space-sm font-body-md text-body-md text-on-surface">
+            <div class="flex flex-wrap justify-between gap-space-sm"><span>Đơn giá thuê xe</span><strong th:text="${#numbers.formatInteger(car.pricePerDay, 0, 'POINT') + ' VNĐ/ngày'}" class="break-all">Giá thuê</strong></div>
+            <div class="pt-space-sm mt-space-xs flex flex-col gap-space-sm bg-surface-container-low p-space-sm rounded-lg"><span class="font-title-md text-title-md text-primary font-semibold">Tổng tiền dự kiến</span><output id="estimated-total" aria-live="polite" class="font-headline-sm text-headline-sm text-primary font-bold break-all">Chọn ngày thuê</output></div>
+          </div>
+          <p class="text-caption text-on-surface-variant my-space-md">Tổng tiền bằng giá mỗi ngày × số ngày thuê. Đơn cần chủ xe xác nhận; kiểm tra khả dụng không giữ chỗ.</p>
+          <button class="w-full py-3.5 px-space-md bg-secondary hover:bg-secondary/90 text-on-secondary font-title-md text-title-md rounded-lg shadow-sm hover:shadow transition-all flex items-center justify-center gap-space-xs font-semibold cursor-pointer text-center" type="submit"><span>Xác nhận đặt xe</span><span class="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span></button>
+          <a th:href="@{/cars/{id}(id=${car.id})}" class="block mt-space-md text-center text-secondary">Quay lại thông tin xe</a>
+        </div>
+      </aside>
+    </form>
+  </div>
+</main>
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script th:src="@{/js/booking-price.js}" defer></script>
+</body>
+</html>

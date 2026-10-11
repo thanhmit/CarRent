@@ -1,8 +1,10 @@
 package com.carrent.car;
 
+import com.carrent.booking.BookingRepository;
 import com.carrent.common.exception.BusinessException;
 import com.carrent.common.exception.ForbiddenException;
 import com.carrent.common.exception.NotFoundException;
+import com.carrent.notification.NotificationService;
 import com.carrent.security.CustomUserPrincipal;
 import com.carrent.storage.StorageService;
 import com.carrent.user.Role;
@@ -37,9 +39,12 @@ public class CarService {
     private final StorageService storage;
     private final Validator validator;
     private final EntityManager entityManager;
+    private final NotificationService notifications;
+    private final BookingRepository bookings;
 
     public CarService(CarRepository cars, CarImageRepository images, CarCategoryRepository categories,
-                      UserRepository users, StorageService storage, Validator validator, EntityManager entityManager) {
+                      UserRepository users, StorageService storage, Validator validator, EntityManager entityManager,
+                      NotificationService notifications, BookingRepository bookings) {
         this.cars = cars;
         this.images = images;
         this.categories = categories;
@@ -47,6 +52,8 @@ public class CarService {
         this.storage = storage;
         this.validator = validator;
         this.entityManager = entityManager;
+        this.notifications = notifications;
+        this.bookings = bookings;
     }
 
     @Transactional(readOnly = true)
@@ -159,6 +166,7 @@ public class CarService {
         Car car = pendingCarForAdmin(carId, principal);
         car.setApprovalStatus(ApprovalStatus.APPROVED);
         car.setRejectionReason(null);
+        notifyOwnerApproval(car);
     }
 
     @Transactional
@@ -173,6 +181,7 @@ public class CarService {
         }
         car.setApprovalStatus(ApprovalStatus.REJECTED);
         car.setRejectionReason(trimmed);
+        notifyOwnerApproval(car);
     }
 
     private User requireAdmin(CustomUserPrincipal principal) {
@@ -213,7 +222,23 @@ public class CarService {
         car.setListingStatus(ListingStatus.ACTIVE);
         car = cars.save(car);
         storeImages(car, validUploads, storedPaths);
+        notifyAdminsNewCar(car);
         return car;
+    }
+
+    private void notifyAdminsNewCar(Car car) {
+        for (User admin : users.findByRole(Role.ADMIN)) {
+            notifications.notify(admin.getId(), "CAR_PENDING_APPROVAL", "Có xe mới chờ duyệt",
+                    car.getBrand() + " " + car.getModel() + " đang chờ phê duyệt.", "CAR", car.getId());
+        }
+    }
+
+    private void notifyOwnerApproval(Car car) {
+        boolean approved = car.getApprovalStatus() == ApprovalStatus.APPROVED;
+        notifications.notify(car.getOwner().getId(), approved ? "CAR_APPROVED" : "CAR_REJECTED",
+                approved ? "Xe đã được phê duyệt" : "Xe bị từ chối",
+                car.getBrand() + " " + car.getModel() + (approved ? " đã được phê duyệt."
+                        : " bị từ chối. Lý do: " + car.getRejectionReason()), "CAR", car.getId());
     }
 
     @Transactional
@@ -250,14 +275,34 @@ public class CarService {
         }
         String webPath = image.getImageUrl();
         images.delete(image);
+        deleteFilesAfterCommit(List.of(webPath));
+    }
+
+    @Transactional
+    public void deleteCar(Long carId, CustomUserPrincipal principal) {
+        Car car = ownedCarForUpdate(carId, requireOwner(principal));
+        if (!bookings.findHistoryForUpdate(car.getId()).isEmpty()) {
+            throw new BusinessException("Xe đã có đơn thuê, không thể xóa — hãy ngừng đăng tin.");
+        }
+        var carImages = images.findByCarIdForUpdate(car.getId());
+        var paths = carImages.stream().map(CarImage::getImageUrl).toList();
+        images.deleteAll(carImages);
+        images.flush();
+        cars.delete(car);
+        deleteFilesAfterCommit(paths);
+    }
+
+    private void deleteFilesAfterCommit(List<String> paths) {
         // The file is removed only once the row deletion has committed; a rollback keeps the image.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                try {
-                    storage.delete(webPath);
-                } catch (RuntimeException error) {
-                    log.error("Could not delete committed car image file {}", webPath, error);
+                for (String path : paths) {
+                    try {
+                        storage.delete(path);
+                    } catch (RuntimeException error) {
+                        log.error("Could not delete committed car image file {}", path, error);
+                    }
                 }
             }
         });

@@ -2,12 +2,18 @@ package com.carrent.car;
 
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CarImageRepository extends JpaRepository<CarImage, Long> {
     List<CarImage> findByCarIdOrderByIdAsc(Long carId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select i from CarImage i where i.car.id = :carId order by i.id")
+    List<CarImage> findByCarIdForUpdate(@Param("carId") Long carId);
 
     Optional<CarImage> findByIdAndCarId(Long imageId, Long carId);
 

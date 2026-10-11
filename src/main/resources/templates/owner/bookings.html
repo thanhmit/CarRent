@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Đơn thuê trên xe của tôi')}"></head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+<aside class="md:fixed md:left-0 md:top-0 md:h-full md:w-64 bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+  <div class="h-16 px-space-md flex items-center gap-space-sm bg-surface-container-low">
+    <span class="material-symbols-outlined text-primary text-[28px]">directions_car</span>
+    <div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary leading-tight">CarRent</span><span class="font-caption text-caption text-on-surface-variant leading-none">Kênh đối tác</span></div>
+  </div>
+  <nav class="flex flex-wrap md:flex-col gap-space-xs py-space-sm px-space-sm" aria-label="Điều hướng chủ xe">
+    <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container" th:href="@{/owner/cars}"><span class="material-symbols-outlined text-[20px]">directions_car</span><span>Xe của tôi</span></a>
+    <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container" th:href="@{/}"><span class="material-symbols-outlined text-[20px]">home</span><span>Trang chủ</span></a>
+    <a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg bg-primary text-on-primary" th:href="@{/owner/bookings}"><span class="material-symbols-outlined text-[20px]">event_note</span><span>Đơn thuê</span></a>
+  </nav>
+  <form class="mt-auto p-space-sm bg-surface-container-low" th:action="@{/logout}" method="post">
+    <button type="submit" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-error hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">logout</span><span>Đăng xuất</span></button>
+  </form>
+</aside>
+<div class="md:pl-64">
+  <header class="h-16 bg-surface-container-lowest/90 shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-space-sm px-gutter-mobile md:px-gutter">
+    <span class="font-title-md text-title-md text-primary truncate">Cổng thông tin chủ xe</span>
+    <div class="flex items-center gap-space-sm min-w-0 shrink-0"><a th:replace="~{fragments/header :: notificationBell}"></a><span class="hidden sm:inline font-label-md text-label-md truncate" th:text="${ownerName}">Chủ xe</span><div class="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div>
+  </header>
+  <div th:replace="~{fragments/messages :: messages}"></div>
+  <main class="w-full px-gutter-mobile md:px-gutter py-space-lg min-h-screen bg-surface">
+    <h1 class="font-headline-lg text-headline-lg text-primary mb-space-sm">Đơn thuê trên xe của tôi</h1>
+    <p class="text-on-surface-variant mb-space-lg">Xem yêu cầu thuê và xử lý đơn trên các xe bạn sở hữu.</p>
+    <section class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden min-w-0">
+      <p th:if="${bookings.isEmpty()}" class="p-space-xl text-center" th:text="${page.totalElements == 0 ? 'Chưa có đơn thuê trên xe của bạn.' : 'Không có đơn thuê ở trang này.'}">Chưa có đơn thuê</p>
+      <div th:if="${!bookings.isEmpty()}" class="overflow-x-auto" tabindex="0" role="region" aria-label="Danh sách đơn thuê, cuộn ngang để xem đủ cột">
+        <table class="w-full min-w-[850px] text-left"><thead class="bg-surface-container-low text-on-surface-variant text-label-sm"><tr><th scope="col" class="p-space-md">Đơn / Xe</th><th scope="col" class="p-space-md">Khách hàng</th><th scope="col" class="p-space-md">Lịch thuê</th><th scope="col" class="p-space-md">Tổng tiền</th><th scope="col" class="p-space-md">Trạng thái</th><th scope="col" class="p-space-md">Thao tác</th></tr></thead>
+        <tbody class="divide-y divide-outline-variant/30"><tr th:each="booking : ${bookings}" th:data-booking-id="${booking.id}">
+          <td class="p-space-md"><p class="font-title-md text-title-md" th:text="${'#CR-' + booking.id}">Mã đơn</p><div class="flex items-center gap-space-sm mt-space-sm"><div class="w-16 h-12 overflow-hidden rounded-lg bg-surface-container shrink-0"><img th:if="${thumbnails[booking.car.id] != null}" th:src="${thumbnails[booking.car.id]}" th:alt="${booking.car.brand + ' ' + booking.car.model}" class="w-full h-full object-cover"/><span th:unless="${thumbnails[booking.car.id] != null}" role="img" aria-label="Xe chưa có ảnh" class="material-symbols-outlined w-full h-full flex items-center justify-center">directions_car</span></div><span class="break-words max-w-56" th:text="${booking.car.brand + ' ' + booking.car.model}">Xe</span></div></td>
+          <td class="p-space-md"><span th:text="${booking.customer.fullName}">Khách hàng</span><p class="text-caption text-on-surface-variant" th:text="${booking.customer.phone ?: 'Chưa có số điện thoại'}">Điện thoại</p></td>
+          <td class="p-space-md whitespace-nowrap"><time th:text="${#temporals.format(booking.startDate,'dd/MM/yyyy')}">Ngày nhận</time><span> → </span><time th:text="${#temporals.format(booking.endDate,'dd/MM/yyyy')}">Ngày trả</time></td>
+          <td class="p-space-md whitespace-nowrap" th:text="${#numbers.formatInteger(booking.totalAmount,0,'POINT') + ' VNĐ'}">Tổng tiền</td>
+          <td class="p-space-md"><span th:replace="~{booking/fragments :: statusBadge(${booking.status})}"></span></td>
+          <td class="p-space-md"><a class="inline-block py-space-sm px-space-md bg-primary text-on-primary rounded-lg whitespace-nowrap" th:href="@{/owner/bookings/{id}(id=${booking.id})}">Xem chi tiết</a></td>
+        </tr></tbody></table>
+      </div>
+      <div class="p-space-md"><div th:replace="~{fragments/pagination :: pagination(${page},${paginationBaseUrl})}"></div></div>
+    </section>
+  </main>
+</div>
+</body></html>
