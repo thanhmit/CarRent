@@ -1,14 +1,18 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.13
-**Trạng thái:** Schema/seed DB, Phase 1, Phase 2/P2.1–P2.14, Phase 3/P3.1–P3.13 và P4.1 đã triển khai; P4.2–P4.6 và Phase 5 chờ triển khai
-**Ngày:** 2026-10-11
+**Phiên bản:** 2.15
+**Trạng thái:** Schema/seed DB, Phase 1, Phase 2/P2.1–P2.14, Phase 3/P3.1–P3.13 và P4.1 đã triển khai; P4.2–P4.6 và Phase 5 chờ triển khai; module biên bản nhận/trả xe đã duyệt, triển khai tại Phase 6
+**Ngày:** 2026-10-17
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
 **Ngôn ngữ tài liệu:** Tiếng Việt
 **Tài liệu liên quan:** `CarRent.md` (bản thảo v1.0 — giữ nguyên để tham chiếu), `docs/decisions.md` (hồ sơ quyết định), `docs/plans/phase-*.md` (implementation plan, sinh sau khi duyệt SDD này)
 
 > SDD v2.13 ghi nhận Phase 3 hoàn tất cả 5 đợt: notification, booking/create/availability/list/detail, cancel/refund atomic, Owner confirm/reject/complete và xóa xe không có lịch sử thuê an toàn DB/file/concurrency. Payment mapping P4.1 đã có; tiếp theo P4.2; payment service/UI thuộc P4.2 trở đi. Thay thế CarRent.md v1.0 và quy ước entity tự tạo schema của SDD v2.0. `scriptDB.sql` tại gốc dự án là nguồn chân lý vật lý của DB; entity các phase sau phải map theo schema sẵn có. Nếu plan cũ mâu thuẫn, quy ước DB-first tại §7.6–7.8 thắng. Xem quyết định D-24 trong `decisions.md`.
+
+> **Bổ sung v2.14:** Chủ dự án duyệt module **Biên bản bàn giao và trả xe** ngày 2026-10-12: xác nhận chéo, cho nhận xe chưa PAID, trả xe xong chờ PAID mới COMPLETED, bất đồng do Admin xử lý thủ công. Đây là thiết kế cho **Phase 6**, chưa có code hoặc migration chạy trên DB. FR-16, BR-11–BR-15 và §7.9 chỉ áp dụng sau khi Phase 6 được kích hoạt; hành vi Phase 3 ghi ở các checkpoint là kết quả lịch sử. Plan: [Phase 6](plans/phase-6-inspection.md); quyết định D-25.
+
+> **Bổ sung v2.15:** Ngày 2026-10-17, chủ dự án duyệt chuyển chọn lịch sang sidebar `/cars`: lọc xe trống trong toàn bộ khoảng thuê, bỏ kiểm tra khả dụng riêng tại chi tiết, điền sẵn ngày sang form đặt thuê và giữ dữ liệu khi lỗi. Quy tắc trùng lịch và khóa khi tạo đơn giữ theo BR-05/D-13; không đổi schema. Xem D-26. Các kết quả kiểm chứng Phase 2–3 bên dưới là bằng chứng lịch sử của luồng cũ.
 
 ---
 
@@ -40,13 +44,14 @@ CarRent là ứng dụng web cho thuê xe hơi. Người thuê (Customer) tìm k
 - Notification lưu database, đánh dấu đã đọc.
 - Admin Dashboard thống kê, quản lý User.
 - Profile + đổi mật khẩu.
+- Phase 6: biên bản tình trạng xe trước/sau thuê, ảnh riêng tư, xác nhận nhận/trả thực tế và xử lý bất đồng thủ công.
 
 **Không bao gồm (phiên bản này):**
 
 - Swagger/OpenAPI, Docker, unit test/integration test tự động.
 - Microservices, REST API JSON riêng cho client độc lập.
 - Cổng thanh toán thật, WebSocket/notification realtime.
-- Giao nhận xe, kiểm tra hư hỏng, bảo hiểm, khuyến mãi, yêu thích, review, audit log.
+- Điều phối giao xe đến nơi khác, tự kết luận hư hỏng/trách nhiệm, tự tính bồi thường/phí trễ/phí nhiên liệu, bảo hiểm, khuyến mãi, yêu thích, review và audit log toàn hệ thống. Phase 6 chỉ lưu bằng chứng và lịch sử thao tác của biên bản.
 - i18n song ngữ, upload avatar, quản lý Category qua UI (chỉ seed).
 
 ---
@@ -174,8 +179,17 @@ Mỗi tài khoản đúng **một role** (cột enum `users.role`).
 | Mock Payment | Không | Booking của mình (đã CONFIRMED) | Không |
 | Xem Notification | Của mình | Của mình | Của mình |
 | Cập nhật Profile / đổi mật khẩu | Của mình | Của mình | Của mình |
+| Phase 6: lập biên bản BEFORE | Chỉ xem | Chỉ xem | Owner của xe |
+| Phase 6: xác nhận nhận xe / bất đồng BEFORE | Chỉ xem | Customer của booking | Không |
+| Phase 6: lập biên bản AFTER | Chỉ xem | Customer của booking | Chỉ xem |
+| Phase 6: xác nhận xe đã trả / bất đồng AFTER | Chỉ xem | Không | Owner của xe |
+| Phase 6: xem ảnh / bổ sung ghi chú biên bản đã gửi | ADMIN | Customer của booking | Owner của xe |
+| Phase 6: xử lý bất đồng | ADMIN | Không | Không |
+| Phase 6: ghi nhận đã thu tiền mặt giả lập | Không | Không | Owner của booking CONFIRMED chưa PAID |
 
 > Ẩn nút trên UI không đủ. **Mọi quyền và ownership phải kiểm tra ở backend** (SecurityConfig + Service). Owner A sửa xe của Owner B bằng cách đổi ID trên URL → 403/404.
+
+> Các quyền xem biên bản Phase 6 trong bảng áp dụng sau submit; nháp chỉ người lập xem, kể cả Admin cũng không xem nháp của bên khác. Panel Booking/list Admin không được lộ nội dung/ảnh nháp.
 
 ### 4.3. Trạng thái tài khoản
 
@@ -260,18 +274,20 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 
 - `/cars` (public, chưa đăng nhập vẫn xem được): chỉ xe `APPROVED` + `ACTIVE`.
 - Tìm kiếm keyword khớp brand hoặc model (không phân biệt hoa thường); `%`, `_`, `\\` trong từ khóa được khớp literal.
-- Lọc: category, province, minPrice, maxPrice, seatCount, transmission, fuelType.
+- Lọc: category, province, minPrice, maxPrice, seatCount, transmission, fuelType và khoảng thuê `startDate/endDate` (ISO `yyyy-MM-dd`). Nhóm **Thời gian thuê** ở đầu sidebar, dùng nút Áp dụng bộ lọc hiện có.
+- Bỏ trống cả hai ngày: không lọc lịch. Chọn một ngày, ngày sai định dạng/quá khứ, `endDate <= startDate` hoặc vượt 31/12/9999: trả 400 ngay trên trang tìm xe, báo lỗi cạnh nhóm ngày, giữ các giá trị đã nhập và không hiển thị kết quả gây hiểu nhầm. Ngày hợp lệ phải thỏa BR-04; chỉ xe không có booking xung đột theo BR-05 mới xuất hiện.
+- Lọc lịch bằng truy vấn DB trước phân trang/count, kết hợp mọi bộ lọc hiện có. Giữ ngày khi phân trang/sắp xếp và chuyển sang chi tiết/form đặt thuê. Submit bộ lọc về trang đầu; Đặt lại xóa mọi điều kiện. Không có kết quả theo ngày: thông báo không có xe trống trong khoảng ngày đã chọn.
 - Sắp xếp whitelist `priceAsc`, `priceDesc`, `newest`; giá tăng/giảm hoặc `created_at desc`, luôn thêm `id desc` khi bằng nhau. Mặc định hoặc sort không biết: mới nhất. Không nhận trường sort tùy ý từ URL/Pageable.
 - Phân trang: mặc định 12 xe/trang, size 1–50, page/offset giới hạn an toàn; Spring Data `Pageable` + Specification lọc/count phía DB. Pager tối đa 5 số trang, giữ query encoded/lặp, chỉ một page và size đã chuẩn hóa.
 - Bộ lọc sai kiểu/giá âm/category không dương/số chỗ ngoài 2–15/chuỗi quá dài trả 400 tiếng Việt; minPrice > maxPrice hợp lệ trả 200 empty. Giá dùng Long, biên inclusive; province khớp toàn bộ chuỗi đã trim.
 - `/cars/{id}`: gallery theo ID ảnh tăng dần, thông số, giá, địa điểm, thông tin Owner (chỉ tên + SĐT). Xe `APPROVED+ACTIVE` công khai; xe khác chỉ Owner sở hữu hoặc Admin có role/status ACTIVE còn đúng trong DB được xem. Người khác hoặc principal cũ không hợp lệ nhận 404; ID sai kiểu nhận 400.
 - Trang chi tiết xe chưa công khai có banner xem trước và không có CTA đặt thuê. CTA xe công khai đã trỏ tới form `/bookings/new?carId=` cho anonymous/Customer; Owner/Admin thấy thông báo chỉ Customer được đặt. Không dựng đánh giá, lịch trống, phí cọc hoặc tiện ích không có dữ liệu.
-- P3.6 đã bật kiểm tra khả dụng theo `start/end` và conflict PENDING/CONFIRMED trên detail. Ngày thiếu/sai/past/đảo/vượt DATE MySQL trả 400 với thông báo tiếng Việt trên trang; đây là kiểm tra tư vấn, không giữ chỗ, submit phải kiểm tra lại dưới khóa. `ACTIVE` chỉ biểu thị đăng tin, không bảo đảm trống lịch. Form tìm xe trang chủ dùng province/q/maxPrice; xe nổi bật trang chủ vẫn thuộc P5.8.
+- Chi tiết xe không còn form/nút/badge kiểm tra khả dụng riêng của P3.6. Nhận `startDate/endDate` để chuyển tiếp sang đặt thuê; nút quay lại Tìm xe giữ khoảng ngày. Kết quả lọc không giữ chỗ, submit vẫn kiểm tra lại dưới khóa. `ACTIVE` chỉ biểu thị đăng tin, không bảo đảm trống lịch. Form tìm xe trang chủ dùng province/q/maxPrice; xe nổi bật trang chủ vẫn thuộc P5.8.
 
 ### FR-10. Booking
 
 **Customer:**
-- Form tạo booking (`/bookings/new?carId=`): startDate, endDate, customer_note.
+- Form tạo booking (`/bookings/new?carId=`): startDate, endDate, customer_note. Nhận ngày từ kết quả tìm xe để điền sẵn; Customer vẫn được sửa ngày tại form này. Thiếu/sai ngày hoặc trùng lịch khi submit phải giữ ngày/ghi chú và báo lỗi trên form, không redirect làm mất dữ liệu. Nút quay lại thông tin xe giữ khoảng ngày hiện tại.
 - Xem giá ước tính trước khi submit (JS nhỏ tính `days × price` hiển thị).
 - Xem danh sách + chi tiết booking của mình.
 - POST `/bookings/{id}/cancel`: hủy khi `PENDING` hoặc `CONFIRMED` (BR-08).
@@ -286,9 +302,9 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 - `/owner/bookings`: booking liên quan xe của mình; chi tiết hiện thông tin customer.
 - POST `/owner/bookings/{id}/confirm` — `PENDING → CONFIRMED`.
 - POST `/owner/bookings/{id}/reject` — `PENDING → REJECTED` + owner_note (lý do).
-- POST `/owner/bookings/{id}/complete` — `CONFIRMED → COMPLETED`, chỉ khi `end_date < hôm nay`.
+- POST `/owner/bookings/{id}/complete` — `CONFIRMED → COMPLETED`, Phase 0–5 chỉ khi `end_date < hôm nay`; Phase 6 dùng BR-13 cho booking theo chính sách mới.
 
-**Admin:** xem toàn bộ booking (`/admin/bookings`, `/admin/bookings/{id}`), không thao tác trạng thái.
+**Admin:** xem toàn bộ booking (`/admin/bookings`, `/admin/bookings/{id}`), không thao tác trạng thái Booking. Phase 6 bổ sung xử lý bất đồng biên bản (FR-16), không thay Owner hoàn tất đơn.
 
 ### FR-11. Booking Status
 
@@ -300,14 +316,14 @@ stateDiagram-v2
     PENDING --> CONFIRMED: Owner confirms
     PENDING --> REJECTED: Owner rejects (reason)
     PENDING --> CANCELLED: Customer cancels
-    CONFIRMED --> CANCELLED: Customer cancels (PAID -> REFUNDED)
-    CONFIRMED --> COMPLETED: Owner marks complete (end_date passed)
+    CONFIRMED --> CANCELLED: Customer cancels under policy (PAID -> REFUNDED)
+    CONFIRMED --> COMPLETED: Owner marks complete under policy
     REJECTED --> [*]
     CANCELLED --> [*]
     COMPLETED --> [*]
 ```
 
-`COMPLETED` là thao tác thủ công của Owner sau khi hết hạn thuê — không tự động (D-07).
+`COMPLETED` là thao tác thủ công của Owner — không tự động (D-07). Phase 0–5 và đơn cũ dùng điều kiện ngày đã qua. Phase 6 với `inspection_required=true` dùng nhận/trả thực tế + biên bản + PAID tại BR-13; không thêm enum Booking. Tiến độ thuê xe, tình trạng thanh toán và bất đồng hiển thị riêng.
 
 ### FR-12. Mock Payment
 
@@ -318,6 +334,7 @@ stateDiagram-v2
 - Booking giữ nguyên `CONFIRMED` sau khi PAID (trạng thái thanh toán đọc từ payments).
 - Notification: PAID → customer + owner; FAILED → customer.
 - Không thu thập thông tin thẻ/ngân hàng thật.
+- **Phase 6:** việc nhận xe không đòi PAID. Khi xe đã trả nhưng chưa PAID, booking vẫn CONFIRMED để Customer thanh toán qua luồng này. Owner có thao tác riêng ghi nhận đã thu tiền mặt giả lập (method `CASH_SIMULATED`, amount từ booking); không đổi nghĩa endpoint thanh toán Customer và không tạo PAID lần hai. Chưa PAID là chưa thanh toán đủ tổng tiền; không làm trả góp, nhắc nợ tự động hay thu tiền thật.
 
 ### FR-13. Notification
 
@@ -337,6 +354,10 @@ stateDiagram-v2
 | Booking COMPLETED | Customer |
 | Payment PAID | Customer + Owner |
 | Payment FAILED | Customer |
+| Phase 6: BEFORE gửi / AFTER gửi | Customer / Owner tương ứng |
+| Phase 6: Customer nhận xe / Owner nhận lại xe | Owner / Customer tương ứng |
+| Phase 6: biên bản có bất đồng | Bên còn lại + các ADMIN ACTIVE |
+| Phase 6: Admin xử lý bất đồng | Customer + Owner |
 
 ### FR-14. Location
 
@@ -350,6 +371,50 @@ stateDiagram-v2
 - `/profile/edit` (GET/POST): sửa full_name, phone. Email không đổi (D-17). Role không đổi.
 - `/profile/change-password` (GET/POST): nhập mật khẩu hiện tại (verify BCrypt) + mật khẩu mới + xác nhận; sai mật khẩu hiện tại → lỗi validation.
 - Không làm avatar upload trong MVP (cột `avatar_url` để dự phòng).
+
+### FR-16. Biên bản bàn giao và trả xe — triển khai Phase 6
+
+**Đối tượng:** một Booking có tối đa một biên bản `BEFORE` và một `AFTER`; ảnh biên bản độc lập với `car_images`. Chỉ áp dụng cho booking tạo sau khi bật Phase 6 (`inspection_required=true`). Đơn cũ hiển thị nhãn chính sách cũ, không tạo bằng chứng quá khứ giả.
+
+**Thông tin:** booking, xe, người lập và địa chỉ nhận/trả lấy từ server; dùng `bookings.pickup_address` đã snapshot cho cả hai lần. Khi gửi bắt buộc có mô tả tình trạng (trim 1–2000 ký tự), hư hỏng nhìn thấy (1–1000; có thể ghi “Không phát hiện”), odometer (số nguyên 0–9.999.999 km), nhiên liệu/pin (0–100%), phụ kiện bàn giao (1–500; có thể ghi “Không bàn giao”) và **4–10 ảnh**. Gợi ý ảnh trước/sau/hai bên, nội thất, đồng hồ; không tự kiểm chứng góc chụp hoặc thời điểm chụp. Odometer AFTER thấp hơn BEFORE chỉ cảnh báo để kiểm tra, không tự kết luận lỗi hay cản ghi nhận xe đã trả.
+
+**BEFORE — Owner lập, Customer xác nhận:**
+
+1. Booking CONFIRMED: Owner lưu nháp, thêm/xóa ảnh nháp rồi gửi biên bản. Có thể chuẩn bị trước ngày nhận.
+2. Customer xem ảnh/nội dung và bấm **Đồng ý biên bản và xác nhận đã nhận xe** tại địa điểm snapshot; server ghi `vehicle_received_at`. Cho nhận khi chưa PAID, hiển thị tổng tiền chưa thanh toán. Thời điểm nhận phải thuộc `start_date ≤ hôm nay < end_date`.
+3. Nếu chưa đồng ý, Customer gửi lý do bất đồng; chưa ghi nhận nhận xe. Admin xử lý thủ công, sau đó Customer vẫn phải xác nhận đã nhận thực tế; Admin không xác nhận thay.
+4. Trước lúc xác nhận nhận xe, server kiểm tra cùng xe không còn được Customer của booking mới khác giữ thực tế (BR-15). Sau xác nhận, không còn hủy/hoàn tiền qua luồng cancellation.
+
+**AFTER — Customer lập, Owner nhận lại xe:**
+
+1. Sau khi đã nhận xe, Customer lập và gửi biên bản AFTER tại vị trí cũ; được trả sớm, đúng hạn hoặc trễ. Gửi báo cáo chưa có nghĩa Owner đã nhận xe.
+2. Owner chọn **Đã nhận xe, đồng ý tình trạng** hoặc **Đã nhận xe, có bất đồng** (lý do bắt buộc): cả hai ghi `vehicle_returned_at` ngay, lựa chọn thứ hai mở bất đồng. Nếu xe chưa tới, chọn **Chưa nhận được xe**: thêm event, giữ chờ xác nhận và không ghi thời điểm trả.
+3. Owner đã nhận xe có bất đồng: giữ nguyên bằng chứng, Admin xử lý; không xóa thời điểm trả. Trạng thái thanh toán hiển thị độc lập.
+4. Owner bấm **Hoàn tất đơn thuê** khi đủ BR-13; trả xe và đóng bất đồng không tự hoàn tất. Không phải đợi qua `end_date` nếu xe thực sự đã trả và đủ điều kiện; ngày thuê/giá snapshot/tổng tiền giữ nguyên.
+
+**Lịch sử và riêng tư:** nháp chỉ người lập sửa/xem; sau gửi, Customer của booking, Owner của xe và Admin ACTIVE được xem. Bản gốc và ảnh đã gửi bất biến; ghi chú bổ sung dạng text, phản hồi và quyết định Admin được append vào `inspection_events` với actor/timestamp. Không bổ sung/thay ảnh bản gốc sau gửi. Admin chỉ đóng bất đồng kèm kết luận xử lý thủ công, không tự tính tiền hoặc thay xác nhận vật lý của hai bên. Người ngoài không truy cập ảnh qua URL trực tiếp; xem NFR-06 và §7.9.
+
+**Luồng tiến độ dự kiến:**
+
+```mermaid
+flowchart TD
+    A[Booking CONFIRMED: chờ bàn giao] --> B[Owner gửi BEFORE]
+    B --> C{Customer đồng ý và đã nhận?}
+    C -->|Có; có thể chưa PAID| D[Đang thuê; khóa cancellation]
+    C -->|Bất đồng| E[Admin xử lý BEFORE]
+    E --> C
+    D --> F[Customer gửi AFTER]
+    F --> G{Owner đã nhận lại xe?}
+    G -->|Chưa| F
+    G -->|Có| H[Ghi thời điểm xe đã trả]
+    H --> I{AFTER được đồng ý hoặc Admin xử lý?}
+    I -->|Chưa| J[Chờ xử lý bất đồng AFTER]
+    J --> I
+    I -->|Rồi| K{Đã PAID?}
+    K -->|Chưa| L[Đã trả xe: chờ thanh toán; CONFIRMED]
+    L --> K
+    K -->|Rồi| M[Owner bấm Hoàn tất: COMPLETED]
+```
 
 ---
 
@@ -394,19 +459,19 @@ Nhân tiền bằng `Math.multiplyExact`, overflow trả business error. Địa 
 
 - Customer: xem/hủy booking của mình. Owner: xem/xử lý booking trên xe của mình. Admin: xem tất cả.
 - Chỉ cho phép transition đúng §FR-11; transition sai → business error, không đổi trạng thái.
-- Mutator kiểm tra role/status ACTIVE từ DB và ownership; Admin chỉ xem. Khóa theo thứ tự **Car → Booking → Payment** khi cần, đọc lại entity hiện tại dưới khóa trước kiểm tra transition (kể cả entity đã nằm trong persistence context). Không ghi đè từ snapshot/managed entity cũ. Với entity đã có lock mode trong Hibernate, `refresh(..., PESSIMISTIC_WRITE)` có thể phát SELECT thường; dùng detach đúng Booking/Payment rồi query `FOR UPDATE` lại. Không clear toàn persistence context; flush thay đổi hợp lệ trước reload. Đợt 4 đã tái hiện RED và verify GREEN dưới MySQL REPEATABLE READ.
-- Cancel/refund và notifications cùng transaction; confirm/reject/complete và payment sau này dùng chung protocol D-13. Reject reason sau trim bắt buộc, ≤500 ký tự. Complete khi `end_date < hôm nay`, không yêu cầu PAID theo nghiệp vụ hiện tại.
+- Mutator kiểm tra role/status ACTIVE từ DB và ownership; Phase 0–5 Admin chỉ xem Booking, Phase 6 Admin có quyền xử lý bất đồng riêng. Khóa theo thứ tự **Car → Booking → Payment** khi cần, đọc lại entity hiện tại dưới khóa trước kiểm tra transition (kể cả entity đã nằm trong persistence context). Không ghi đè từ snapshot/managed entity cũ. Với entity đã có lock mode trong Hibernate, `refresh(..., PESSIMISTIC_WRITE)` có thể phát SELECT thường; dùng detach đúng Booking/Payment rồi query `FOR UPDATE` lại. Không clear toàn persistence context; flush thay đổi hợp lệ trước reload. Đợt 4 đã tái hiện RED và verify GREEN dưới MySQL REPEATABLE READ. Phase 6 mở rộng theo BR-14.
+- Cancel/refund và notifications cùng transaction; confirm/reject/complete và payment sau này dùng chung protocol D-13. Reject reason sau trim bắt buộc, ≤500 ký tự. Phase 0–5/đơn cũ complete khi `end_date < hôm nay`, không yêu cầu PAID; booking chính sách Phase 6 thay bằng BR-13.
 - Xóa Car cũng khóa Car, kiểm tra toàn bộ lịch sử booking bằng current read, chỉ xóa file ảnh sau DB commit; rollback giữ file. Lock timeout/deadlock trả lỗi có kiểm soát, không commit dữ liệu/thông báo một phần.
 
 ### BR-08. Cancellation
 
-- Customer hủy được khi status ∈ {`PENDING`, `CONFIRMED`}. Không giới hạn thời gian trong MVP.
+- Customer hủy được khi status ∈ {`PENDING`, `CONFIRMED`}. Phase 0–5/đơn cũ không giới hạn thời gian; Phase 6 thêm điều kiện `vehicle_received_at IS NULL` cho booking theo chính sách mới.
 - Nếu booking có Payment `PAID` → payment đó chuyển `REFUNDED` (giả lập), kèm notification.
 
 ### BR-09. Payment
 
 - Payment thuộc 1 booking; amount lấy từ `booking.total_amount` phía server.
-- Chỉ customer của booking đó được thanh toán; booking phải `CONFIRMED`.
+- Customer của booking đó được thanh toán; booking phải `CONFIRMED`. Phase 6 bổ sung Owner của xe ghi nhận đã thu tiền mặt giả lập (FR-12), dùng cùng guard CONFIRMED/chưa PAID và amount server.
 - Tối đa **1 Payment `PAID`** mỗi booking (Service chặn trước khi tạo mới).
 - Theo D-13: khóa Car → Booking → Payment và kiểm tra CONFIRMED/chưa PAID bằng dữ liệu hiện tại trước insert; thanh toán đồng thời hoặc tranh chấp với cancel không tạo PAID trùng hay CANCELLED+PAID.
 
@@ -415,6 +480,36 @@ Nhân tiền bằng `Math.multiplyExact`, overflow trả business error. Địa 
 - FK đầy đủ giữa các bảng; email unique.
 - Không xóa cứng dữ liệu được booking/payment tham chiếu (Car, User) — dùng deactivate.
 - Tạo booking + notification, payment + notification → cùng transaction.
+
+### BR-11. Chính sách và bằng chứng biên bản — Phase 6
+
+- `inspection_required` do server đặt true cho booking mới sau kích hoạt; các row có sẵn giữ false. Client không được đổi cờ hoặc gửi actor/booking/car/timestamps/status để bypass.
+- UNIQUE `(booking_id, phase)`; BEFORE tác giả là Owner của xe, AFTER là Customer của booking. Draft cho phép thiếu thông tin, submit phải đủ FR-16 và booking CONFIRMED. AFTER chỉ tạo sau `vehicle_received_at` và trước khi đã ghi nhận trả xe.
+- `DRAFT → SUBMITTED → ACCEPTED` hoặc `DISPUTED → RESOLVED`. BEFORE đã RESOLVED vẫn cần Customer nhận thực tế (`RESOLVED → ACCEPTED` hoặc mở lại DISPUTED khi chưa nhận). AFTER RESOLVED không cần sửa bản gốc hay ghi nhận trả lần hai.
+- Nội dung/ảnh gốc bị khóa từ lần submit đầu. Ghi chú, bất đồng, xác nhận và xử lý Admin chỉ thêm event. Không xóa lịch sử khi đơn hủy trước nhận; đơn ở trạng thái cuối chỉ đọc.
+
+### BR-12. Xác nhận vật lý và địa điểm — Phase 6
+
+- Customer của booking xác nhận nhận xe; Owner của xe xác nhận nhận lại. Timestamp do server ghi một lần, không nhận thời gian do client khai. `vehicle_returned_at ≥ vehicle_received_at`; không xác nhận thay, không xác nhận nếu chỉ đã gửi report.
+- Trả xe tại snapshot `pickup_address`; không đổi địa chỉ theo Car hiện tại. Người thao tác xác nhận xe tại địa chỉ đó; hệ thống không chứng minh bằng GPS/EXIF.
+- Không bắt buộc PAID để nhận; nhận rồi cấm hủy/hoàn tiền qua BR-08. Trả sớm/trễ giữ nguyên ngày/tổng tiền; không tự tạo phí hoặc refund.
+
+### BR-13. Hoàn tất và khoản chưa thanh toán — Phase 6
+
+Với `inspection_required=true`, Owner chỉ complete khi: Booking CONFIRMED; BEFORE ACCEPTED và `vehicle_received_at` có giá trị; `vehicle_returned_at` có giá trị; AFTER ACCEPTED hoặc RESOLVED; có Payment PAID. Bất đồng AFTER đang mở chặn complete dù đã nhận lại xe/PAID. Không dùng riêng `end_date < hôm nay` để kết luận đã trả xe. Owner chưa nhận xe thì không được complete kể cả Admin đã đóng bất đồng.
+
+Xe đã trả/chưa PAID vẫn CONFIRMED, hiện **Đã trả xe — chờ thanh toán**, tổng tiền chưa trả và CTA phù hợp role. PAID không tự complete. Tối đa một PAID; Owner ghi nhận cash và Customer mock pay đồng thời phải chỉ có một lần thành công. Khoản chưa PAID theo dõi trên chi tiết/danh sách đơn hiện có; không thêm trạng thái nợ, bảng công nợ, thanh toán một phần hoặc job nhắc nợ. Đơn cũ giữ chính sách complete/cancel lịch sử và có nhãn rõ.
+
+### BR-14. Đồng thời, xử lý bất đồng và ảnh — Phase 6
+
+- Thứ tự khóa **Car → Booking → Payment (nếu cần) → Inspection → Image**; current read dưới khóa, events chỉ append trong cùng transaction. Nếu đọc nhiều Booking cùng xe, khóa theo ID tăng dần. Không khóa Inspection rồi quay lại lấy Payment/Booking. Tái sử dụng D-13, không dùng Java synchronized.
+- Submit/nhận/trả/dispute/resolve/complete/cash là transition một lần; gửi lặp hoặc thua race trả business error, không lặp timestamp/notification/payment. Ghi chú bổ sung có thể nhiều event hợp lệ; không là sửa nội dung gốc.
+- Admin chỉ resolve khi DISPUTED, phải ghi kết luận trim 1–2000 ký tự. Không đổi giá, trạng thái Payment/Booking, nội dung/ảnh gốc hay timestamp nhận/trả; mở lại BEFORE chỉ khi Customer chưa nhận, qua thao tác bất đồng của Customer.
+- Ảnh mới bị rollback phải dọn; xóa ảnh nháp chỉ xóa file afterCommit. Sau submit không xóa/thay ảnh. Transaction thất bại không để event/notification/receipt một phần; timeout/deadlock trả lỗi kiểm soát như D-13.
+
+### BR-15. Khả dụng theo lịch và xe đang được giữ thực tế — Phase 6
+
+BR-05 vẫn quyết định đặt trước theo ngày. Riêng xác nhận nhận xe kiểm tra current Booking cùng Car có `inspection_required=true AND vehicle_received_at IS NOT NULL AND vehicle_returned_at IS NULL` (khác booking hiện tại) dưới khóa Car: có thì chặn bàn giao và báo Owner kiểm tra xe chưa trả. Không bỏ qua vì ngày cũ đã hết. Đơn đã trả nhưng chưa PAID không còn giữ xe thực tế; nếu khoảng ngày vẫn trùng, vẫn chịu BR-05. Dữ liệu legacy không có thời điểm bàn giao: Owner phải rà soát đơn đang thuê khi kích hoạt, không suy diễn xe đã trả từ thiếu timestamp.
 
 ---
 
@@ -574,7 +669,7 @@ FK `car_images.car_id` dùng `ON DELETE CASCADE`; 6 FK còn lại dùng `ON DELE
 
 ### 7.6. Hợp đồng DB-first cho các phase sau
 
-- Đã provision tất cả bảng bằng `scriptDB.sql`; P1/P2/P3/P4 chỉ viết entity, repository, service, controller và UI trên schema này.
+- Đã provision 7 bảng của Phase 0–5 bằng `scriptDB.sql`; P1/P2/P3/P4/P5 chỉ viết entity, repository, service, controller và UI trên schema này. Module Phase 6 được duyệt sau bootstrap, cần migration riêng tại §7.9 trước khi map entity mới.
 - Giữ nguyên tên bảng/cột, length, nullability và enum ở §7.2. JPA dùng `@GeneratedValue(strategy=IDENTITY)`, `@Enumerated(EnumType.STRING)`, `@JoinColumn` đúng tên FK; dùng `Long` cho tiền VND, `LocalDate` cho ngày thuê, `LocalDateTime` cho timestamp, `boolean read` map `is_read`.
 - DB timestamp defaults giúp INSERT bằng SQL; Java vẫn có thể dùng `@PrePersist`/`@PreUpdate` như plan. Không thêm bảng `roles`, `user_roles`, `locations`.
 - `application.properties`: `spring.jpa.hibernate.ddl-auto=none`. Không dùng `update/create/create-drop`, không thêm `schema.sql/data.sql` tự chạy ở mỗi lần boot. Khi đã có entity, có thể chạy kiểm tra mapping bằng override `--spring.jpa.hibernate.ddl-auto=validate`; không dùng Hibernate để thay schema.
@@ -583,7 +678,7 @@ FK `car_images.car_id` dùng `ON DELETE CASCADE`; 6 FK còn lại dùng `ON DELE
 - Mỗi verify ở phase sau phải lọc theo ID/định danh của record vừa tạo hoặc so số lượng trước/sau; không giả định toàn bảng chỉ có 1 record hoặc chỉ có admin + test user.
 - Vì DB đã có PAID/REFUNDED, **thực hiện P4.1 (Payment entity/enums/repository) sau P3.6 và trước P3.7/P3.8**. Booking detail đọc trạng thái thật; P3.8 hủy booking phải chuyển PAID→REFUNDED và notify trong cùng transaction ngay từ Phase 3. P4.6 kiểm chứng lại refund, không chờ Phase 4 mới bổ sung việc hoàn tiền. Không chạy lại P4.1 khi sang Phase 4.
 - Các quy tắc nhiều bảng vẫn nằm ở Service: owner phải có role OWNER, customer phải có role CUSTOMER, ownership, visibility, transition, overlap (D-13), payment amount bằng booking total, tối đa 1 PAID, refund và notification trong cùng transaction. Không có trigger/stored procedure hoặc unique `payments.booking_id` thay thế các quy tắc này.
-- `notifications.related_entity_type/id` là liên kết đa hình; không có FK tới ba bảng CAR/BOOKING/PAYMENT. Service phải truyền đúng loại và ID, enum/string type dùng 10 giá trị đã chốt.
+- `notifications.related_entity_type/id` là liên kết đa hình; không có FK tới ba bảng CAR/BOOKING/PAYMENT. Phase 0–5 dùng 10 giá trị type đã chốt; Phase 6 thêm các type ở §7.9, vẫn liên kết BOOKING.
 - Khi đổi schema sau này: sửa SDD, viết ALTER có kiểm soát cho DB hiện hữu và cập nhật bootstrap tương ứng. `CREATE TABLE IF NOT EXISTS` không sửa bảng không tương thích.
 
 ### 7.7. Dữ liệu mẫu và cách chạy script
@@ -643,6 +738,53 @@ Ngày 2026-10-10 trên MySQL 8.0.45, `localhost:3306`, database `carrent`:
 
 ---
 
+### 7.9. Schema dự kiến và migration Phase 6 — chưa áp dụng DB
+
+**Hiện tại:** 7 bảng trong `scriptDB.sql`. **Đích sau P6.1:** 10 bảng, giữ toàn bộ 7 bảng và record hiện hữu, thêm 3 bảng dưới đây; không đổi các enum Booking/Payment. SQL thực thi sẽ được viết khi triển khai P6.1 tại `docs/db/phase-6-inspection.sql` và cập nhật bootstrap `scriptDB.sql` cùng lúc. Không chạy migration trong lần cập nhật SDD này.
+
+**Bổ sung `bookings`:**
+
+| Cột | Kiểu MySQL | Hợp đồng |
+|---|---|---|
+| inspection_required | BOOLEAN NOT NULL DEFAULT FALSE | Row có sẵn/seed cũ false; BookingService tạo mới đặt true sau kích hoạt Phase 6 |
+| vehicle_received_at | DATETIME NULL | Customer xác nhận nhận xe; server ghi một lần |
+| vehicle_returned_at | DATETIME NULL | Owner xác nhận đã nhận lại xe; độc lập đồng ý tình trạng |
+
+CHECK: trả xe phải có nhận xe và `vehicle_returned_at >= vehicle_received_at`; row `inspection_required=false` không có hai timestamp. Index `idx_bookings_custody(car_id, inspection_required, vehicle_returned_at, vehicle_received_at)` cho kiểm tra giữ xe thực tế. Cờ chính sách và timestamp không bind từ form.
+
+**`booking_inspections`:**
+
+| Cột | Kiểu MySQL | Hợp đồng |
+|---|---|---|
+| id | BIGINT AUTO_INCREMENT PRIMARY KEY | Long |
+| booking_id | BIGINT NOT NULL | FK bookings, RESTRICT |
+| phase | ENUM('BEFORE','AFTER') NOT NULL | InspectionPhase |
+| author_id | BIGINT NOT NULL | FK users, RESTRICT; actor server |
+| status | ENUM('DRAFT','SUBMITTED','ACCEPTED','DISPUTED','RESOLVED') NOT NULL DEFAULT 'DRAFT' | InspectionStatus |
+| condition_note | VARCHAR(2000) NULL | Chỉ nullable khi nháp |
+| visible_damage | VARCHAR(1000) NULL | Chỉ nullable khi nháp |
+| odometer_km | INT NULL | 0–9.999.999 khi có giá trị |
+| energy_percent | TINYINT UNSIGNED NULL | 0–100 khi có giá trị |
+| accessories_note | VARCHAR(500) NULL | Chỉ nullable khi nháp |
+| submitted_at | DATETIME NULL | NULL ở DRAFT; server ghi một lần khi gửi |
+| created_at, updated_at | DATETIME NOT NULL | Default CURRENT_TIMESTAMP; updated_at cập nhật khi đổi trạng thái/nháp |
+
+UNIQUE `uk_inspection_booking_phase(booking_id, phase)`; index `idx_inspection_status(status, submitted_at, id)` cho danh sách Admin. CHECK numeric bounds, DRAFT có submitted_at NULL và mọi status khác có submitted_at; Service kiểm tra đầy đủ text/numeric/4–10 ảnh trước submit. Địa chỉ đọc từ Booking snapshot, không thêm snapshot thứ hai có thể lệch.
+
+**`inspection_images`:** `id BIGINT AUTO_INCREMENT PK`, `inspection_id BIGINT NOT NULL FK booking_inspections RESTRICT`, `storage_key VARCHAR(80) NOT NULL UNIQUE` (UUID + .jpg/.png, khóa nội bộ), `media_type VARCHAR(30) NOT NULL`, `size_bytes INT UNSIGNED NOT NULL` (1–5.242.880), `created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`; index `(inspection_id, id)`, CHECK size. Không lưu URL public hoặc tên/path client. Giới hạn 10 ảnh/biên bản do Service kiểm tra dưới khóa.
+
+**`inspection_events`:** `id BIGINT AUTO_INCREMENT PK`, `inspection_id BIGINT NOT NULL FK booking_inspections RESTRICT`, `actor_id BIGINT NOT NULL FK users RESTRICT`, `action VARCHAR(40) NOT NULL`, `note VARCHAR(2000) NULL`, `created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`; index `(inspection_id, created_at, id)`. Action whitelist: `SUBMITTED`, `PICKUP_CONFIRMED`, `RETURN_CONFIRMED`, `DISPUTED`, `RETURN_NOT_RECEIVED`, `RESOLVED`, `ADDENDUM`. DISPUTED/RESOLVED/ADDENDUM/RETURN_NOT_RECEIVED bắt buộc note trim 1–2000. Nhận lại xe có bất đồng ghi RETURN_CONFIRMED + DISPUTED cùng transaction. Không endpoint update/delete event; sau gửi không endpoint sửa/xóa ảnh gốc. Tác giả/action/time lấy từ server.
+
+**Notification:** thêm `INSPECTION_SUBMITTED`, `VEHICLE_RECEIVED`, `VEHICLE_RETURNED`, `INSPECTION_DISPUTED`, `INSPECTION_RESOLVED` vào whitelist của NotificationService; type hiện là VARCHAR, không đổi enum DB. `related_entity_type='BOOKING'`, id = booking.id; link vào chi tiết đơn và mục biên bản. Không nhét cả nội dung bất đồng vào notification (message ≤1000). Owner chọn chưa nhận lại xe: thêm RETURN_NOT_RECEIVED event và notify Customer bằng INSPECTION_SUBMITTED với nội dung yêu cầu kiểm tra việc trả xe; không đổi status hay ghi timestamp trả.
+
+**Ảnh riêng tư:** thư mục runtime `private-uploads/inspections/` nằm ngoài resources và ngoài `/uploads/**`; Git bỏ qua khi implement. GET `/bookings/{bookingId}/inspections/{phase}/images/{imageId}` qua Controller có auth/ownership/report-image membership, nháp chỉ tác giả xem. Chỉ JPEG/PNG được decode bằng ImageIO chuẩn JDK; tối đa 5MiB/ảnh và 20 triệu pixel, từ chối payload hỏng/MIME hoặc đuôi không khớp. Không thêm thư viện chỉ để hỗ trợ định dạng mới. UI ghi rõ định dạng nhận; ảnh listing vẫn theo D-16.
+
+Upload ảnh nháp theo đợt **1–4 ảnh/request**, mỗi đợt ≤20MiB file payload, tổng mỗi report ≤10 ảnh; giữ multipart 5MB/file, 30MB/request hiện tại. Vì vậy 10 ảnh không phải gửi chung một request. Server validate tổng số ảnh dưới khóa; client chỉ hỗ trợ preview/camera/gallery, không quyết định validity. File mới dọn khi rollback/lỗi ghi, ảnh nháp bị xóa chỉ dọn afterCommit; ảnh đã gửi giữ nguyên.
+
+**Cutover:** dừng app ghi dữ liệu, backup schema/data và ảnh, kiểm tra schema nguồn, chạy ALTER + CREATE có kiểm soát rồi verify trước boot code Phase 6; MySQL DDL có implicit commit, không coi transaction rollback là cách phục hồi migration. Script nhận biết lần chạy lại và kiểm tra contract, không backfill cờ true cho đơn cũ, không tự reset hoặc sửa schema sai. Bootstrap cập nhật cho máy mới phải có cùng contract; row seed giữ false. Hibernate vẫn `ddl-auto=none`, chỉ override validate để kiểm tra. Rà soát các đơn legacy đang sử dụng thực tế với Owner trước bật bàn giao mới; không suy diễn xe đã trả khi thiếu timestamp. Xem P6.1/P6.13/P6.14 cho bằng chứng bảo toàn dữ liệu và chính sách cũ.
+
+---
+
 ## 8. Thiết kế giao diện
 
 ### 8.1. Trang theo nhóm
@@ -656,6 +798,10 @@ Ngày 2026-10-10 trên MySQL 8.0.45, `localhost:3306`, database `carrent`:
 **Owner:** `/owner/dashboard`, `/owner/cars`, `/owner/cars/new`, `/owner/cars/{id}/edit`, `/owner/bookings`, `/owner/bookings/{id}`
 
 **Admin:** `/admin/dashboard`, `/admin/users`, `/admin/users/{id}`, `/admin/cars`, `/admin/cars/{id}`, `/admin/bookings`, `/admin/bookings/{id}`
+
+**Bổ sung Phase 6:** mục **Biên bản nhận/trả xe** trên chi tiết booking của cả 3 role; CTA **Lập biên bản trước thuê** cho Owner, **Xem và xác nhận nhận xe** cho Customer, **Lập biên bản trả xe** cho Customer, **Kiểm tra xe trả** cho Owner. Form/detail dùng `templates/inspection/form.html`, `detail.html`; panel dùng `fragments/inspection-summary.html`. Admin có `/admin/inspections?status=DISPUTED` và link **Bất đồng bàn giao** trong điều hướng Admin. Không có prototype riêng: theo design system D-23. Xem plan Phase 6 cho route và trạng thái nút.
+
+Danh sách/chi tiết hiển thị riêng badge Booking, tiến độ xe, payment và bất đồng. Tiến độ suy ra từ timestamp + report: chờ nhận → đang thuê → chờ Owner nhận lại → đã trả; cảnh báo quá hạn nếu đang thuê và tới/quá end_date, không tự thu phí. Không gán “Đã trả” chỉ vì Customer upload ảnh. Màn hình trả xe có so sánh BEFORE/AFTER, địa chỉ snapshot, lịch sử actor/thời điểm và lý do nút complete/cancel bị khóa. Camera/gallery và preview dùng mobile, input vẫn hoạt động không JS; nháp riêng tư, lỗi upload không mất text đã lưu.
 
 ### 8.2. Cấu trúc template
 
@@ -827,6 +973,8 @@ com.carrent
 
 Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ thể (không interface).
 
+**Bổ sung dự kiến Phase 6:** package `inspection/` gồm `BookingInspection`, `InspectionImage`, `InspectionEvent`, các enum/Repository tương ứng, `InspectionForm`, `ReturnReceiptForm`, `InspectionView`, `InspectionService`, `InspectionController`, `AdminInspectionController`; `storage/InspectionStorageService` cho ảnh riêng tư. BookingService vẫn sở hữu create/cancel/complete và dùng repository biên bản cho guards; InspectionService dùng hợp đồng khóa BookingService, tránh phụ thuộc vòng giữa services. PaymentService tái dùng protocol D-13 cho cash. Chi tiết file/interface ở plan Phase 6; chưa tạo class ở lần cập nhật này.
+
 ---
 
 ## 10. Route Design
@@ -837,8 +985,8 @@ Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ th�
 | GET | `/login` | Trang đăng nhập | Public |
 | POST | `/login` | Xử lý đăng nhập (Spring Security) | Public |
 | GET/POST | `/register` | Đăng ký CUSTOMER/OWNER | Public |
-| GET | `/cars` | Danh sách công khai + filter/sort/page | Public |
-| GET | `/cars/{id}` | Chi tiết xe + kiểm tra khả dụng theo start/end (P3.6 đã triển khai) | Public nếu APPROVED+ACTIVE; Admin/Owner-of-car có role/status ACTIVE trong DB được xem trước |
+| GET | `/cars` | Danh sách công khai + lọc xe trống theo startDate/endDate, filter/sort/page | Public |
+| GET | `/cars/{id}` | Chi tiết xe; chuyển tiếp startDate/endDate sang đặt thuê, không kiểm tra khả dụng riêng (D-26) | Public nếu APPROVED+ACTIVE; Admin/Owner-of-car có role/status ACTIVE trong DB được xem trước |
 | POST | `/logout` | Đăng xuất | Authenticated |
 | GET | `/profile` | Xem profile | Authenticated |
 | GET/POST | `/profile/edit` | Sửa full_name, phone | Authenticated |
@@ -865,7 +1013,7 @@ Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ th�
 | GET | `/owner/bookings/{id}` | Chi tiết booking | Owner của xe |
 | POST | `/owner/bookings/{id}/confirm` | Xác nhận booking | Owner của xe |
 | POST | `/owner/bookings/{id}/reject` | Từ chối + lý do | Owner của xe |
-| POST | `/owner/bookings/{id}/complete` | Hoàn tất (end_date đã qua) | Owner của xe |
+| POST | `/owner/bookings/{id}/complete` | Hoàn tất: Phase 0–5/legacy theo ngày; Phase 6 chính sách mới theo BR-13 | Owner của xe |
 | GET | `/admin/dashboard` | Thống kê hệ thống | ADMIN |
 | GET | `/admin/users` | Danh sách user + search/filter/page | ADMIN |
 | GET | `/admin/users/{id}` | Chi tiết user | ADMIN |
@@ -878,6 +1026,27 @@ Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ th�
 | POST | `/admin/cars/{id}/activate` | Đăng lại xe APPROVED | ADMIN/ACTIVE |
 | GET | `/admin/bookings` | Toàn bộ booking | ADMIN |
 | GET | `/admin/bookings/{id}` | Chi tiết booking | ADMIN |
+
+**Route bổ sung Phase 6 (chưa triển khai):** `phase` chỉ nhận BEFORE/AFTER và luôn kiểm tra quyền theo vai trò của mỗi phase.
+
+| Method | Route | Chức năng / quyền |
+|---|---|---|
+| GET | `/bookings/{id}/inspections/{phase}` | Detail nếu đã gửi: Customer của booking / Owner xe / Admin; nháp chỉ tác giả |
+| GET/POST | `/bookings/{id}/inspections/{phase}/draft` | Form/lưu nháp: BEFORE Owner, AFTER Customer; POST mới tạo row, GET không ghi DB |
+| POST | `/bookings/{id}/inspections/{phase}/images` | Upload đợt 1–4 ảnh nháp; chỉ tác giả |
+| POST | `/bookings/{id}/inspections/{phase}/images/{imageId}/delete` | Xóa ảnh nháp thuộc đúng report; chỉ tác giả |
+| GET | `/bookings/{id}/inspections/{phase}/images/{imageId}` | Stream ảnh riêng tư sau auth + membership |
+| POST | `/bookings/{id}/inspections/BEFORE/submit` | Owner gửi BEFORE |
+| POST | `/bookings/{id}/inspections/BEFORE/receive` | Customer đồng ý và đã nhận xe |
+| POST | `/bookings/{id}/inspections/BEFORE/dispute` | Customer bất đồng BEFORE + lý do |
+| POST | `/bookings/{id}/inspections/AFTER/submit` | Customer gửi AFTER |
+| POST | `/bookings/{id}/inspections/AFTER/receipt` | Owner chọn RECEIVED_ACCEPTED / RECEIVED_DISPUTED / NOT_RECEIVED |
+| POST | `/bookings/{id}/inspections/{phase}/notes` | Ghi chú bổ sung sau gửi; Customer/Owner liên quan hoặc Admin |
+| POST | `/owner/bookings/{id}/payment/cash-receipt` | Owner ghi nhận thu tiền mặt giả lập, CONFIRMED/chưa PAID |
+| GET | `/admin/inspections` | Danh sách phân trang, mặc định DISPUTED; chỉ filter status đã gửi, loại DRAFT; Admin |
+| POST | `/admin/inspections/{inspectionId}/resolve` | Admin đóng DISPUTED với kết luận, không đổi trạng thái Booking |
+
+Route complete hiện có giữ nguyên; guard sau Phase 6 theo BR-13 cho booking chính sách mới. Mọi POST mới vẫn CSRF; ID/phase/ảnh không khớp trả 404, payload không hợp lệ không tạo thay đổi DB/file.
 
 **Ghi chú:**
 - GET hiển thị; POST thay đổi. Mọi POST qua form Thymeleaf có CSRF token.
@@ -1001,6 +1170,13 @@ sequenceDiagram
 - Empty state tiếng Việt; confirm trước hành động quan trọng.
 - Pagination component dùng chung.
 
+### NFR-06. Bằng chứng và ảnh riêng tư — Phase 6
+
+- Xác thực session, kiểm tra role/status ACTIVE hiện tại, ownership và quan hệ image/report/booking cho từng GET ảnh và POST. Không static handler/public link cho ảnh biên bản; URL khó đoán không thay authorization.
+- Stream với Content-Type server đã xác thực, `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`; không cache ảnh ở public CDN. Không lộ path vật lý/original filename/nội dung biên bản trong log lỗi hoặc notification.
+- Giới hạn file, pixel, số ảnh và request theo §7.9; validate ở backend, decode thực tế, không tin MIME/filename client. Storage key UUID, resolve path nằm trong thư mục private; chống path traversal.
+- Bản gốc bất biến sau submit; actor/time và event lưu cùng transaction với transition/notification. Đây là bằng chứng nghiệp vụ được lưu trong ứng dụng, không là chữ ký số hay xác minh thời điểm/vị trí chụp. Cần backup cả DB và private files để không mất bằng chứng.
+
 ---
 
 ## 13. Xử lý lỗi
@@ -1102,7 +1278,30 @@ Chi tiết checkpoint tại `plans/phase-3-booking.md`. Cả 5 đợt/P3.1–P3.
 - P5.8 Rà soát BR toàn hệ thống: ownership mọi route, transition states, empty states, thông báo tiếng Việt.
 - P5.9 Kịch bản E2E tổng + chốt SDD.
 
-Tổng: **55 tasks** trên 6 phase.
+**Phase 6 — Biên bản bàn giao và trả xe (14 tasks, đã duyệt thiết kế, chưa triển khai)** — [plans/phase-6-inspection.md](plans/phase-6-inspection.md)
+- P6.1 Migration giữ dữ liệu cũ + mapping/repository, marker chính sách mới.
+- P6.2 Storage ảnh riêng tư + GET ảnh có authorization.
+- P6.3 Backend nháp và upload/xóa ảnh theo đợt.
+- P6.4 Owner gửi BEFORE + notification.
+- P6.5 Customer nhận xe/bất đồng BEFORE + kiểm tra xe đang được giữ thực tế.
+- P6.6 Cancel/refund guard sau nhận và nhánh đơn legacy.
+- P6.7 UI BEFORE, CTA/tiến độ và mobile.
+- P6.8 Customer gửi AFTER.
+- P6.9 Owner xác nhận nhận lại xe / bất đồng / chưa nhận.
+- P6.10 Payment/cash + complete guard theo chính sách.
+- P6.11 UI AFTER, so sánh và trạng thái chờ thanh toán.
+- P6.12 Admin xử lý bất đồng + ghi chú append, điều hướng.
+- P6.13 Kiểm chứng concurrency/privacy/legacy và rollback DB/file.
+- P6.14 E2E toàn module, cutover và chốt tài liệu.
+
+| Đợt Phase 6 | Tasks | Kết quả mong muốn |
+|---|---|---|
+| 1 | P6.1–P6.3 | Schema/mapping mới, dữ liệu cũ còn nguyên, ảnh riêng tư và nháp an toàn |
+| 2 | P6.4–P6.7 | BEFORE → Customer nhận xe; cancellation bị khóa sau nhận; UI/mobile |
+| 3 | P6.8–P6.11 | AFTER → Owner nhận lại; unpaid chờ thanh toán, complete có guards |
+| 4 | P6.12–P6.14 | Admin bất đồng, race/privacy/legacy/E2E pass, tài liệu/cutover được kiểm chứng |
+
+Phase 6 thực hiện sau Phase 4–5; không thêm các guard phụ thuộc bảng mới vào code Phase 4/5 trước migration. **Tổng: 69 tasks trên 7 phase** (55 task Phase 0–5 + 14 task Phase 6). Checkpoint hiện tại giữ 41 task đã hoàn tất; Phase 6 chưa có task hoàn tất.
 
 ### 14.2. Format mỗi task trong plan
 
@@ -1244,6 +1443,17 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - Build/package/boot thành công; sau cleanup exact fixture ID/file, mọi row/timestamp/hash/schema/constraint của7bảng và sáu ảnh seed khớp baseline; **21 HTTP smoke chỉ đọc** với seed users ba role đạt. Review độc lập **Approved**; giữ checkout/nhánh/index, không stage/commit/push/schema/seed/dependency/Java unit test. AUTO_INCREMENT có thể tăng.
 - Evidence/commands/checklist tại `plans/phase-3-booking.md`, `.scratch/phase3/batch5/`, `.superpowers/sdd/phase-3-booking/batch-5-review.md`. RED stderr bị PowerShell promote thành terminating error nên transcript ở `red-evidence.md`; GREEN logs lưu đầy đủ. App8080 đang chạy. **Phase 3 hoàn tất; tiếp theo P4.2**; P4.1 không chạy lại. Payment service/history/UI, Admin booking riêng và dashboard/profile chưa triển khai; refund hiện giả lập.
 
+### 14.15. Tìm xe trống theo khoảng thuê — D-26 (2026-10-17)
+
+- Nhóm Thời gian thuê ở đầu sidebar `/cars`; không ngày vẫn xem toàn bộ xe công khai, đủ ngày hợp lệ dùng `NOT EXISTS` booking PENDING/CONFIRMED trùng lịch trước phân trang/count. Kết hợp bộ lọc cũ; giữ ngày qua sort/pager/chi tiết/đặt thuê. Ngày lỗi trả 400 trên trang tìm xe, giữ input và ẩn kết quả. Empty state theo khoảng ngày; Đặt lại xóa điều kiện.
+- Xóa form/nút/badge khả dụng tại chi tiết, `BookingService.checkAvailability` và truy vấn advisory không còn caller. Form đặt thuê nhận sẵn ngày, vẫn sửa được, JS cập nhật giá/ngày và link quay lại theo ngày mới. Lỗi tạo đơn render lại, giữ ngày/ghi chú và báo tiếng Việt; server tiếp tục khóa và kiểm tra lịch/giá theo D-13.
+- **34 kiểm thử JUnit tích hợp Spring/MySQL/MVC** đạt; mọi fixture được rollback: trạng thái và cả hai biên ngày, overlap một phần/bao trùm, visibility, bộ lọc kết hợp/sort/count/pager, thiếu/sai/quá khứ/đảo/vượt giới hạn ngày, chuyển ngày, sửa ngày và giá server, lỗi trùng lịch/ghi chú escaped, preview/phân quyền/CSRF. Lệnh build cuối `mvnw.cmd -q clean package -Dmaven.compiler.useIncrementalCompilation=false` exit 0. Test được lưu trong repo tại `src/test/java/com/carrent/car/CarDateSearchIntegrationTest.java`, chạy lại bằng `mvnw.cmd clean test` với DB local đã cấu hình.
+- **149 assertions hồi quy backend** đạt, gồm hai connection REPEATABLE READ, snapshot cũ và chờ khóa thật: chỉ một đơn trùng được tạo; lỗi khóa trả 409 và rollback. Dùng bản copy checker Phase 3 đợt 2 tại `.scratch/date-search/VerifyBookings.java`, thay hai assertion advisory đã xóa bằng locking read hiện có; giữ nguyên artifact lịch sử.
+- **31 kiểm tra trình duyệt** đạt trên JAR cuối, Customer login, submit bộ lọc, reset/pager, chuyển ngày sang form, sửa ngày và quay lại, POST trùng lịch qua HTTP thật giữ input; 1440/390/320px không tràn ngang, không pageerror. Đã xem ảnh desktop/mobile. RED trình duyệt phát hiện back link giữ ngày cũ sau edit → cập nhật JS → GREEN. Playwright runner không hỗ trợ dynamic import Node filesystem; lưu kết quả qua công cụ workspace sau khi chạy kiểm tra.
+- Đối chiếu trước/sau: row hashes, timestamps, columns và constraints của cả 7 bảng khớp baseline, không còn fixture; không đổi schema/seed/dependency. AUTO_INCREMENT có thể tăng do fixture rollback/probe. Giữ thay đổi sẵn có; không stage/commit/push. Không triển khai Phase 4–6.
+- Bằng chứng raw: `.scratch/date-search-red.log`, `.scratch/date-validation-red.log`, `.scratch/date-flow-red.log`, `.scratch/date-booking-red.log`; build, backend regression, JSON browser/DB, script và screenshots tại `.scratch/date-search/`. File `.class` trong `target` từng không hợp lệ ở build tăng dần; build sạch bằng Java 21 thành công và kiểm tra browser chạy JAR đóng gói để tránh dùng output đang được compiler IDE cập nhật.
+- Giới hạn hiện hành: kết quả tìm không giữ chỗ; PENDING chưa tự hết hạn (D-04); ngày theo múi giờ máy chủ, chưa có giờ nhận/trả. Lọc và tạo đơn dùng cùng quy tắc overlap BR-05.
+
 ## 15. Kết luận
 
-CarRent là web monolithic Spring Boot + Thymeleaf + MySQL, 3 role, 7 bảng, với thiết kế vòng đời thuê xe: duyệt xe → tìm xe → đặt → xác nhận → thanh toán giả lập → hoàn tất, kèm notification trong DB và dashboard quản trị. Schema/seed đã có sẵn qua `scriptDB.sql`; Phase 1 Authentication & Authorization, toàn bộ Phase 2 quản lý/tìm/xem xe và Phase 3/P3.1–P3.13 notification/booking toàn vòng đời và xóa xe an toàn, cùng P4.1 Payment mapping đã triển khai. Tiếp tục P4.2→Phase 5 theo hợp đồng DB-first §7.6 và khóa D-13 để hoàn thiện thuê xe, thanh toán và dashboard.
+CarRent là web monolithic Spring Boot + Thymeleaf + MySQL, 3 role, hiện có 7 bảng. Schema/seed đã có sẵn qua `scriptDB.sql`; Phase 1, toàn bộ Phase 2 và Phase 3/P3.1–P3.13, cùng P4.1 Payment mapping đã triển khai. Tiếp tục P4.2→Phase 5 để hoàn thiện thanh toán/dashboard. Module biên bản bàn giao và trả xe đã được duyệt cho Phase 6: bổ sung 3 bảng bằng migration bảo toàn dữ liệu, xác nhận chéo nhận/trả, ảnh riêng tư, theo dõi khoản chưa PAID và xử lý bất đồng thủ công. Phase 6 giữ 5 status Booking, áp dụng chính sách mới cho đơn mới và giữ nhánh legacy rõ ràng; chi tiết ở FR-16, §7.9 và plan Phase 6.

@@ -1,12 +1,16 @@
 package com.carrent.car;
 
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Getter
 @Setter
@@ -32,5 +36,22 @@ public class CarSearchCriteria {
 
     private Transmission transmission;
     private FuelType fuelType;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @FutureOrPresent(message = "Ngày nhận xe không được ở quá khứ.")
+    private LocalDate startDate;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate endDate;
+
     private String sort = "newest";
+
+    @AssertTrue(message = "Vui lòng chọn đủ ngày nhận và ngày trả xe; ngày trả phải sau ngày nhận và không sau 31/12/9999.")
+    public boolean isRentalPeriodValid() {
+        if (startDate == null && endDate == null) {
+            return true;
+        }
+        return startDate != null && endDate != null && startDate.isBefore(endDate)
+                && !endDate.isAfter(LocalDate.of(9999, 12, 31));
+    }
 }
