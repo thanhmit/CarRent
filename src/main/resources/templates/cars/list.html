@@ -4,7 +4,7 @@
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
 <div th:replace="~{fragments/header :: header}"></div>
 <div th:replace="~{fragments/messages :: messages}"></div>
-<main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
+<main th:object="${criteria}" class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
   <div class="w-full bg-surface-container-lowest shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-gutter py-space-lg">
       <h1 class="font-headline-lg text-headline-lg text-primary mb-space-md">Tìm xe</h1>
@@ -26,7 +26,7 @@
           </select>
         </div>
       </div>
-      <p class="mt-space-md font-title-md text-title-md">Tìm thấy <span class="text-secondary" th:text="${cars.totalElements}">0</span> xe</p>
+      <p th:if="${!#fields.hasAnyErrors()}" class="mt-space-md font-title-md text-title-md">Tìm thấy <span class="text-secondary" th:text="${cars.totalElements}">0</span> xe</p>
     </div>
   </div>
   <div class="max-w-7xl mx-auto px-4 sm:px-gutter py-space-lg w-full">
@@ -37,6 +37,22 @@
           <a class="font-label-sm text-label-sm text-secondary hover:underline" th:href="@{/cars}">Đặt lại</a>
         </div>
         <form id="car-filters" th:action="@{/cars}" method="get" class="space-y-space-md">
+          <fieldset class="space-y-space-sm">
+            <legend class="font-title-md text-title-md mb-space-xs">Thời gian thuê</legend>
+            <div>
+              <label for="startDate" class="block font-label-md text-label-md mb-space-xs">Ngày nhận xe</label>
+              <input id="startDate" th:field="*{startDate}" type="date" th:min="${today}" max="9999-12-31" aria-describedby="rental-date-errors" th:attr="aria-invalid=${#fields.hasErrors('startDate') or #fields.hasErrors('rentalPeriodValid')}" class="w-full min-w-0 h-11 bg-surface-container-low rounded-lg px-space-sm"/>
+            </div>
+            <div>
+              <label for="endDate" class="block font-label-md text-label-md mb-space-xs">Ngày trả xe</label>
+              <input id="endDate" th:field="*{endDate}" type="date" th:min="${today}" max="9999-12-31" aria-describedby="rental-date-errors" th:attr="aria-invalid=${#fields.hasErrors('endDate') or #fields.hasErrors('rentalPeriodValid')}" class="w-full min-w-0 h-11 bg-surface-container-low rounded-lg px-space-sm"/>
+            </div>
+            <div id="rental-date-errors" th:if="${#fields.hasAnyErrors()}" role="alert" class="text-error text-caption space-y-space-xs">
+              <p th:errors="*{startDate}"></p>
+              <p th:errors="*{endDate}"></p>
+              <p th:errors="*{rentalPeriodValid}"></p>
+            </div>
+          </fieldset>
           <div>
             <label for="categoryId" class="block font-title-md text-title-md mb-space-xs">Loại xe</label>
             <select id="categoryId" name="categoryId" class="w-full bg-surface-container-low rounded-lg px-space-sm py-space-sm">
@@ -74,11 +90,11 @@
           <button class="w-full py-space-sm bg-secondary text-on-secondary font-label-md text-label-md rounded-lg" type="submit">Áp dụng bộ lọc</button>
         </form>
       </aside>
-      <section class="flex-1 w-full flex flex-col gap-space-lg" aria-label="Danh sách xe">
+      <section th:if="${!#fields.hasAnyErrors()}" class="flex-1 w-full flex flex-col gap-space-lg" aria-label="Danh sách xe">
         <div th:if="${cars.empty}" class="bg-surface-container-lowest rounded-xl shadow-sm p-space-xl text-center">
           <span class="material-symbols-outlined text-outline text-[40px]" aria-hidden="true">directions_car_off</span>
-          <h2 class="font-headline-sm text-headline-sm text-primary">Không tìm thấy xe phù hợp</h2>
-          <p class="text-on-surface-variant mt-space-sm">Hãy thay đổi bộ lọc hoặc xem lại từ trang đầu.</p>
+          <h2 class="font-headline-sm text-headline-sm text-primary" th:text="${criteria.startDate != null and criteria.endDate != null ? 'Không có xe trống trong khoảng ngày đã chọn' : 'Không tìm thấy xe phù hợp'}">Không tìm thấy xe phù hợp</h2>
+          <p class="text-on-surface-variant mt-space-sm">Hãy thay đổi ngày thuê, bộ lọc hoặc xem lại từ trang đầu.</p>
           <a class="inline-block mt-space-md px-space-md py-space-sm bg-surface-container text-primary rounded-lg" th:href="@{/cars}">Xem tất cả xe</a>
         </div>
         <div th:unless="${cars.empty}" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md">
@@ -96,7 +112,7 @@
               </div>
               <div class="pt-space-sm border-t border-surface-container flex items-center justify-between gap-space-xs">
                 <div><strong class="block font-headline-sm text-headline-sm text-secondary" th:text="${#numbers.formatDecimal(car.pricePerDay, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong><span class="font-caption text-caption text-outline">/ ngày</span></div>
-                <a class="px-space-sm py-space-sm bg-surface-container text-primary font-label-md text-label-md rounded-lg" th:href="@{'/cars/' + ${car.id}}">Xem chi tiết</a>
+                <a class="px-space-sm py-space-sm bg-surface-container text-primary font-label-md text-label-md rounded-lg" th:href="@{/cars/{id}(id=${car.id},startDate=${criteria.startDate},endDate=${criteria.endDate})}">Xem chi tiết</a>
               </div>
             </div>
           </article>

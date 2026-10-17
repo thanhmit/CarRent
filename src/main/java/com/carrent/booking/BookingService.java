@@ -83,17 +83,6 @@ public class BookingService {
         return booking;
     }
 
-    @Transactional(readOnly = true)
-    public boolean checkAvailability(Long carId, LocalDate start, LocalDate end) {
-        validateDates(start, end);
-        Car car = carId == null ? null : cars.findById(carId).orElse(null);
-        if (car == null || car.getApprovalStatus() != ApprovalStatus.APPROVED
-                || car.getListingStatus() != ListingStatus.ACTIVE) {
-            throw new NotFoundException("Xe không tồn tại.");
-        }
-        return !bookings.existsConflict(carId, start, end);
-    }
-
     private static void validateDates(LocalDate start, LocalDate end) {
         if (start == null || end == null) {
             throw new BusinessException("Vui lòng chọn đủ ngày nhận và ngày trả xe.");

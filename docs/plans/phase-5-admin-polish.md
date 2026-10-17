@@ -1,8 +1,10 @@
 # CarRent — Phase 5: Admin & Hoàn thiện — Implementation Plan
 
-> **For agentic workers:** Chạy task-by-task. Checkbox `- [ ]` tracking. Không git (D-19). Quy ước verify chung ở `phase-0-init.md`.
+> **For agentic workers:** Chạy task-by-task. Checkbox `- [ ]` tracking. Giữ checkout/nhánh/thay đổi đang có; không tự stage/commit/push (D-19). Quy ước verify chung ở `phase-0-init.md`.
 
 **Goal:** Admin Dashboard + quản lý User + Profile/đổi mật khẩu + Owner dashboard + rà soát toàn hệ thống — FR-02, FR-03, FR-15.
+
+> **Phạm vi sau bổ sung D-25:** P5.8/P5.9 chốt FR-01–FR-15 và nghiệp vụ Phase 0–5. Module biên bản nhận/trả xe FR-16, ảnh riêng tư, bất đồng và complete/cancel theo chính sách mới thuộc [Phase 6](phase-6-inspection.md); chưa thêm guard/query bảng inspection trong Phase 5. Giữ tiến độ Phase 6 là chưa triển khai khi chốt checkpoint Phase 5.
 
 > **D-24 / SDD v2.1:** DB và seed đã có từ `scriptDB.sql`; Hibernate `ddl-auto=none`, không tạo lại bảng hoặc reset seed khi boot. Dashboard/revenue phải tính cả dữ liệu mẫu và dữ liệu mới; so với SQL hiện tại, không hardcode số lượng. Password mẫu và các trạng thái account xem SDD §7.7.
 
@@ -148,6 +150,6 @@
   4. Customer đặt xe 2 (để hủy) → hủy → owner nhận notification hủy.
   5. Admin dashboard: số liệu tăng đúng; user list + ban 1 tài khoản test → login bị chặn.
   6. Owner complete booking 1 (SQL set end_date quá khứ trước) → customer nhận notification COMPLETED.
-- [ ] **Step 2: Rà soát SDD** — mọi FR (15) có bằng chứng; cập nhật file `docs/SDD.md` mục 14.1 đánh dấu phase hoàn thành (✅). Chốt dự án MVP.
+- [ ] **Step 2: Rà soát SDD** — FR-01–FR-15 có bằng chứng; cập nhật file `docs/SDD.md` mục 14.1 đánh dấu Phase 0–5 hoàn thành (✅). Chốt checkpoint MVP Phase 0–5, FR-16/Phase 6 vẫn chưa triển khai.
 
-**Hoàn thành dự án:** toàn bộ FR/NFR phủ, permission matrix verify, kịch bản E2E pass. CarRent MVP sẵn sàng demo/portfolio.
+**Hoàn thành Phase 0–5:** FR-01–FR-15 và NFR áp dụng cho phạm vi này được phủ, permission matrix verify, kịch bản E2E pass. CarRent MVP Phase 0–5 sẵn sàng demo/portfolio; module được duyệt thêm sẽ tiếp tục ở Phase 6.

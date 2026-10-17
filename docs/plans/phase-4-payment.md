@@ -4,6 +4,8 @@
 
 **Goal:** Mock payment hoàn chỉnh (FR-12) + refund khi hủy booking đã PAID (BR-08) + hiển thị trạng thái thanh toán.
 
+> **Phạm vi Phase 4 / D-25:** triển khai Payment trên 7 bảng hiện có, chưa thêm guard inspection. Phase 6 bổ sung Owner ghi nhận tiền mặt giả lập, cấm cancellation sau nhận xe và bắt buộc PAID trước complete cho booking chính sách mới. Booking đã trả nhưng chưa PAID vẫn CONFIRMED nên tiếp tục dùng luồng payment này. Checkbox/label `CASH_SIMULATED` hiện tại chỉ là thanh toán giả lập của Customer, không chứng minh Owner đã thu tiền thật. Xem [plan Phase 6](phase-6-inspection.md), P6.10.
+
 > **D-24 / SDD §7.6:** Bảng payments và seed đã có từ `scriptDB.sql`; Hibernate `ddl-auto=none`, không tạo lại bảng. `booking_id` không unique. Seed #2 có PAID, #3 CONFIRMED chưa PAID, #5 CANCELLED có REFUNDED dùng để đọc/đối chiếu; không thanh toán/hủy/sửa seed gốc. Verify mutation trên fixture riêng, ghi đúng ID và baseline; rollback hoặc cleanup đúng fixture theo FK, so seed/ảnh sau kiểm tra.
 
 > **Thứ tự đã duyệt 2026-10-11:** P4.1 chỉ entity/enums/repository, thực hiện trong đợt 3 Phase 3: **P3.6 → P4.1 → P3.7**, trước P3.8, vì DB đã có payment mẫu. Không chạy lại P4.1 khi bắt đầu Phase 4. P4.2–P4.6 triển khai sau Phase 3; P4.6 rà soát/verify refund từ P3.8.

@@ -12,12 +12,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    // Advisory only: booking creation must use the current locking read below.
-    @Query("select count(b) > 0 from Booking b where b.car.id = :carId "
-            + "and b.status in (com.carrent.booking.BookingStatus.PENDING, com.carrent.booking.BookingStatus.CONFIRMED) "
-            + "and b.startDate < :end and b.endDate > :start")
-    boolean existsConflict(@Param("carId") Long carId, @Param("start") LocalDate start, @Param("end") LocalDate end);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select b from Booking b where b.car.id = :carId "
             + "and b.status in (com.carrent.booking.BookingStatus.PENDING, com.carrent.booking.BookingStatus.CONFIRMED) "

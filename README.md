@@ -36,7 +36,9 @@ Notification **P3.1–P3.3 đã triển khai**: sau login, bấm chuông trên h
 
 Booking backend **P3.4–P3.5 đã triển khai**: mapping bảng có sẵn, kiểm tra CUSTOMER/ACTIVE, ngày và lịch trùng, chụp giá/địa chỉ và tính tiền ở server, tạo PENDING cùng thông báo Owner. Khóa MySQL theo D-13 chặn hai yêu cầu đặt trùng cả khi transaction giữ snapshot cũ; lỗi chờ khóa trả 409 tiếng Việt. Form/detail/list đã nối trong đợt 3 bên dưới. Kết quả 149 assertions Spring/MySQL và 16 kiểm tra HTTP tại [plan Phase 3 — đợt 2](docs/plans/phase-3-booking.md#kết-quả-verify--đợt-2-p34p35-2026-10-11).
 
-Booking UI **P3.6 → P4.1 → P3.7 đã triển khai**: đăng nhập Customer → `/cars` → chi tiết xe → chọn ngày **Kiểm tra khả dụng** hoặc **Đặt xe** → `/bookings/new?carId=<id>` → submit → `/bookings/{id}`. Xem danh sách ở `/bookings` hoặc **Đơn thuê** trên header. Availability không giữ chỗ; server kiểm tra lại khi submit. Giá/địa chỉ snapshot và trạng thái PAID thật được hiển thị. Owner sở hữu xe/Admin có thể mở generic detail từ BOOKING notification; Customer/Owner khác nhận 404. Nút cancel và Owner confirm/reject đã nối ở đợt 4 bên dưới; payment UI/history chi tiết thuộc Phase 4. Kết quả đợt 3: 118 assertions Spring/MySQL/MVC, 149 hồi quy backend, 117 HTTP/MySQL và 47 browser checks; DB/ảnh gốc giữ nguyên.
+Booking UI **P3.6 → P4.1 → P3.7 đã triển khai**: Customer đặt xe → `/bookings/{id}`; xem danh sách ở `/bookings` hoặc **Đơn thuê** trên header. Giá/địa chỉ snapshot và trạng thái PAID thật được hiển thị. Owner sở hữu xe/Admin có thể mở generic detail từ BOOKING notification; Customer/Owner khác nhận 404. Nút cancel và Owner confirm/reject đã nối ở đợt 4 bên dưới; payment UI/history chi tiết thuộc Phase 4. Kết quả lịch sử đợt 3: 118 assertions Spring/MySQL/MVC, 149 hồi quy backend, 117 HTTP/MySQL và 47 browser checks; DB/ảnh gốc giữ nguyên.
+
+**Cập nhật tìm xe theo ngày (2026-10-17, D-26):** tại `/cars`, chọn **Ngày nhận xe / Ngày trả xe** trong nhóm **Thời gian thuê** ở đầu sidebar → **Áp dụng bộ lọc** → chỉ còn xe trống suốt khoảng thuê. Bỏ trống cả hai ngày để xem tất cả xe công khai; chọn thiếu/sai ngày được báo ngay tại bộ lọc và giữ dữ liệu. Ngày đi theo phân trang/sắp xếp → **Xem chi tiết** → **Đặt thuê xe**, điền sẵn vào form và vẫn cho sửa. Phần **Kiểm tra khả dụng** riêng ở chi tiết đã bỏ. Kết quả tìm kiếm không giữ chỗ; backend kiểm tra lại lịch dưới khóa khi gửi đơn. Lỗi tạo đơn giữ ngày/ghi chú trên form. PENDING/CONFIRMED chặn lịch; hai khoảng chỉ chạm biên không trùng. Không đổi schema DB.
 
 Booking transitions **P3.8–P3.10 đã triển khai**: Customer mở `/bookings/{id}` → **Hủy đơn thuê** cho PENDING/CONFIRMED; payment PAID được REFUNDED cùng transaction và notification, chỉ mô phỏng. Owner mở `/owner/bookings` hoặc **Đơn thuê** trong sidebar trang xe → **Xem chi tiết** → **Xác nhận đơn thuê** / **Từ chối đơn thuê** (nhập lý do 1–500 ký tự) khi PENDING. Từ BOOKING notification, Owner có link **Quản lý đơn thuê** trên generic detail. Khóa DB và current read chặn xử lý trạng thái cũ khi thao tác đồng thời. Kiểm chứng: 232 Spring/MySQL/MVC, 118 hồi quy, 139 HTTP/MySQL, 57 browser + 11 DB checks; baseline DB/ảnh giữ nguyên.
 
@@ -44,9 +46,20 @@ Booking hoàn tất/xóa xe **P3.11–P3.13 đã triển khai**: Owner mở `/ow
 
 Redirect `/owner/dashboard` và `/admin/dashboard`, profile vẫn thuộc các đợt sau, có thể trả 404; dùng các route trực tiếp ở trên để test. **Phase 3 hoàn tất; tiếp theo Phase 4 từ P4.2** (P4.1 đã có, không làm lại). Danh sách xe nổi bật trên trang chủ thuộc P5.8. Tài nguyên giao diện bên ngoài cần internet. Kết quả kiểm chứng và giới hạn chức năng xe tại [plan Phase 2](docs/plans/phase-2-car.md).
 
+## Kiểm thử tìm xe theo ngày
+
+Với MySQL và cấu hình local như phần chạy ứng dụng, chạy:
+
+```powershell
+.\mvnw.cmd clean test
+```
+
+`src/test/java/com/carrent/car/CarDateSearchIntegrationTest.java` kiểm tra trực tiếp Spring/MySQL/MVC, gồm trùng lịch/trạng thái/biên ngày, lọc trước phân trang, ngày thiếu/sai, chuyển ngày tới đặt thuê, sửa ngày, giữ dữ liệu khi lỗi và phân quyền/CSRF. Fixture nằm trong transaction được rollback sau mỗi test; không tạo hoặc đổi schema. Dùng build sạch để tránh dùng lại `.class` do trình biên dịch nền IDE ghi vào `target`.
+
 ## Tài liệu và file local
 
 - [SDD](docs/SDD.md), [quyết định](docs/decisions.md), [plans](docs/plans/) và [prototype Stitch](docs/design/stitch/README.md).
+- **Phase 6 đã duyệt thiết kế, chưa triển khai:** [biên bản bàn giao và trả xe](docs/plans/phase-6-inspection.md), 14 task chia 4 đợt. Owner lập BEFORE/Customer nhận xe; Customer lập AFTER/Owner nhận lại, ảnh riêng tư và Admin xử lý bất đồng. Cho nhận chưa PAID; trả xe xong chờ PAID mới complete. DB hiện vẫn 7 bảng; migration bổ sung sẽ thực hiện ở P6.1.
 - `CarRent.md` là bản thảo cũ giữ để tham khảo; SDD hiện tại mô tả yêu cầu đang áp dụng.
 - `.scratch/` và `.superpowers/` giữ script, ảnh và biên bản kiểm tra ở local, bị Git bỏ qua. Bản clone mới không chứa các bằng chứng local được tham chiếu trong plan.
 - `target/`, cache, log, cấu hình IDE và ảnh upload runtime bị Git bỏ qua; sáu ảnh seed vẫn đưa vào repo.

@@ -43,11 +43,14 @@ public class BookingController {
 
     @GetMapping("/bookings/new")
     public String createForm(@RequestParam(required = false) Long carId,
-                             @AuthenticationPrincipal CustomUserPrincipal principal, Model model) {
+                             @ModelAttribute("form") BookingCreateForm form, BindingResult result,
+                             @AuthenticationPrincipal CustomUserPrincipal principal,
+                             HttpServletResponse response, Model model) {
         populateForm(carId, principal, model);
-        BookingCreateForm form = new BookingCreateForm();
         form.setCarId(carId);
-        model.addAttribute("form", form);
+        if (result.hasErrors()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        }
         return "booking/create";
     }
 
@@ -69,8 +72,9 @@ public class BookingController {
             redirect.addFlashAttribute("successMessage", "Đặt xe thành công!");
             return "redirect:/bookings/" + booking.getId();
         } catch (BusinessException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/bookings/new?carId=" + form.getCarId();
+            result.reject("booking.unavailable", ex.getMessage());
+            populateForm(form.getCarId(), principal, model);
+            return "booking/create";
         }
     }
 

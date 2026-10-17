@@ -1,5 +1,8 @@
 package com.carrent.car;
 
+import com.carrent.booking.Booking;
+import com.carrent.booking.BookingStatus;
+import java.time.LocalDate;
 import java.util.Locale;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -25,6 +28,19 @@ public final class CarSpecifications {
 
     public static Specification<Car> isPublic() {
         return Specification.allOf(approvalEq(ApprovalStatus.APPROVED), listingEq(ListingStatus.ACTIVE));
+    }
+
+    public static Specification<Car> availableBetween(LocalDate start, LocalDate end) {
+        return (root, query, builder) -> {
+            var conflicts = query.subquery(Long.class);
+            var booking = conflicts.from(Booking.class);
+            conflicts.select(booking.get("id")).where(
+                    builder.equal(booking.get("car"), root),
+                    booking.get("status").in(BookingStatus.PENDING, BookingStatus.CONFIRMED),
+                    builder.lessThan(booking.get("startDate"), end),
+                    builder.greaterThan(booking.get("endDate"), start));
+            return builder.not(builder.exists(conflicts));
+        };
     }
 
     public static Specification<Car> categoryEq(Long categoryId) {

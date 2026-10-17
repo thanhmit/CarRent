@@ -91,8 +91,14 @@ public class CarService {
     @Transactional(readOnly = true)
     public Page<Car> searchPublicCars(CarSearchCriteria criteria, Pageable pageable) {
         CarSearchCriteria search = criteria == null ? new CarSearchCriteria() : criteria;
+        if (!validator.validate(search).isEmpty()) {
+            throw new BusinessException("Điều kiện lọc không hợp lệ. Vui lòng kiểm tra lại.");
+        }
         List<Specification<Car>> specifications = new ArrayList<>();
         specifications.add(CarSpecifications.isPublic());
+        if (search.getStartDate() != null && search.getEndDate() != null) {
+            specifications.add(CarSpecifications.availableBetween(search.getStartDate(), search.getEndDate()));
+        }
         if (search.getQ() != null && !search.getQ().isBlank()) {
             specifications.add(CarSpecifications.brandOrModelContains(search.getQ()));
         }
