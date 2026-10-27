@@ -1,6 +1,6 @@
 # CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
 
-**Ngày chốt:** 2026-10-27. **Trạng thái:** P7.1–P7.3 đã triển khai/kiểm chứng, queue đã nối 14 mutation HTTP; build sạch đạt 94 test. P7.4 và các phase sau còn là kế hoạch, chưa có migration hoặc giao dịch tiền thật. Bằng chứng tại [checkpoint Phase 7](phase-7-car-queue.md#bằng-chứng-p73--2026-10-27).
+**Ngày chốt:** 2026-10-27. **Trạng thái:** Phase 7/P7.1–P7.4 đã triển khai/kiểm chứng, queue nối 14 mutation HTTP và đạt gate transaction/DB hai kết nối; build sạch đạt 103 test. Các phase sau còn là kế hoạch, chưa có migration hoặc giao dịch tiền thật. Bằng chứng tại [checkpoint Phase 7](phase-7-car-queue.md#bằng-chứng-p74--2026-10-27).
 
 **Spec:** các quyết định brainstorming được tổng hợp tại file này; [SDD](../SDD.md) §1.4–1.6 lưu backlog và phạm vi tiền thật. Những phần mock payment/inspection cũ trong SDD và D-04/D-06/D-07/D-12/D-25 là thiết kế hoặc checkpoint trước lần cập nhật này. Khi thực hiện các phase bên dưới, dùng hợp đồng mới tại đây cho workflow mới; giữ bằng chứng lịch sử và hành vi legacy. Đồng bộ các chương chi tiết của SDD trước khi kích hoạt workflow mới.
 
@@ -18,7 +18,7 @@ Giữ số phase đã tồn tại để không đổi định danh task lịch s
 
 Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P4.2 trở đi, Phase 5 và Phase 6 được lập lại theo yêu cầu mới. Không chạy lại P4.1 và không đánh dấu bất kỳ task mới nào hoàn thành chỉ vì có plan.
 
-**Tiến độ hiện tại:** 44/85 task đã hoàn thành, 41 task còn lại; số task không phải phần trăm hoàn thiện sản phẩm. **Task tiếp theo: P7.4** — kiểm chứng transaction boundary, hai kết nối thật gọi service bỏ qua queue và contract worker tài chính; sau gate Phase 7 mới sang P4.2.
+**Tiến độ hiện tại:** 45/85 task đã hoàn thành, 40 task còn lại; số task không phải phần trăm hoàn thiện sản phẩm. **Task tiếp theo: P4.2** — kiểm chứng điều kiện tích hợp và chốt mapping SePay/kênh chi hoàn tiền. Phase 7 đã đạt gate local; điều kiện provider/live của Phase 4 chưa được kiểm chứng.
 
 ### Phân công ba thành viên
 
@@ -182,6 +182,7 @@ Migration chỉ chạy có kiểm soát, backup và kiểm tra schema nguồn; k
 
 - Reads không vào queue. Các entry point HTTP, xử lý receipt thuê xe và job thay đổi booking/custody cùng xe đi qua CarCommandExecutor; không lồng queue, không enqueue khi đang giữ transaction DB.
 - Queue chỉ điều phối một tiến trình, không thay khóa DB hoặc ngăn mọi deadlock. Webhook/job có nguồn việc bền vững trong DB; queue mất khi app dừng không được làm mất giao dịch đã ACK.
+- Contract tích hợp worker sau gate P7.4 được ghi tại [Phase 7](phase-7-car-queue.md#contract-worker-tài-chính-cho-phase-46): claim/route xong transaction mới enqueue, apply/processed cùng commit, admission fail giữ việc để retry; API payout ngoài transaction/Car queue.
 - Thứ tự khóa mở rộng: **Owner User → OwnerSubscription → SubscriptionOrder → Car → Booking (ID tăng) → Obligation → Intent → Receipt → Refund → PayoutAttempt → Inspection → Image**. Chỉ lấy các hàng cần thiết theo thứ tự, không lấy khóa ngược chiều. Nghiệp vụ không cần Owner/quota có thể bắt đầu từ Car nhưng sau đó không quay lại khóa Owner.
 - Quota phối hợp theo Owner bằng khóa hàng Owner, vì hai carId khác nhau vẫn có thể cùng lấy suất cuối. Subscription mutation không đi vào Car queue rồi chờ Owner lock; tier change/hide nhiều xe khóa Owner trước rồi Car theo ID tăng.
 - Xác thực webhook và ghi inbox là transaction riêng ngắn. Worker đọc route rồi vào queue nếu cần; transaction xử lý nghiệp vụ bắt đầu khi đến lượt. ACK thành công chỉ sau inbox commit; DB lỗi trả lỗi để nhà cung cấp retry.

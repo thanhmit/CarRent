@@ -12,7 +12,7 @@
 
 **Phân công:** `thanhmit` phụ trách toàn bộ task mới; `huy69332` review. Xem [phân công nhóm](team-assignment.md).
 
-**Checkpoint 2026-10-27:** P7.1–P7.3 đã triển khai và kiểm chứng; singleton executor đã nối 14 mutation HTTP. Build sạch đạt 94 test; task tiếp theo: **P7.4** — gate transaction/DB hai kết nối và contract worker tài chính. Chưa triển khai thanh toán thật.
+**Checkpoint 2026-10-27:** P7.1–P7.4 đã triển khai và kiểm chứng, **Phase 7 hoàn tất**. Singleton executor nối 14 mutation HTTP; gate transaction/DB hai kết nối đạt và contract worker tài chính đã ghi bên dưới. Build sạch đạt **103 test**; task tiếp theo: **P4.2**. Chưa triển khai thanh toán thật; chưa ghi nhận review của contributor khác.
 
 ## Global Constraints
 
@@ -148,10 +148,38 @@ GET danh sách/chi tiết và các thao tác ngoài aggregate xe/booking không 
 
 **Test:** CarCommandTransactionTest; hồi quy `car/CarDateSearchIntegrationTest.java` hiện có.
 
-- [ ] Hai transaction/kết nối thật cùng xe vẫn không tạo trùng kể cả gọi trực tiếp service bỏ qua queue; chứng minh không thay khóa DB bằng queue.
-- [ ] Assert transaction chưa mở khi task đang chờ; task trả về sau commit/rollback. Chạy query current read để loại stale managed state như protocol hiện có.
-- [ ] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`; đối chiếu baseline seed và status cuối fixture.
-- [ ] Ghi contract cho Phase 4/6: worker đọc ID việc từ DB rồi gọi `execute(carId, ...)`; nếu admission fail thì để việc trong DB retry, không đánh dấu processed trước commit.
-- [ ] Cập nhật checkpoint chỉ sau khi các test trên chạy thật; không cần benchmark hoặc triển khai queue phân tán.
+- [x] Hai transaction/kết nối thật cùng xe vẫn không tạo trùng kể cả gọi trực tiếp service bỏ qua queue; chứng minh không thay khóa DB bằng queue.
+- [x] Assert transaction chưa mở khi task đang chờ; task trả về sau commit/rollback. Chạy query current read để loại stale managed state như protocol hiện có.
+- [x] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`; đối chiếu baseline seed và status cuối fixture.
+- [x] Ghi contract cho Phase 4/6: worker đọc ID việc từ DB rồi gọi `execute(carId, ...)`; nếu admission fail thì để việc trong DB retry, không đánh dấu processed trước commit.
+- [x] Cập nhật checkpoint chỉ sau khi các test trên chạy thật; không cần benchmark hoặc triển khai queue phân tán.
 
 **Hoàn thành khi:** FIFO/parallel/giới hạn/cleanup/exception/transaction boundary đều có bằng chứng; luồng cũ giữ kết quả; reads bypass queue; còn lỗi DB có thông báo kiểm soát. Chưa có thay đổi số tiền, webhook hoặc workflow rental mới.
+
+### Bằng chứng P7.4 — 2026-10-27
+
+- Thêm `CarCommandTransactionTest`: **9 test tích hợp Spring/JPA/MySQL đạt**, dùng service proxy, transaction manager và connection thật. Không mock service/DB, không thêm dependency hoặc thay đổi implementation production. Transaction listener của Spring chỉ được gắn trong từng test rồi khôi phục; latch có deadline và mọi tác vụ được đợi kết thúc trước cleanup fixture theo ID.
+- **Chờ queue chưa mở transaction:** listener `beforeBegin` quan sát không có transaction nào khi action bị chặn ở queue; khi tới lượt mới có một transaction trên `car-command-*`, không ở thread caller. Gọi queue từ transaction thật đang khóa Car bị từ chối trước khi action chạy; sau khi nhả transaction vẫn tạo booking được.
+- **Commit/rollback boundary:** giữ proxy ở cả trước và sau commit/rollback bằng listener/latch; caller và lệnh kế tiếp chưa được hoàn tất/chạy. Connection độc lập thấy booking/notification bằng 0 trước commit; sau commit bằng 1, sau rollback bằng 0. Lỗi rollback gốc trở về đúng caller; tác vụ kế tiếp vẫn chạy. Nhánh rollback dùng TransactionTemplate bao service proxy thật, flush booking/notification rồi ném lỗi fixture.
+- **Bỏ qua queue vẫn an toàn DB:** hai connection ID khác nhau, REPEATABLE READ; A tạo booking chưa commit, B giữ snapshot cũ không thấy đơn và managed Car cũ rồi gọi trực tiếp BookingService. Test quan sát `performance_schema.data_lock_waits` đúng Car và hai connection, không suy đoán bằng sleep. A commit → B từ chối trùng lịch; A rollback → B đặt thành công. Cả hai kết thúc chỉ 1 booking và 1 notification bền vững. Tài khoản DB chạy test cần đọc được các bảng lock/thread trong `performance_schema`.
+- **Current read:** snapshot/managed Car cũ vẫn có giá 500.000 và ACTIVE sau khi connection khác đổi giá/ẩn xe; createBooking dùng giá 700.000, tổng 1.400.000 cho 2 ngày hoặc từ chối xe đã ẩn. Managed Booking PENDING cũ không cho Owner confirm sau khi connection khác đã cancel; không phát sinh notification confirm.
+- Đây là gate kiểm chứng implementation đã có: các lát test lần lượt đạt 1 → 3 → 5 → 9 ca. Kiểm tra độ nhạy chủ động tạm bỏ `detach` trong `BookingService.lockedCar`: **RED 2/2** (dùng giá 500.000 cũ, nhận xe đã ẩn), log `.scratch/phase7/transaction-sensitivity-red.log`. Sau đó khôi phục nguyên bytes production; `git diff -- src/main/java src/main/resources` rỗng. Không coi lỗi được chủ động tạo là bug mới đã sửa của production.
+- Build cuối `.\mvnw.cmd -o '-Dmaven.compiler.useIncrementalCompilation=false' clean verify` → **BUILD SUCCESS; 103 test, 0 failure/error/skip** (19 lõi + 34 date-search + 41 HTTP queue + 9 transaction). Log `.scratch/phase7/transaction-clean-verify.log`. SQL CHECK stack và WARN shutdown từ các test lỗi có chủ đích đã có tại P7.1–P7.3.
+- Script `.scratch/phase7/check-transaction-db.py` đối chiếu `.scratch/phase7/transaction-db-before.json`: rows/timestamps fingerprints, columns/constraints cả 7 bảng và ảnh seed giữ nguyên; không còn user/car fixture P7.4. Checker P7.3 cũng đạt lại. Không reset/seed/DDL DB; AUTO_INCREMENT có thể tăng do fixture.
+- Contract worker Phase 4/6 bên dưới đã ghi; chưa tạo inbox/job/payout hoặc thử API tiền thật. Không benchmark/browser, không thêm cơ chế queue phân tán. Nhánh triển khai `feat/car-queue-transaction`; chủ dự án yêu cầu commit/push/merge sau kiểm chứng và giữ nhánh. Thay đổi riêng sẵn có ở `phase-0-init.md` được giữ ngoài commit. Phụ trách `thanhmit`, reviewer `huy69332` chưa ghi nhận review.
+
+### Contract worker tài chính cho Phase 4/6
+
+Đây là hợp đồng tích hợp cho các worker sẽ được tạo tại Phase 4/6, không phải code thanh toán đã triển khai.
+
+1. **Nguồn việc là DB.** Webhook phải xác thực và commit inbox trước ACK. Scheduler tìm lại việc chưa hoàn tất từ DB sau restart; không dùng queue RAM hoặc một `Supplier` trong bộ nhớ làm bằng chứng đã nhận tiền.
+2. **Claim và route trước queue.** `ReceiptProcessor.process(inboxId)` đọc ID đối tượng/carId từ dữ liệu server; claim bằng lease trong transaction ngắn rồi commit. Kết thúc transaction và nhả khóa trước `execute`. Route chỉ là gợi ý định tuyến; apply phải đọc lại đối tượng/trạng thái hiện hành. Không chuyển managed entity, EntityManager hoặc transaction sang worker.
+3. **Rental theo carId.** Worker gọi `commands.execute(carId, () -> { applicationService.apply(inboxId); return null; })`. `applicationService` là Spring proxy `ReceiptApplicationService`, mở transaction hữu hạn khi đến lượt; không gọi qua `this`, không lồng queue. Job expiry dùng cùng quy tắc với `expire(intentId)`.
+4. **Giữ thứ tự khóa và current read.** Apply rental khóa Car/Booking trước Obligation/Intent/Receipt rồi mới handler domain; trạng thái managed/snapshot cũ phải được đọc lại dưới khóa như protocol hiện có. Với subscription, khóa Owner trước entitlement/order và Car theo ID tăng; không vào Car queue rồi quay lại lấy Owner lock, không tạo carId giả cho gói.
+5. **Chỉ hoàn tất sau commit.** Receipt duy nhất, thay đổi domain, notification và đánh dấu inbox processed nằm cùng transaction. Nếu lỗi thì rollback cả nhóm; không có trạng thái processed bền vững trước commit. Caller chỉ nhận kết quả sau proxy hoàn tất commit/rollback.
+6. **Từ chối admission không làm mất việc.** Queue đầy, hết chờ trước chạy hoặc app đang dừng: giữ việc trong DB để quét lại; trả lease hoặc chờ lease hết hạn theo cơ chế claim, không đánh dấu processed/failed vĩnh viễn. Tác vụ bị từ chối trước chạy không được âm thầm apply muộn. Tác vụ RUNNING đợi kết quả transaction, không coi hết chờ queue là bằng chứng đã rollback.
+7. **Retry phải idempotent.** Rollback/crash trước commit cho phép retry; crash sau commit nhưng trước nhận kết quả phải được nhận diện từ DB để không cộng tiền/cấp quyền/tạo refund lần hai. Unique provider transaction và business key theo Phase 4 là lớp bảo vệ cuối, không dựa vào FIFO để chống trùng. Domain chưa bật vẫn giữ việc bền vững.
+8. **Tách quyền người dùng và ghi nhận tiền.** HTTP giữ CSRF và kiểm tra lại actor ACTIVE/role/ownership khi thực thi. Worker dùng entry point hệ thống, kiểm chứng channel/chủ thể và sự kiện đã xác thực; không giả session Customer hoặc bỏ giao dịch ngân hàng chỉ vì tài khoản bị khóa.
+9. **API chi ngoài transaction/queue.** Claim/lưu attempt và idempotency key → commit → gọi provider ngoài DB transaction và Car queue → ghi kết quả trong transaction ngắn; đối soát kết quả chưa rõ theo cùng key. Queue không giải quyết side effect mạng hoặc thay cơ chế phục hồi payout.
+
+Kiểm chứng inbox/retry/restart/payout thật thuộc P4.5–P4.10; P7.4 không tạo schema/job tiền, không chứng minh provider đã sẵn sàng live. Xem [hợp đồng chung §6.3](README.md#63-khóa-queue-và-giao-dịch-ngoài-hệ-thống) và [P4.6](phase-4-payment.md#task-p46--apply-receipt-một-lần-và-adapter-domain).

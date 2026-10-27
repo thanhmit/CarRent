@@ -1,7 +1,7 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.19
-**Trạng thái:** Schema/seed DB, Phase 1, Phase 2, Phase 3, P4.1 và queue P7.1–P7.3 đã triển khai; 14 mutation HTTP đã nối queue, tiếp theo P7.4
+**Phiên bản:** 2.20
+**Trạng thái:** Schema/seed DB, Phase 1, Phase 2, Phase 3, P4.1 và Phase 7/P7.1–P7.4 đã triển khai/kiểm chứng; tiếp theo P4.2
 **Ngày:** 2026-10-27
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
@@ -19,6 +19,8 @@
 > **Bổ sung v2.17:** Đã cập nhật các plan theo brainstorming ngày 2026-10-27: Queue → nền thanh toán thật → luồng thuê 30/70 và hợp đồng Owner → gói Owner → Admin. Xem [hợp đồng chung và roadmap hiện hành](plans/README.md) và §14.1. Hợp đồng này thay các chỉ dẫn triển khai mock payment, nhận xe chưa trả trước, Customer xác nhận nhận xe lần hai, hủy theo 72 giờ và bắt giải quyết AFTER trước complete của thiết kế cũ đối với workflow mới. Các chương FR/BR/schema cũ và checkpoint vẫn được giữ làm tham chiếu; phải đồng bộ chi tiết SDD trước cutover, không coi toàn bộ schema/workflow mới đã tồn tại trong ứng dụng.
 
 > **Bổ sung v2.19:** P7.3 đã nối singleton queue vào 14 POST xe/booking/ảnh, cấu hình transaction timeout 30 giây và trả HTTP 503 khi queue đầy/hết chờ trước chạy. Build sạch đạt 94 test; giữ DB locking, CSRF, kiểm tra lại quyền khi thực thi và policy legacy. P7.4 còn gate transaction/hai kết nối và contract worker tài chính; chưa có thanh toán thật. Bằng chứng và map route tại [plan Phase 7](plans/phase-7-car-queue.md#bằng-chứng-p73--2026-10-27).
+
+> **Bổ sung v2.20:** P7.4 hoàn tất gate local Phase 7: 9 test transaction/DB thật mới, tổng build sạch 103 test đạt. Kiểm chứng queue chờ chưa mở transaction, caller/lệnh sau đợi commit/rollback, hai kết nối bỏ qua queue vẫn chống đặt trùng và current read loại snapshot/entity cũ. Contract worker Phase 4/6 đã ghi; không thêm code production/schema/job tiền. Tiếp theo P4.2; chưa kiểm chứng provider live hoặc human review. Chi tiết tại [checkpoint P7.4](plans/phase-7-car-queue.md#bằng-chứng-p74--2026-10-27).
 
 ---
 
@@ -1319,7 +1321,7 @@ Chi tiết từng task (mục tiêu, ngữ cảnh, bước, ràng buộc, verify
 | 4 | P3.8–P3.10 | Customer cancel/refund, Owner list/detail và confirm/reject |
 | 5 | P3.11–P3.13 | Complete, xóa xe an toàn và E2E/concurrency toàn phase |
 
-Chi tiết checkpoint tại `plans/phase-3-booking.md`. Cả 5 đợt/P3.1–P3.13 và P4.1 đã triển khai, verify đầy đủ checkpoint. Theo roadmap mới, Phase 7/P7.1–P7.3 đã hoàn thành; tiếp theo P7.4 rồi Phase 4 viết lại. P4.1 là mapping/repository legacy đã hoàn tất, không chạy lại.
+Chi tiết checkpoint tại `plans/phase-3-booking.md`. Cả 5 đợt/P3.1–P3.13 và P4.1 đã triển khai, verify đầy đủ checkpoint. Theo roadmap mới, Phase 7/P7.1–P7.4 đã hoàn thành; tiếp theo P4.2 theo Phase 4 viết lại. P4.1 là mapping/repository legacy đã hoàn tất, không chạy lại.
 
 **Roadmap mới ngày 2026-10-27 — thứ tự 7 → 4 → 6 → 8 → 5**
 
@@ -1340,7 +1342,7 @@ Hợp đồng nghiệp vụ, money model, default kỹ thuật, interface, schem
 - **Phase 5:** doanh thu Admin từ gói hợp lệ, không SUM tiền thuê. Kết quả fixture/live được ghi riêng, không tick từ kế hoạch.
 - Cộng dồn/hoàn lệch tiền trả trước 30% tạm hoãn tại §1.4. Một Owner thật + Admin trước; live capability của nhà cung cấp cần kiểm chứng.
 
-**Tiến độ lịch sử:** 41 task đã hoàn thành (Phase 0–3 + P4.1). **Roadmap mới:** P7.1–P7.3 đã triển khai/kiểm chứng, 41/44 task còn lại chưa thực hiện; tổng hiện hành **44/85 task hoàn thành** trên 9 phase. Queue đã nối HTTP, P7.4 còn gate tích hợp; không suy ra phần trăm hoàn thiện chức năng từ số task. Không chuyển checkbox của task cũ sang task mới chỉ vì trùng số định danh.
+**Tiến độ lịch sử:** 41 task đã hoàn thành (Phase 0–3 + P4.1). **Roadmap mới:** P7.1–P7.4 đã triển khai/kiểm chứng, 40/44 task còn lại chưa thực hiện; tổng hiện hành **45/85 task hoàn thành** trên 9 phase. Phase 7 đạt gate local, queue chỉ phối hợp trong một tiến trình và vẫn giữ khóa DB; không suy ra phần trăm hoàn thiện chức năng từ số task. Không chuyển checkbox của task cũ sang task mới chỉ vì trùng số định danh.
 
 ### 14.2. Format mỗi task trong plan
 
@@ -1502,6 +1504,15 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - Snapshot trước/sau build đầy đủ giữ nguyên mọi row/timestamp fingerprint, columns/constraints của 7 bảng và ảnh seed; không còn xe/user/file fixture queue. Không DDL/reset/seed/dependency mới. Bằng chứng local `.scratch/phase7/http-clean-verify.log`, chi tiết tại [plan Phase 7](plans/phase-7-car-queue.md).
 - P7.4 chưa thực hiện, chưa benchmark/browser hoặc thanh toán thật. Tại thời điểm kiểm chứng, thay đổi P7.3 ở branch `feat/car-queue-http`, chưa stage/commit/push; phân công `thanhmit`, reviewer `huy69332` chưa ghi nhận review.
 
+### 14.17. Checkpoint transaction/DB P7.4 — 2026-10-27
+
+- Thêm `CarCommandTransactionTest`, 9 ca Spring/JPA/MySQL thật: quan sát transaction manager chưa mở transaction lúc chờ; caller và lệnh kế tiếp đợi cả trước/sau commit hoặc rollback; enqueue trong transaction thật đang giữ Car lock bị chặn. Test rollback flush booking/notification thật trước lỗi, không có dữ liệu bền vững sau rollback.
+- Hai kết nối REPEATABLE READ khác ID gọi BookingService trực tiếp, bỏ qua queue. B thiết lập snapshot cũ và managed Car trước khi chờ khóa Car của A; quan sát chờ thật bằng `performance_schema.data_lock_waits`. A commit thì B bị từ chối trùng; A rollback thì B thành công. Cả hai chỉ 1 booking/notification bền vững.
+- Current read dùng giá/visibility mới dù entity/snapshot cũ; Owner không confirm từ managed Booking PENDING khi connection khác đã cancel. Kiểm tra độ nhạy tạm bỏ detach đã RED 2/2, sau đó khôi phục nguyên bytes production và chạy GREEN. Đây là kiểm chứng cơ chế đã có, không phải sửa bug production mới.
+- Build `.\mvnw.cmd -o '-Dmaven.compiler.useIncrementalCompilation=false' clean verify` đạt **103 test, 0 failure/error/skip** (19 lõi + 34 date-search + 41 HTTP + 9 transaction), log `.scratch/phase7/transaction-clean-verify.log`. Baseline cả 7 bảng/ảnh seed giữ nguyên, không còn fixture P7.4; không DDL/reset/seed/dependency hoặc thay đổi code production.
+- [Contract worker Phase 4/6](plans/phase-7-car-queue.md#contract-worker-tài-chính-cho-phase-46): DB là nguồn việc bền vững, claim/route kết thúc transaction trước enqueue, service proxy apply/processed cùng commit, admission fail giữ việc retry, API payout ngoài transaction/queue. Chưa triển khai job tiền hoặc thử provider; không coi RAM queue là nguồn bảo đảm tài chính.
+- **Phase 7 hoàn tất; tiếp theo P4.2**, `thanhmit` phụ trách, `huy69332` review chưa ghi nhận. Nhánh `feat/car-queue-transaction`; chủ dự án yêu cầu commit/push/merge sau kiểm chứng và giữ nhánh. Giữ thay đổi riêng sẵn có ở `phase-0-init.md` ngoài commit. Không benchmark/browser hoặc kiểm chứng provider live trong P7.4.
+
 ## 15. Kết luận
 
-CarRent hiện vẫn là monolith Spring Boot/Thymeleaf/MySQL. Queue **P7.1–P7.3** đã triển khai, nối HTTP và kiểm chứng; tiếp theo **P7.4**, rồi theo thứ tự **4 → 6 → 8 → 5** cho thanh toán SePay/payOS, thuê xe 30/70 và gói Owner. Chi tiết hiện hành ở [plans/README.md](plans/README.md). Queue chỉ RAM trong một tiến trình và vẫn giữ DB locking. Đồng bộ SDD chi tiết, migration bảo toàn legacy, gate nhà cung cấp và kiểm chứng một Owner + Admin là điều kiện trước khi bật workflow tiền thật.
+CarRent hiện vẫn là monolith Spring Boot/Thymeleaf/MySQL. Queue **Phase 7/P7.1–P7.4** đã triển khai, nối HTTP và đạt gate transaction/DB; tiếp theo **P4.2**, theo thứ tự **4 → 6 → 8 → 5** cho thanh toán SePay/payOS, thuê xe 30/70 và gói Owner. Chi tiết hiện hành ở [plans/README.md](plans/README.md). Queue chỉ RAM trong một tiến trình và vẫn giữ DB locking. Đồng bộ SDD chi tiết, migration bảo toàn legacy, gate nhà cung cấp và kiểm chứng một Owner + Admin là điều kiện trước khi bật workflow tiền thật.
