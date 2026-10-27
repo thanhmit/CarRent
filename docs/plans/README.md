@@ -1,6 +1,6 @@
 # CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
 
-**Ngày chốt:** 2026-10-27. **Trạng thái:** P7.1–P7.2 đã triển khai/kiểm chứng lõi queue; chưa nối vào HTTP. Phần còn lại là kế hoạch, chưa có migration hoặc giao dịch tiền thật. Bằng chứng tại [checkpoint Phase 7](phase-7-car-queue.md#bằng-chứng-p71p72--2026-10-27).
+**Ngày chốt:** 2026-10-27. **Trạng thái:** P7.1–P7.3 đã triển khai/kiểm chứng, queue đã nối 14 mutation HTTP; build sạch đạt 94 test. P7.4 và các phase sau còn là kế hoạch, chưa có migration hoặc giao dịch tiền thật. Bằng chứng tại [checkpoint Phase 7](phase-7-car-queue.md#bằng-chứng-p73--2026-10-27).
 
 **Spec:** các quyết định brainstorming được tổng hợp tại file này; [SDD](../SDD.md) §1.4–1.6 lưu backlog và phạm vi tiền thật. Những phần mock payment/inspection cũ trong SDD và D-04/D-06/D-07/D-12/D-25 là thiết kế hoặc checkpoint trước lần cập nhật này. Khi thực hiện các phase bên dưới, dùng hợp đồng mới tại đây cho workflow mới; giữ bằng chứng lịch sử và hành vi legacy. Đồng bộ các chương chi tiết của SDD trước khi kích hoạt workflow mới.
 
@@ -18,7 +18,7 @@ Giữ số phase đã tồn tại để không đổi định danh task lịch s
 
 Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P4.2 trở đi, Phase 5 và Phase 6 được lập lại theo yêu cầu mới. Không chạy lại P4.1 và không đánh dấu bất kỳ task mới nào hoàn thành chỉ vì có plan.
 
-**Tiến độ hiện tại:** 43/85 task đã hoàn thành, 42 task còn lại; số task không phải phần trăm hoàn thiện sản phẩm. **Task tiếp theo: P7.3** — đăng ký executor/properties, cấu hình timeout transaction hữu hạn và nối các mutation HTTP; sau đó P7.4 kiểm chứng tích hợp.
+**Tiến độ hiện tại:** 44/85 task đã hoàn thành, 41 task còn lại; số task không phải phần trăm hoàn thiện sản phẩm. **Task tiếp theo: P7.4** — kiểm chứng transaction boundary, hai kết nối thật gọi service bỏ qua queue và contract worker tài chính; sau gate Phase 7 mới sang P4.2.
 
 ### Phân công ba thành viên
 
@@ -213,6 +213,6 @@ Mọi phase: fixture riêng, giữ seed/schema/data cũ theo baseline; không in
 git diff --check
 ```
 
-Trước khi thực thi plan: xác nhận baseline hiện tại, migration/backup và trạng thái từng gate. Cuối mỗi task ghi lệnh, kết quả thật và giới hạn; checkbox mới chỉ được tick sau khi thực thi. Không stage/commit/push tự động. Đợt cập nhật này chỉ tạo kế hoạch, không chạy build/DB hoặc chuyển tiền.
+Trước khi thực thi plan: xác nhận baseline hiện tại, migration/backup và trạng thái từng gate. Cuối mỗi task ghi lệnh, kết quả thật và giới hạn; checkbox mới chỉ được tick sau khi thực thi. Không stage/commit/push tự động. Đợt lập roadmap chỉ tạo kế hoạch; các lần thực thi sau được ghi riêng tại checkpoint từng phase, chưa chuyển tiền thật.
 
 **Gate bật demo mới:** Phase 7, 4, 6 và 8 đạt kiểm chứng tích hợp; một Owner và Admin có kênh thật hợp lệ; workflow flags chưa bật cho user khác. Phase 5 chốt dashboard và E2E toàn bộ. Tiền thật chỉ thử khi người dùng chủ động thực hiện giao dịch kiểm chứng đã xác định; không tự chuyển tiền thử lúc boot.

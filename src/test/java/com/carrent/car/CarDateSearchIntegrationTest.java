@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,13 +32,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.test.context.transaction.TestTransaction;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-/** Real MySQL and rendered MVC; every fixture and booking is rolled back after its test. */
+/** Real MySQL/MVC; read fixtures roll back, queued HTTP fixtures commit and are deleted by exact IDs. */
 @SpringBootTest(properties = {"debug=false", "logging.level.root=WARN", "logging.level.org.springframework=WARN",
         "logging.level.org.hibernate=WARN", "logging.level.org.hibernate.SQL=OFF", "spring.main.banner-mode=off"})
 @Transactional
@@ -48,6 +53,9 @@ class CarDateSearchIntegrationTest {
     @Autowired Filter springSecurityFilterChain;
     @Autowired CarService cars;
     @Autowired BookingService bookings;
+    @Autowired JdbcTemplate jdbc;
+    @Autowired PlatformTransactionManager transactions;
+    boolean committedFixture;
     MockMvc mvc;
     User owner;
     User customer;
@@ -59,10 +67,39 @@ class CarDateSearchIntegrationTest {
     void fixtures() {
         mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(springSecurityFilterChain).build();
         brand = "date-" + UUID.randomUUID();
+        committedFixture = false;
         owner = user(Role.OWNER);
         customer = user(Role.CUSTOMER);
         category = CarCategory.builder().name(brand).build();
         em.persist(category);
+    }
+
+    private void commitFixtureForHttp() {
+        // Worker transactions cannot see another thread's uncommitted fixture rows.
+        committedFixture = true;
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+    }
+
+    @AfterEach
+    void cleanupCommittedHttpFixture() {
+        if (!committedFixture) return;
+        new TransactionTemplate(transactions).executeWithoutResult(status -> {
+            for (Long carId : jdbc.queryForList("select id from cars where brand=?", Long.class, brand)) {
+                for (Long bookingId : jdbc.queryForList("select id from bookings where car_id=?", Long.class, carId)) {
+                    jdbc.update("delete from notifications where related_entity_type='BOOKING' and related_entity_id=?", bookingId);
+                    jdbc.update("delete from payments where booking_id=?", bookingId);
+                }
+                jdbc.update("delete from bookings where car_id=?", carId);
+                jdbc.update("delete from car_images where car_id=?", carId);
+                jdbc.update("delete from cars where id=?", carId);
+            }
+            jdbc.update("delete from car_categories where id=?", category.getId());
+            for (User user : new User[]{owner, customer}) {
+                jdbc.update("delete from notifications where user_id=?", user.getId());
+                jdbc.update("delete from users where id=?", user.getId());
+            }
+        });
     }
 
     User user(Role role) {
@@ -180,6 +217,8 @@ class CarDateSearchIntegrationTest {
         String token = csrf(page.getResponse().getContentAsString(StandardCharsets.UTF_8));
         booking(car, BookingStatus.CONFIRMED, start.plusDays(1), start.plusDays(3));
 
+        commitFixtureForHttp();
+
         var result = mvc.perform(post("/bookings").session(who).param("_csrf", token)
                 .param("carId", car.getId().toString()).param("startDate", start.toString())
                 .param("endDate", start.plusDays(4).toString()).param("customerNote", "Giữ ghi chú <script>test</script>")).andReturn();
@@ -275,6 +314,7 @@ class CarDateSearchIntegrationTest {
     void customerCanEditPrefilledDatesAndServerBooksFinalPeriod() throws Exception {
         Car car = car("Editable dates");
         em.flush();
+        commitFixtureForHttp();
         var who = session(customer);
         var form = mvc.perform(get("/bookings/new").session(who).param("carId", car.getId().toString())
                 .param("startDate", start.toString()).param("endDate", start.plusDays(4).toString())).andReturn();
@@ -311,6 +351,7 @@ class CarDateSearchIntegrationTest {
         em.flush();
         var who = session(customer);
         var page = mvc.perform(get("/bookings/new").session(who).param("carId", car.getId().toString())).andReturn();
+        commitFixtureForHttp();
         String from = switch (scenario) {
             case "bad" -> "bad";
             case "missing" -> "";

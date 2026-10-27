@@ -1,6 +1,7 @@
 package com.carrent.booking;
 
 import com.carrent.car.CarImageRepository;
+import com.carrent.concurrency.CarCommandExecutor;
 import com.carrent.common.exception.BusinessException;
 import com.carrent.payment.PaymentRepository;
 import com.carrent.payment.PaymentStatus;
@@ -25,11 +26,14 @@ public class OwnerBookingController {
     private final BookingService bookings;
     private final CarImageRepository images;
     private final PaymentRepository payments;
+    private final CarCommandExecutor commands;
 
-    public OwnerBookingController(BookingService bookings, CarImageRepository images, PaymentRepository payments) {
+    public OwnerBookingController(BookingService bookings, CarImageRepository images, PaymentRepository payments,
+                                  CarCommandExecutor commands) {
         this.bookings = bookings;
         this.images = images;
         this.payments = payments;
+        this.commands = commands;
     }
 
     @GetMapping("/owner/bookings")
@@ -70,7 +74,11 @@ public class OwnerBookingController {
     public String confirm(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal,
                           RedirectAttributes redirect) {
         try {
-            bookings.confirmBooking(id, principal);
+            Long carId = bookings.getBookingForView(id, principal).getCar().getId();
+            commands.execute(carId, () -> {
+                bookings.confirmBooking(id, principal);
+                return null;
+            });
             redirect.addFlashAttribute("successMessage", "Đã xác nhận đơn thuê.");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
@@ -82,7 +90,11 @@ public class OwnerBookingController {
     public String complete(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal,
                            RedirectAttributes redirect) {
         try {
-            bookings.completeBooking(id, principal);
+            Long carId = bookings.getBookingForView(id, principal).getCar().getId();
+            commands.execute(carId, () -> {
+                bookings.completeBooking(id, principal);
+                return null;
+            });
             redirect.addFlashAttribute("successMessage", "Đã hoàn tất đơn thuê.");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
@@ -99,7 +111,11 @@ public class OwnerBookingController {
             return "redirect:/owner/bookings/" + id;
         }
         try {
-            bookings.rejectBooking(id, principal, trimmedReason);
+            Long carId = bookings.getBookingForView(id, principal).getCar().getId();
+            commands.execute(carId, () -> {
+                bookings.rejectBooking(id, principal, trimmedReason);
+                return null;
+            });
             redirect.addFlashAttribute("successMessage", "Đã từ chối đơn thuê.");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());

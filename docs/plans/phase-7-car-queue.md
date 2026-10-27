@@ -12,7 +12,7 @@
 
 **Phân công:** `thanhmit` phụ trách toàn bộ task mới; `huy69332` review. Xem [phân công nhóm](team-assignment.md).
 
-**Checkpoint 2026-10-27:** P7.1–P7.2 đã triển khai và kiểm chứng; P7.3–P7.4 chưa thực hiện. Executor/properties hiện là lõi độc lập, chưa đăng ký bean hoặc nối controller. Task tiếp theo: **P7.3**.
+**Checkpoint 2026-10-27:** P7.1–P7.3 đã triển khai và kiểm chứng; singleton executor đã nối 14 mutation HTTP. Build sạch đạt 94 test; task tiếp theo: **P7.4** — gate transaction/DB hai kết nối và contract worker tài chính. Chưa triển khai thanh toán thật.
 
 ## Global Constraints
 
@@ -31,6 +31,7 @@
 - Modify `config/` để đăng ký properties/bean, `application.properties`, `common/exception/CommonExceptionHandler.java`.
 - Modify entry point hiện có: `booking/BookingController.java`, `booking/OwnerBookingController.java`, `car/OwnerCarController.java`, `car/AdminCarController.java`.
 - Test `src/test/java/com/carrent/concurrency/CarCommandExecutorTest.java`, `CarCommandTransactionTest.java`.
+- Test tích hợp HTTP `src/test/java/com/carrent/concurrency/CarQueueHttpIntegrationTest.java`; điều chỉnh fixture HTTP trong `car/CarDateSearchIntegrationTest.java` để worker đọc được dữ liệu đã commit.
 
 ### Task P7.1 — Admission, FIFO và chạy song song giữa xe
 
@@ -89,10 +90,10 @@ Test helper `await(CountDownLatch)` chờ tối đa 2 giây rồi fail; tạo ex
 
 **Files:** bốn controller đã liệt kê, config/CarQueueConfiguration, CommonExceptionHandler, application.properties. Giữ implementation transactional của BookingService/CarService qua proxy.
 
-- [ ] Đăng ký `CarQueueProperties` bằng `@EnableConfigurationProperties`, tạo singleton executor bean có destroy method `close`, khai báo giới hạn tại server. Đặt timeout transaction hữu hạn cho các service action (không dùng thời gian chờ queue để giả làm timeout transaction); xác minh commit/rollback qua proxy tại P7.4.
+- [x] Đăng ký `CarQueueProperties` bằng `@EnableConfigurationProperties`, tạo singleton executor bean có destroy method `close`, khai báo giới hạn tại server. Đặt timeout transaction hữu hạn cho các service action (không dùng thời gian chờ queue để giả làm timeout transaction); xác minh commit/rollback qua proxy tại P7.4.
 
-- [ ] Lập bảng toàn bộ POST thay đổi xe/booking/image hiện tại; với route có bookingId đọc carId để route, sau đó service kiểm tra lại ownership/current state khi thực thi. Create car chưa có carId không vào queue; quota Owner sẽ khóa DB tại Phase 8.
-- [ ] Bao entry point theo mẫu:
+- [x] Lập bảng toàn bộ POST thay đổi xe/booking/image hiện tại; với route có bookingId đọc carId để route, sau đó service kiểm tra lại ownership/current state khi thực thi. Create car chưa có carId không vào queue; quota Owner sẽ khóa DB tại Phase 8.
+- [x] Bao entry point theo mẫu:
 
 ```java
 commands.execute(carId, () -> {
@@ -103,8 +104,43 @@ commands.execute(carId, () -> {
 
 Không di chuyển `@Transactional` lên controller/executor và không gọi transactional method bằng self-invocation. Bấm xác nhận chỉ nhận success sau khi service proxy đã commit.
 
-- [ ] Queue đầy/hết chờ khi chưa chạy: HTTP 503 với thông báo tiếng Việt thử lại, không lộ stack/SQL; rollback hoặc admission fail không gửi notification thành công. Giữ handler 409 cho lỗi khóa DB hiện có.
-- [ ] Test HTTP cùng xe confirm/cancel cạnh tranh; chỉ một transition hợp lệ. Thêm test SQL failure/notification failure cho thấy caller nhận lỗi sau rollback và task sau tiếp tục chạy.
+- [x] Queue đầy/hết chờ khi chưa chạy: HTTP 503 với thông báo tiếng Việt thử lại, không lộ stack/SQL; rollback hoặc admission fail không gửi notification thành công. Giữ handler 409 cho lỗi khóa DB hiện có.
+- [x] Test HTTP cùng xe confirm/cancel cạnh tranh; mỗi tác vụ kiểm tra trạng thái đã commit của tác vụ trước và chỉ áp dụng transition hợp lệ theo policy hiện hành. Thêm test SQL failure/notification failure cho thấy caller nhận lỗi sau rollback và task sau tiếp tục chạy.
+
+### Map mutation HTTP P7.3
+
+Tất cả route dưới đây dùng POST. Preflight kiểm tra ID/quyền để định tuyến; worker gọi service proxy với ID/form/principal tường minh, đọc lại quyền và trạng thái trong transaction riêng. Không chuyển EntityManager, managed entity, Model, session hoặc SecurityContext sang worker.
+
+| Route | Khóa queue | Service |
+|---|---|---|
+| `/bookings` | `form.carId` | `createBooking` |
+| `/bookings/{id}/cancel` | carId từ booking | `cancelBooking` |
+| `/owner/bookings/{id}/confirm` | carId từ booking | `confirmBooking` |
+| `/owner/bookings/{id}/complete` | carId từ booking | `completeBooking` |
+| `/owner/bookings/{id}/reject` | carId từ booking | `rejectBooking` |
+| `/owner/cars/{id}/edit` | id xe | `updateCar`, gồm upload ảnh |
+| `/owner/cars/{id}/images/{imageId}/delete` | id xe | `deleteImage` |
+| `/owner/cars/{id}/deactivate` | id xe | `deactivateCar` |
+| `/owner/cars/{id}/activate` | id xe | `activateCar` |
+| `/owner/cars/{id}/delete` | id xe | `deleteCar` |
+| `/admin/cars/{id}/approve` | id xe | `approveCar` |
+| `/admin/cars/{id}/reject` | id xe | `rejectCar` |
+| `/admin/cars/{id}/deactivate` | id xe | `deactivateCarForAdmin` |
+| `/admin/cars/{id}/activate` | id xe | `activateCarForAdmin` |
+| `/owner/cars/new` | bypass, chưa có carId | `createCar` |
+
+GET danh sách/chi tiết và các thao tác ngoài aggregate xe/booking không enqueue. Validation có thể trả lỗi trước admission. Không thay đổi `@Transactional` hoặc khóa/current read trong service.
+
+### Bằng chứng P7.3 — 2026-10-27
+
+- `CarQueueConfiguration` đăng ký properties và singleton executor có `destroyMethod=close`. Cấu hình production: 4 worker, 50 chờ/xe, 500 chờ toàn app, chờ trước chạy 10 giây, shutdown grace 30 giây; `spring.transaction.default-timeout=30s`, test xác nhận JpaTransactionManager nhận giá trị 30 giây.
+- RED: thiếu executor bean; sau khi đăng ký bean, 14 ca queue đầy vẫn trả 302/200 thay vì 503. Sau khi nối controller và handler, GREEN. Fixture test cũ phải commit trước POST qua queue vì worker dùng connection/transaction khác; giữ kiểm tra giá phía server và trùng lịch. Helper đồng bộ test được sửa để phân biệt chờ DB với chờ trong executor, không dùng sleep đoán thứ tự.
+- **41 test Spring/MySQL/MVC HTTP đạt:** 14 route thành công và 14 route queue đầy; timeout không tạo đơn muộn; reads/create-car bypass; CSRF/role/ownership/ID sai; hai thứ tự confirm/cancel; lỗi notification rollback cả booking/payment/thông báo; SQL CHECK failure thật và lỗi khóa được inject trả 500/409, tác vụ sau vẫn commit; ba role bị BANNED khi chờ và đổi ownership đều bị worker từ chối. Xóa ảnh/xóa xe kiểm tra file đã được dọn sau commit.
+- **Làm rõ policy legacy:** cancel trước → confirm bị từ chối (1 transition/notification); confirm trước → Customer vẫn được cancel CONFIRMED (2 transition/notification hợp lệ, cuối cùng CANCELLED). Không đổi policy chỉ để ép cả hai thứ tự có đúng một transition. Chặn hủy sau bàn giao thuộc Phase 6.
+- SQL failure dùng UPDATE vi phạm CHECK trên booking fixture sau khi flush thay đổi và notification thật; không sửa constraint/schema. Lỗi notification chỉ được kích hoạt trong test, không thêm hook production. Ca 409 ở đợt này là lỗi inject, không được coi là bằng chứng 1205/1213 thật mới; gate hai kết nối còn tại P7.4.
+- Build cuối `.\mvnw.cmd -o '-Dmaven.compiler.useIncrementalCompilation=false' clean verify` → **BUILD SUCCESS; 94 test, 0 failure/error/skip** (19 lõi queue + 34 tìm xe theo ngày + 41 HTTP queue). Raw log local: `.scratch/phase7/http-clean-verify.log`. Stack SQL CHECK và hai WARN shutdown trong log là nhánh lỗi có chủ đích; cảnh báo Mockito/Java agent có từ bộ test cũ.
+- Snapshot trước/sau lần build đầy đủ xác nhận fingerprints toàn bộ rows/timestamps, columns/constraints của 7 bảng và ảnh seed giữ nguyên; không còn xe fixture queue/date, user queue hoặc file ảnh queue. Script local `.scratch/phase7/check-http-db.py`; baseline `.scratch/phase7/http-db-before.json`. Không reset/seed/DDL DB, không thêm dependency. AUTO_INCREMENT có thể tăng do fixture.
+- `git diff --check` đạt; giữ nguyên thay đổi có sẵn ở `phase-0-init.md`. Tại thời điểm kiểm chứng: branch `feat/car-queue-http`, chưa stage/commit/push; chưa ghi nhận review của contributor khác. Chưa benchmark/browser hoặc tích hợp tiền thật. Queue vẫn chỉ RAM trong một tiến trình; DB locking/rollback được giữ nguyên. **P7.4 chưa hoàn thành.**
 
 ### Task P7.4 — Gate tích hợp và điểm mở rộng cho worker tài chính
 
