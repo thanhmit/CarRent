@@ -44,7 +44,7 @@ Booking transitions **P3.8–P3.10 đã triển khai**: Customer mở `/bookings
 
 Booking hoàn tất/xóa xe **P3.11–P3.13 đã triển khai**: Owner mở `/owner/bookings/{id}` → **Hoàn tất đơn thuê** khi CONFIRMED và ngày trả xe đã qua (hôm nay chưa được, không cần PAID). Mở `/owner/cars` → icon **Xóa** để xóa vĩnh viễn xe chưa từng có đơn; xe đã có lịch sử thuê ở bất kỳ trạng thái nào phải dùng **Ẩn xe**. Xóa ảnh chỉ sau commit, rollback giữ ảnh; kiểm chứng đồng thời đặt/ẩn/xóa và upload/xóa không để dữ liệu hoặc file mồ côi. Kết quả: 192 Spring/MySQL/MVC, 149+118+232 hồi quy, 225 HTTP/MySQL, 65+6 browser, 5 browser DB checks; timeout/deadlock thật rollback+409, review Approved, DB/sáu ảnh seed nguyên vẹn. [Plan Phase 3 — kết quả đợt 5](docs/plans/phase-3-booking.md#kết-quả-verify--đợt-5-p311p313-2026-10-11).
 
-Redirect `/owner/dashboard` và `/admin/dashboard`, profile vẫn thuộc các đợt sau, có thể trả 404; dùng các route trực tiếp ở trên để test. **Phase 3 hoàn tất; tiếp theo Phase 4 từ P4.2** (P4.1 đã có, không làm lại). Danh sách xe nổi bật trên trang chủ thuộc P5.8. Tài nguyên giao diện bên ngoài cần internet. Kết quả kiểm chứng và giới hạn chức năng xe tại [plan Phase 2](docs/plans/phase-2-car.md).
+Redirect `/owner/dashboard` và `/admin/dashboard`, profile vẫn thuộc các đợt sau, có thể trả 404; dùng các route trực tiếp ở trên để test. **Phase 3/P4.1 và lõi queue P7.1–P7.2 đã hoàn tất; tiếp theo P7.3 → P7.4**, rồi theo [roadmap 7 → 4 → 6 → 8 → 5](docs/plans/README.md). Queue chưa nối controller, nên luồng HTTP vẫn dùng transaction/khóa DB hiện có. Danh sách xe nổi bật trên trang chủ thuộc P5.8. Tài nguyên giao diện bên ngoài cần internet. Kết quả kiểm chứng và giới hạn chức năng xe tại [plan Phase 2](docs/plans/phase-2-car.md).
 
 ## Kiểm thử tìm xe theo ngày
 
@@ -55,6 +55,14 @@ Với MySQL và cấu hình local như phần chạy ứng dụng, chạy:
 ```
 
 `src/test/java/com/carrent/car/CarDateSearchIntegrationTest.java` kiểm tra trực tiếp Spring/MySQL/MVC, gồm trùng lịch/trạng thái/biên ngày, lọc trước phân trang, ngày thiếu/sai, chuyển ngày tới đặt thuê, sửa ngày, giữ dữ liệu khi lỗi và phân quyền/CSRF. Fixture nằm trong transaction được rollback sau mỗi test; không tạo hoặc đổi schema. Dùng build sạch để tránh dùng lại `.class` do trình biên dịch nền IDE ghi vào `target`.
+
+## Kiểm thử lõi queue theo carId
+
+```powershell
+.\mvnw.cmd '-Dtest=CarCommandExecutorTest' test
+```
+
+19 test không cần DB: FIFO, song song giữa xe, giới hạn 50/500 tác vụ chờ, timeout trước chạy, interruption, shutdown, trả nguyên lỗi và đua enqueue/cleanup. Chạy toàn bộ bằng `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify` cần MySQL local cho 34 test tìm xe theo ngày hiện có. Checkpoint P7.1–P7.2: **53 test đạt**, không đổi schema/seed hoặc dependency. Xem [plan Phase 7](docs/plans/phase-7-car-queue.md); Spring bean/HTTP 503 và transaction boundary tích hợp thuộc P7.3–P7.4.
 
 ## Tài liệu và file local
 

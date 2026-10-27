@@ -1,8 +1,8 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.15
-**Trạng thái:** Schema/seed DB, Phase 1, Phase 2/P2.1–P2.14, Phase 3/P3.1–P3.13 và P4.1 đã triển khai; P4.2–P4.6 và Phase 5 chờ triển khai; module biên bản nhận/trả xe đã duyệt, triển khai tại Phase 6
-**Ngày:** 2026-10-17
+**Phiên bản:** 2.18
+**Trạng thái:** Schema/seed DB, Phase 1, Phase 2, Phase 3, P4.1 và lõi queue P7.1–P7.2 đã triển khai; queue chưa nối HTTP, tiếp theo P7.3
+**Ngày:** 2026-10-27
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
 **Ngôn ngữ tài liệu:** Tiếng Việt
@@ -13,6 +13,10 @@
 > **Bổ sung v2.14:** Chủ dự án duyệt module **Biên bản bàn giao và trả xe** ngày 2026-10-12: xác nhận chéo, cho nhận xe chưa PAID, trả xe xong chờ PAID mới COMPLETED, bất đồng do Admin xử lý thủ công. Đây là thiết kế cho **Phase 6**, chưa có code hoặc migration chạy trên DB. FR-16, BR-11–BR-15 và §7.9 chỉ áp dụng sau khi Phase 6 được kích hoạt; hành vi Phase 3 ghi ở các checkpoint là kết quả lịch sử. Plan: [Phase 6](plans/phase-6-inspection.md); quyết định D-25.
 
 > **Bổ sung v2.15:** Ngày 2026-10-17, chủ dự án duyệt chuyển chọn lịch sang sidebar `/cars`: lọc xe trống trong toàn bộ khoảng thuê, bỏ kiểm tra khả dụng riêng tại chi tiết, điền sẵn ngày sang form đặt thuê và giữ dữ liệu khi lỗi. Quy tắc trùng lịch và khóa khi tạo đơn giữ theo BR-05/D-13; không đổi schema. Xem D-26. Các kết quả kiểm chứng Phase 2–3 bên dưới là bằng chứng lịch sử của luồng cũ.
+
+> **Bổ sung v2.16:** Ngày 2026-10-27, chủ dự án tạm hoãn xử lý chuyển thiếu/thừa khoản trả trước 30%, lưu backlog tại §1.4. Admin dùng nguồn tiền và kênh chi payOS/Bảo Kim riêng để tự động hoàn khoản Owner thanh toán trùng hoặc đến sau hạn; hạn thanh toán gói Owner là 15 phút, xem §1.5. Phạm vi kiểm chứng tiền thật ban đầu là một Owner và Admin, xem §1.6. Các mục này chưa được gán phase; thiết kế đầy đủ về thanh toán thật, gói Owner, bàn giao và queue đang được brainstorming sẽ được tổng hợp riêng trước triển khai.
+
+> **Bổ sung v2.17:** Đã cập nhật các plan theo brainstorming ngày 2026-10-27: Queue → nền thanh toán thật → luồng thuê 30/70 và hợp đồng Owner → gói Owner → Admin. Xem [hợp đồng chung và roadmap hiện hành](plans/README.md) và §14.1. Hợp đồng này thay các chỉ dẫn triển khai mock payment, nhận xe chưa trả trước, Customer xác nhận nhận xe lần hai, hủy theo 72 giờ và bắt giải quyết AFTER trước complete của thiết kế cũ đối với workflow mới. Các chương FR/BR/schema cũ và checkpoint vẫn được giữ làm tham chiếu; phải đồng bộ chi tiết SDD trước cutover, không coi toàn bộ schema/workflow mới đã tồn tại trong ứng dụng.
 
 ---
 
@@ -53,6 +57,62 @@ CarRent là ứng dụng web cho thuê xe hơi. Người thuê (Customer) tìm k
 - Cổng thanh toán thật, WebSocket/notification realtime.
 - Điều phối giao xe đến nơi khác, tự kết luận hư hỏng/trách nhiệm, tự tính bồi thường/phí trễ/phí nhiên liệu, bảo hiểm, khuyến mãi, yêu thích, review và audit log toàn hệ thống. Phase 6 chỉ lưu bằng chứng và lịch sử thao tác của biên bản.
 - i18n song ngữ, upload avatar, quản lý Category qua UI (chỉ seed).
+
+---
+
+### 1.4. Backlog — xử lý chuyển thiếu/thừa khoản trả trước 30%
+
+**Trạng thái:** Tạm hoãn theo yêu cầu chủ dự án ngày 2026-10-27. Chỉ lưu để đọc lại và thiết kế sau; chưa triển khai, chưa chọn A/B và chưa gán phase.
+
+**Bối cảnh:** Trong luồng thanh toán thật đang được brainstorming, Customer trả trước 30% bằng VietQR và có 15 phút để thanh toán giữ chỗ. Số tiền điền sẵn trên QR không bảo đảm Customer chuyển đúng số tiền trong ứng dụng ngân hàng.
+
+**Các phương án đã thảo luận, chưa được duyệt:**
+
+- **A — Cộng dồn trong thời hạn, hoàn phần dư:** các giao dịch hợp lệ cùng mã thanh toán được cộng dồn trong thời hạn 15 phút. Chưa đủ thì hiển thị số còn thiếu và cho chuyển bổ sung; đủ thì xác nhận đặt xe; thừa thì tạo yêu cầu hoàn phần dư. Hết hạn vẫn thiếu thì đơn hết hạn, giải phóng xe và tạo yêu cầu hoàn toàn bộ số đã nhận.
+- **B — Chỉ nhận từng giao dịch đúng số tiền:** chỉ giao dịch bằng đúng số tiền yêu cầu mới đủ điều kiện xác nhận; giao dịch lệch số tiền tạo yêu cầu hoàn toàn bộ. Customer phải thực hiện lại khoản thanh toán đúng số tiền trong thời hạn còn lại.
+
+Ví dụ tham khảo cho phương án A, với khoản trả trước **600.000 VND**:
+
+| Tình huống | Cách xử lý từng được đề xuất |
+|---|---|
+| Nhận 400.000 VND | Chưa xác nhận đặt xe; còn thiếu 200.000 VND |
+| Nhận thêm 200.000 VND trong hạn | Đủ khoản trả trước, xác nhận đặt xe |
+| Hết hạn vẫn chỉ nhận 400.000 VND | Đơn hết hạn; tạo yêu cầu hoàn 400.000 VND |
+| Nhận 650.000 VND trong hạn | Ghi nhận trả trước 600.000 VND; tạo yêu cầu hoàn 50.000 VND dư |
+
+**Cần chốt khi mở lại:** chọn A/B hoặc phương án khác; thời điểm bắt đầu cửa sổ hủy miễn phí khi có nhiều giao dịch; đối soát giao dịch đến muộn, trùng lặp và các khoản hoàn. Đề xuất lấy thời điểm nhận đủ khoản trả trước làm mốc hủy miễn phí chưa được duyệt.
+
+**Giới hạn phạm vi:** chưa xây cộng dồn, chuyển bổ sung hoặc tự động hoàn do lệch số tiền cho khoản trả trước 30% trong đợt triển khai sắp tới. Trước khi tích hợp tiền thật, phải xác định cách ghi nhận các khoản lệch chưa được xử lý; không mặc định xác nhận đã trả đủ khi số tiền chưa đủ và không bỏ mất giao dịch đã nhận. Các quy tắc cơ sở dữ liệu, mock payment và bằng chứng triển khai hiện có ở phần sau vẫn mô tả phiên bản trước khi tích hợp thanh toán thật.
+
+---
+
+### 1.5. Thanh toán gói Owner — hoàn khoản trả trùng và thời hạn
+
+**Trạng thái:** Đã được chủ dự án chốt lại ngày 2026-10-27, thay cho quyết định tạm hoãn trước đó. Đã phân bổ nền thanh toán/hoàn tại Phase 4 và nghiệp vụ gói tại Phase 8; chưa có code. Admin cần nguồn tiền và kênh chi payOS/Bảo Kim riêng, được nhà cung cấp kích hoạt trước khi thực hiện hoàn tiền thật.
+
+**Luồng đã chốt:** khi Owner chuyển khoản thực tế hai lần cho cùng một yêu cầu mua/gia hạn, khoản hợp lệ đầu tiên kích hoạt hoặc gia hạn 30 ngày; khoản trả trùng tạo yêu cầu hoàn và được chuyển tự động từ nguồn tiền, kênh chi riêng của Admin tới tài khoản nhận hoàn của Owner. Không tự coi khoản trả trùng là một lần gia hạn khác. Backend đối soát trạng thái chuyển tiền qua API; giao diện polling trạng thái tại CarRent. Chỉ báo hoàn tất khi nhà cung cấp xác nhận chuyển thành công; thiếu thông tin nhận hoặc thiếu số dư thì giữ trạng thái chờ phù hợp.
+
+**Phân biệt kỹ thuật:** SePay gửi lại cùng một webhook không phải Owner thực hiện thêm một lần chuyển khoản. Mỗi giao dịch ngân hàng chỉ được xử lý một lần; không cộng thời hạn hoặc tạo yêu cầu hoàn thêm khi webhook được gửi lại. Mỗi khoản phải hoàn cần chống chuyển tiền lặp khi gọi lại API hoặc đối soát kết quả chưa rõ.
+
+**Đã chốt trong brainstorming:** yêu cầu thanh toán gói Owner có thời hạn **15 phút**; hết hạn thì ẩn QR, thông báo hết hạn và cho phép tạo yêu cầu mới. Gói đang còn hiệu lực không mất thời hạn đã mua chỉ vì một yêu cầu gia hạn mới hết hạn. Khoản mua gói hợp lệ đã kích hoạt không được hoàn theo số ngày chưa sử dụng.
+
+**Tiền gói thực sự đến sau hạn — đã chốt:** không kích hoạt hoặc gia hạn từ yêu cầu đã hết hạn; tạo yêu cầu hoàn **100%** và chuyển tự động từ nguồn tiền, kênh chi payOS/Bảo Kim của Admin tới Owner. Đề xuất trước đó chỉ lưu tiền đến muộn ở trạng thái chờ đối soát được thay bằng quyết định hoàn tự động này. Backend vẫn lưu giao dịch và tiến trình hoàn, chỉ báo hoàn thành khi chuyển tiền thành công.
+
+**Phân biệt webhook chậm:** ngân hàng nhận tiền đúng hạn nhưng webhook đến sau hạn không mặc định là Owner chuyển muộn; cần đối soát thời điểm giao dịch thực tế. Vòng đời yêu cầu bị hủy trước hạn dùng mặc định hoàn 100% được ghi riêng để review tại [hợp đồng plan](plans/README.md), không tự coi tiền đến sau hủy là một lần mua hợp lệ.
+
+---
+
+### 1.6. Phạm vi kiểm chứng thanh toán thật — một Owner và Admin
+
+**Đã chốt ngày 2026-10-27:** bản local kiểm chứng toàn bộ luồng tiền thật với **một Owner và Admin trước**, thay vì triển khai kết nối nhiều Owner thật ngay trong đợt đầu.
+
+- **Owner thử nghiệm:** có tài khoản ngân hàng nhận tiền thuê qua SePay và kênh chi payOS/Bảo Kim riêng để hoàn tiền Customer từ nguồn tiền của Owner.
+- **Admin:** có tài khoản ngân hàng nhận phí gói qua SePay và kênh chi payOS/Bảo Kim riêng để hoàn tiền gói cho Owner theo §1.5.
+- **Customer:** không cần liên kết SePay/payOS; cung cấp tài khoản nhận khi phát sinh hoàn tiền.
+- Thiết kế liên kết cấu hình nhận/chi với đúng chủ thể Owner hoặc Admin; không dùng chung tài khoản Admin để nhận tiền thuê thay Owner. Kiểm tra cấu hình hợp lệ trước khi bật thanh toán thật cho chủ thể đó.
+- Tự động kết nối nhiều Owner không nằm trong đợt kiểm chứng ban đầu. Việc mở rộng cần xác minh điều kiện nhà cung cấp cho phép CarRent tích hợp các kênh riêng của nhiều Owner.
+
+**Điều kiện trước khi kiểm chứng tiền thật:** nhà cung cấp đã duyệt/kích hoạt các kênh nhận và chi tương ứng; kiểm chứng quyền gọi API, webhook, đích nhận và trạng thái chuyển tiền. Sandbox hoặc tài liệu API không thay thế xác nhận khả năng sử dụng tài khoản thật. Hiện đây là phạm vi thiết kế, chưa có bằng chứng giao dịch thật đã chạy thành công.
 
 ---
 
@@ -1257,51 +1317,28 @@ Chi tiết từng task (mục tiêu, ngữ cảnh, bước, ràng buộc, verify
 | 4 | P3.8–P3.10 | Customer cancel/refund, Owner list/detail và confirm/reject |
 | 5 | P3.11–P3.13 | Complete, xóa xe an toàn và E2E/concurrency toàn phase |
 
-Chi tiết checkpoint tại `plans/phase-3-booking.md`. Cả 5 đợt/P3.1–P3.13 và P4.1 đã triển khai, verify đầy đủ checkpoint; Phase 3 hoàn tất, tiếp theo P4.2. P4.1 chỉ entity/enums/repository, thực hiện một lần trong đợt 3; chức năng payment P4.2–P4.6 theo Phase 4.
+Chi tiết checkpoint tại `plans/phase-3-booking.md`. Cả 5 đợt/P3.1–P3.13 và P4.1 đã triển khai, verify đầy đủ checkpoint. Theo roadmap mới, lõi Phase 7/P7.1–P7.2 đã hoàn thành; tiếp theo P7.3 → P7.4 rồi Phase 4 viết lại. P4.1 là mapping/repository legacy đã hoàn tất, không chạy lại.
 
-**Phase 4 — Payment (6 tasks)** — `plans/phase-4-payment.md`
-- P4.1 `Payment` entity + enums + repo.
-- P4.2 `PaymentService.processPayment()` — guard (CONFIRMED, chưa PAID, ownership), PAID/FAILED, notify.
-- P4.3 Trang payment (form method + simulate failure) + POST.
-- P4.4 Hiển thị trạng thái thanh toán + lịch sử payment trong booking detail.
-- P4.5 Admin booking detail hiện payment.
-- P4.6 Verify tổng phase (thanh toán + retry + refund khi cancel).
+**Roadmap mới ngày 2026-10-27 — thứ tự 7 → 4 → 6 → 8 → 5**
 
-**Phase 5 — Admin & Hoàn thiện (9 tasks)** — `plans/phase-5-admin-polish.md`
-- P5.1 `AdminService` query thống kê dashboard.
-- P5.2 Template admin dashboard (stat cards + doanh thu theo tháng).
-- P5.3 Admin users: list + search + filter + pagination.
-- P5.4 Admin user detail + đổi status (cấm tự đổi).
-- P5.5 Profile view + edit.
-- P5.6 Change password (verify mật khẩu hiện tại).
-- P5.7 Owner dashboard (xe, booking, doanh thu của mình).
-- P5.8 Rà soát BR toàn hệ thống: ownership mọi route, transition states, empty states, thông báo tiếng Việt.
-- P5.9 Kịch bản E2E tổng + chốt SDD.
+Hợp đồng nghiệp vụ, money model, default kỹ thuật, interface, schema dự kiến và gate: [plans/README.md](plans/README.md). Số phase giữ để không đổi task lịch sử; thứ tự chạy theo phụ thuộc dưới đây.
 
-**Phase 6 — Biên bản bàn giao và trả xe (14 tasks, đã duyệt thiết kế, chưa triển khai)** — [plans/phase-6-inspection.md](plans/phase-6-inspection.md)
-- P6.1 Migration giữ dữ liệu cũ + mapping/repository, marker chính sách mới.
-- P6.2 Storage ảnh riêng tư + GET ảnh có authorization.
-- P6.3 Backend nháp và upload/xóa ảnh theo đợt.
-- P6.4 Owner gửi BEFORE + notification.
-- P6.5 Customer nhận xe/bất đồng BEFORE + kiểm tra xe đang được giữ thực tế.
-- P6.6 Cancel/refund guard sau nhận và nhánh đơn legacy.
-- P6.7 UI BEFORE, CTA/tiến độ và mobile.
-- P6.8 Customer gửi AFTER.
-- P6.9 Owner xác nhận nhận lại xe / bất đồng / chưa nhận.
-- P6.10 Payment/cash + complete guard theo chính sách.
-- P6.11 UI AFTER, so sánh và trạng thái chờ thanh toán.
-- P6.12 Admin xử lý bất đồng + ghi chú append, điều hướng.
-- P6.13 Kiểm chứng concurrency/privacy/legacy và rollback DB/file.
-- P6.14 E2E toàn module, cutover và chốt tài liệu.
+| Thứ tự | Phase / plan | Task mới | Nội dung |
+|---|---|---|---|
+| 1 | [Phase 7 — Queue theo carId](plans/phase-7-car-queue.md) | P7.1–P7.4 | FIFO, bounded worker, request đợi commit/rollback; reads bypass queue; DB locking giữ nguyên |
+| 2 | [Phase 4 — Thanh toán thật](plans/phase-4-payment.md) | P4.2–P4.11 | Kênh SePay/payOS, obligation/intent/receipt, durable inbox, chống trùng, polling, refund/đối soát |
+| 3 | [Phase 6 — Thuê xe và biên bản](plans/phase-6-inspection.md) | P6.1–P6.13 | BEFORE, 30%, Owner xác nhận hợp đồng/giao xe, AFTER/return, 70%, cancel/refund, deadline |
+| 4 | [Phase 8 — Gói Owner](plans/phase-8-owner-subscriptions.md) | P8.1–P8.8 | 4/8/16 xe, 5.000/10.000/15.000 VND mỗi 30 ngày, gia hạn/hết hạn/quota và hoàn từ Admin |
+| 5 | [Phase 5 — Admin và hoàn thiện](plans/phase-5-admin-polish.md) | P5.1–P5.9 | Doanh thu phí gói riêng, quyền/admin/profile, theo dõi nợ/hoàn và E2E cuối |
 
-| Đợt Phase 6 | Tasks | Kết quả mong muốn |
-|---|---|---|
-| 1 | P6.1–P6.3 | Schema/mapping mới, dữ liệu cũ còn nguyên, ảnh riêng tư và nháp an toàn |
-| 2 | P6.4–P6.7 | BEFORE → Customer nhận xe; cancellation bị khóa sau nhận; UI/mobile |
-| 3 | P6.8–P6.11 | AFTER → Owner nhận lại; unpaid chờ thanh toán, complete có guards |
-| 4 | P6.12–P6.14 | Admin bất đồng, race/privacy/legacy/E2E pass, tài liệu/cutover được kiểm chứng |
+- **Phase 7:** không thay transaction bằng queue; webhook/job phải có dữ liệu bền vững, không chỉ RAM.
+- **Phase 4:** P4.1 giữ checkpoint lịch sử; không triển khai các task mock cũ. Tiền thuê vào Owner, phí gói vào Admin; khoản hoàn dùng đúng ví/kênh chi của bên nhận tiền.
+- **Phase 6:** Owner checkbox hợp đồng + xác nhận giao xe là mốc Đang thuê/chặn hủy; không thêm giờ hẹn, giá giữ theo chênh lệch ngày. Đã trả/đủ tiền tự complete, bất đồng được lưu. Quá hạn 70%/hoàn chỉ cảnh báo.
+- **Phase 8:** hạn QR 15 phút, gói 30 ngày; chỉ đổi loại sau hết hạn; active + pending chiếm suất, hạ gói Owner tự chọn xe bật lại.
+- **Phase 5:** doanh thu Admin từ gói hợp lệ, không SUM tiền thuê. Kết quả fixture/live được ghi riêng, không tick từ kế hoạch.
+- Cộng dồn/hoàn lệch tiền trả trước 30% tạm hoãn tại §1.4. Một Owner thật + Admin trước; live capability của nhà cung cấp cần kiểm chứng.
 
-Phase 6 thực hiện sau Phase 4–5; không thêm các guard phụ thuộc bảng mới vào code Phase 4/5 trước migration. **Tổng: 69 tasks trên 7 phase** (55 task Phase 0–5 + 14 task Phase 6). Checkpoint hiện tại giữ 41 task đã hoàn tất; Phase 6 chưa có task hoàn tất.
+**Tiến độ lịch sử:** 41 task đã hoàn thành (Phase 0–3 + P4.1). **Roadmap mới:** P7.1–P7.2 đã triển khai/kiểm chứng, 42/44 task còn lại chưa thực hiện; tổng hiện hành **43/85 task hoàn thành** trên 9 phase. Queue chưa nối HTTP; không suy ra phần trăm hoàn thiện chức năng từ số task. Không chuyển checkbox của task cũ sang task mới chỉ vì trùng số định danh.
 
 ### 14.2. Format mỗi task trong plan
 
@@ -1456,4 +1493,4 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 
 ## 15. Kết luận
 
-CarRent là web monolithic Spring Boot + Thymeleaf + MySQL, 3 role, hiện có 7 bảng. Schema/seed đã có sẵn qua `scriptDB.sql`; Phase 1, toàn bộ Phase 2 và Phase 3/P3.1–P3.13, cùng P4.1 Payment mapping đã triển khai. Tiếp tục P4.2→Phase 5 để hoàn thiện thanh toán/dashboard. Module biên bản bàn giao và trả xe đã được duyệt cho Phase 6: bổ sung 3 bảng bằng migration bảo toàn dữ liệu, xác nhận chéo nhận/trả, ảnh riêng tư, theo dõi khoản chưa PAID và xử lý bất đồng thủ công. Phase 6 giữ 5 status Booking, áp dụng chính sách mới cho đơn mới và giữ nhánh legacy rõ ràng; chi tiết ở FR-16, §7.9 và plan Phase 6.
+CarRent hiện vẫn là monolith Spring Boot/Thymeleaf/MySQL. Lõi queue **P7.1–P7.2** đã triển khai và kiểm chứng, chưa nối HTTP; tiếp theo **P7.3 → P7.4**, rồi theo thứ tự **4 → 6 → 8 → 5** cho thanh toán SePay/payOS, thuê xe 30/70 và gói Owner. Chi tiết hiện hành ở [plans/README.md](plans/README.md). Đồng bộ SDD chi tiết, migration bảo toàn legacy, gate nhà cung cấp và kiểm chứng một Owner + Admin là điều kiện trước khi bật workflow tiền thật.
