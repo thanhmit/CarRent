@@ -1,6 +1,7 @@
 package com.carrent.car;
 
 import com.carrent.booking.BookingRepository;
+import com.carrent.concurrency.CarCommandExecutor;
 import com.carrent.security.CustomUserPrincipal;
 import com.carrent.common.exception.BusinessException;
 import jakarta.validation.Valid;
@@ -33,13 +34,15 @@ public class OwnerCarController {
     private final CarImageRepository images;
     private final CarCategoryRepository categories;
     private final BookingRepository bookings;
+    private final CarCommandExecutor commands;
 
     public OwnerCarController(CarService cars, CarImageRepository images, CarCategoryRepository categories,
-                              BookingRepository bookings) {
+                              BookingRepository bookings, CarCommandExecutor commands) {
         this.cars = cars;
         this.images = images;
         this.categories = categories;
         this.bookings = bookings;
+        this.commands = commands;
     }
 
     @GetMapping("/new")
@@ -82,7 +85,7 @@ public class OwnerCarController {
             return carForm(owner, model, form, car, this.images.findByCarIdOrderByIdAsc(car.getId()));
         }
         try {
-            cars.updateCar(id, form, images, owner);
+            commands.execute(id, () -> cars.updateCar(id, form, images, owner));
         } catch (BusinessException error) {
             model.addAttribute("errorMessage", error.getMessage());
             return carForm(owner, model, form, car, this.images.findByCarIdOrderByIdAsc(car.getId()));
@@ -94,7 +97,11 @@ public class OwnerCarController {
     @PostMapping("/{id}/images/{imageId}/delete")
     public String deleteImage(@PathVariable Long id, @PathVariable Long imageId,
                               @AuthenticationPrincipal CustomUserPrincipal owner, RedirectAttributes redirect) {
-        cars.deleteImage(id, imageId, owner);
+        cars.getOwnedCar(id, owner);
+        commands.execute(id, () -> {
+            cars.deleteImage(id, imageId, owner);
+            return null;
+        });
         redirect.addFlashAttribute("successMessage", "Đã xóa ảnh xe.");
         return "redirect:/owner/cars/" + id + "/edit";
     }
@@ -103,7 +110,11 @@ public class OwnerCarController {
     public String deactivate(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal owner,
                              RedirectAttributes redirect) {
         try {
-            cars.deactivateCar(id, owner);
+            cars.getOwnedCar(id, owner);
+            commands.execute(id, () -> {
+                cars.deactivateCar(id, owner);
+                return null;
+            });
         } catch (BusinessException error) {
             redirect.addFlashAttribute("errorMessage", error.getMessage());
             return "redirect:/owner/cars";
@@ -116,7 +127,11 @@ public class OwnerCarController {
     public String delete(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal owner,
                          RedirectAttributes redirect) {
         try {
-            cars.deleteCar(id, owner);
+            cars.getOwnedCar(id, owner);
+            commands.execute(id, () -> {
+                cars.deleteCar(id, owner);
+                return null;
+            });
             redirect.addFlashAttribute("successMessage", "Đã xóa xe.");
         } catch (BusinessException error) {
             redirect.addFlashAttribute("errorMessage", error.getMessage());
@@ -128,7 +143,11 @@ public class OwnerCarController {
     public String activate(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal owner,
                            RedirectAttributes redirect) {
         try {
-            cars.activateCar(id, owner);
+            cars.getOwnedCar(id, owner);
+            commands.execute(id, () -> {
+                cars.activateCar(id, owner);
+                return null;
+            });
         } catch (BusinessException error) {
             redirect.addFlashAttribute("errorMessage", error.getMessage());
             return "redirect:/owner/cars";

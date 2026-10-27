@@ -43,7 +43,7 @@ Số commit bao gồm merge, không phải tỷ lệ công sức. Git xác nhậ
 
 ## 3. Phần sắp làm — giao 44 task mới
 
-**Checkpoint 2026-10-27:** P7.1–P7.2 đã triển khai và kiểm chứng (19 queue test + 34 test hồi quy đạt); `thanhmit` còn P7.3–P7.4 và P4.2–P4.11. Phân công reviewer giữ nguyên; chưa ghi nhận review của contributor khác. Tổng task mới còn lại: 42. Chi tiết tại [plan Phase 7](phase-7-car-queue.md).
+**Checkpoint 2026-10-27:** P7.1–P7.3 đã triển khai và kiểm chứng (19 lõi queue + 34 hồi quy + 41 HTTP queue = 94 test đạt); `thanhmit` tiếp theo làm P7.4, sau gate Phase 7 là P4.2–P4.11. Phân công reviewer `huy69332` giữ nguyên; chưa ghi nhận review của contributor khác. Tổng task mới còn lại: 41. Chi tiết tại [plan Phase 7](phase-7-car-queue.md). Nhánh triển khai P7.3: `feat/car-queue-http`.
 
 Mỗi người làm đầy đủ backend, UI liên quan, kiểm chứng và tài liệu của mảng mình; không dồn toàn bộ kiểm thử cho một thành viên.
 

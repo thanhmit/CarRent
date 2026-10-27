@@ -1,6 +1,7 @@
 package com.carrent.car;
 
 import com.carrent.common.exception.BusinessException;
+import com.carrent.concurrency.CarCommandExecutor;
 import com.carrent.security.CustomUserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -25,10 +26,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AdminCarController {
     private final CarService cars;
     private final CarImageRepository images;
+    private final CarCommandExecutor commands;
 
-    public AdminCarController(CarService cars, CarImageRepository images) {
+    public AdminCarController(CarService cars, CarImageRepository images, CarCommandExecutor commands) {
         this.cars = cars;
         this.images = images;
+        this.commands = commands;
     }
 
     @GetMapping
@@ -74,7 +77,11 @@ public class AdminCarController {
     public String approve(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal admin,
                           RedirectAttributes redirect) {
         try {
-            cars.approveCar(id, admin);
+            cars.getCarForAdmin(id, admin);
+            commands.execute(id, () -> {
+                cars.approveCar(id, admin);
+                return null;
+            });
         } catch (BusinessException error) {
             redirect.addFlashAttribute("errorMessage", error.getMessage());
             return "redirect:/admin/cars/" + id;
@@ -88,7 +95,11 @@ public class AdminCarController {
                          @AuthenticationPrincipal CustomUserPrincipal admin,
                          Model model, RedirectAttributes redirect) {
         try {
-            cars.rejectCar(id, reason, admin);
+            cars.getCarForAdmin(id, admin);
+            commands.execute(id, () -> {
+                cars.rejectCar(id, reason, admin);
+                return null;
+            });
         } catch (BusinessException error) {
             Car car = cars.getCarForAdmin(id, admin);
             model.addAttribute("car", car);
@@ -105,7 +116,11 @@ public class AdminCarController {
     @PostMapping("/{id}/deactivate")
     public String deactivate(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal admin,
                              RedirectAttributes redirect) {
-        cars.deactivateCarForAdmin(id, admin);
+        cars.getCarForAdmin(id, admin);
+        commands.execute(id, () -> {
+            cars.deactivateCarForAdmin(id, admin);
+            return null;
+        });
         redirect.addFlashAttribute("successMessage", "Đã ẩn xe khỏi danh sách công khai.");
         return "redirect:/admin/cars/" + id;
     }
@@ -114,7 +129,11 @@ public class AdminCarController {
     public String activate(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal admin,
                            RedirectAttributes redirect) {
         try {
-            cars.activateCarForAdmin(id, admin);
+            cars.getCarForAdmin(id, admin);
+            commands.execute(id, () -> {
+                cars.activateCarForAdmin(id, admin);
+                return null;
+            });
             redirect.addFlashAttribute("successMessage", "Đã đăng lại xe.");
         } catch (BusinessException error) {
             redirect.addFlashAttribute("errorMessage", error.getMessage());

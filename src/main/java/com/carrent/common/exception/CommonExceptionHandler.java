@@ -1,5 +1,6 @@
 package com.carrent.common.exception;
 
+import com.carrent.concurrency.CarQueueRejectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ui.Model;
@@ -69,6 +70,13 @@ public class CommonExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public String concurrentUpdate(Model model) {
         model.addAttribute("errorMessage", "Dữ liệu đang được xử lý bởi yêu cầu khác. Vui lòng thử lại.");
+        return "error/error";
+    }
+
+    @ExceptionHandler(CarQueueRejectedException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public String queueUnavailable(CarQueueRejectedException ex, Model model) {
+        model.addAttribute("errorMessage", ex.getMessage());
         return "error/error";
     }
 

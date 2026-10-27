@@ -1,6 +1,7 @@
 package com.carrent.booking;
 
 import com.carrent.car.CarImageRepository;
+import com.carrent.concurrency.CarCommandExecutor;
 import com.carrent.car.CarService;
 import com.carrent.car.ApprovalStatus;
 import com.carrent.car.ListingStatus;
@@ -33,12 +34,15 @@ public class BookingController {
     private final CarService cars;
     private final CarImageRepository images;
     private final PaymentRepository payments;
+    private final CarCommandExecutor commands;
 
-    public BookingController(BookingService bookings, CarService cars, CarImageRepository images, PaymentRepository payments) {
+    public BookingController(BookingService bookings, CarService cars, CarImageRepository images,
+                             PaymentRepository payments, CarCommandExecutor commands) {
         this.bookings = bookings;
         this.cars = cars;
         this.images = images;
         this.payments = payments;
+        this.commands = commands;
     }
 
     @GetMapping("/bookings/new")
@@ -68,7 +72,8 @@ public class BookingController {
             return "booking/create";
         }
         try {
-            Booking booking = bookings.createBooking(form, principal);
+            cars.getPublicCar(form.getCarId(), null);
+            Booking booking = commands.execute(form.getCarId(), () -> bookings.createBooking(form, principal));
             redirect.addFlashAttribute("successMessage", "Đặt xe thành công!");
             return "redirect:/bookings/" + booking.getId();
         } catch (BusinessException ex) {
@@ -124,7 +129,11 @@ public class BookingController {
     public String cancel(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal,
                          RedirectAttributes redirect) {
         try {
-            bookings.cancelBooking(id, principal);
+            Long carId = bookings.getBookingForView(id, principal).getCar().getId();
+            commands.execute(carId, () -> {
+                bookings.cancelBooking(id, principal);
+                return null;
+            });
             redirect.addFlashAttribute("successMessage", "Đã hủy đơn thuê. Khoản đã thanh toán được hoàn tiền (giả lập).");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
