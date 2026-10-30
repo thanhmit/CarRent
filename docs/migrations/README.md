@@ -45,7 +45,7 @@ MySQL DDL implicit commit: `ROLLBACK` không xóa được các bảng đã tạ
 - Core dùng UTC `DATETIME(6)`, Java `Instant` với `TIMESTAMP_UTC`. Caller cung cấp các mốc bằng Clock; không dùng default thời gian session hoặc thay timezone toàn bộ entity legacy. `ready_at/due_at` cùng NULL hoặc cách đúng 1 giờ; service P4.7 giữ chúng không reset.
 - Channel chỉ lưu credential reference, mặc định `enabled=false`; không lưu secret. Resolver/handler phải kiểm tra role/chủ kênh/provider/purpose, collector của receipt và nguồn chi; FK user riêng lẻ không chứng minh các quan hệ nghiệp vụ này.
 - Snapshot nguồn/amount/đích, reference và idempotency key nằm trong payout attempt. Tổng số hoàn theo receipt, một intent ACTIVE, một lần chi chưa rõ và chuyển trạng thái hợp lệ cần khóa/transaction service ở P4.4–P4.9; unique/check riêng từng dòng không thay các guard đó. `UNKNOWN` không được tự gửi lại; adapter hiện chưa phát NOT_SENT.
-- Lease/retry/deadline/overdue notification có cột lưu bền vững; chưa có worker hoặc job. `OVERDUE` là thuộc tính thời gian, không phải kết quả chuyển tiền thất bại.
+- Lease/retry/deadline/overdue notification có cột lưu bền vững; P4.8/P4.9 đã có worker và job trên DB kiểm chứng, scheduler mặc định tắt. `OVERDUE` là thuộc tính thời gian, không phải kết quả chuyển tiền thất bại.
 - Repository `findByIdForUpdate` lấy pessimistic row lock; service vẫn phải refresh/reload entity đã managed theo D-13 trước khi quyết định dựa trên trạng thái. Phương thức này không tự xóa snapshot/entity cũ khỏi persistence context.
 
 ## Kiểm chứng tự động

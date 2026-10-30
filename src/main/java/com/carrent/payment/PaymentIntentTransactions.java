@@ -132,7 +132,8 @@ public class PaymentIntentTransactions {
         }
     }
 
-    private PaymentIntentView view(PaymentIntent intent) {
+    // Shared with scoped finance reads so lists and checkout describe the same committed money state.
+    PaymentIntentView view(PaymentIntent intent) {
         String status = intent.getStatus().name();
         if (intent.getStatus() == PaymentIntentStatus.ACTIVE && !clock.instant().isBefore(intent.getExpiresAt())) {
             status = "EXPIRED";
@@ -144,13 +145,19 @@ public class PaymentIntentTransactions {
             status = "UNAVAILABLE";
         }
         var received = receipts.findByIntentId(intent.getId());
-        var pending = received.stream()
-                .filter(r -> r.getStatus() == PaymentReceiptStatus.REFUND_REQUIRED).toList();
-        if (!pending.isEmpty()) {
-            boolean refunded = pending.stream().allMatch(r -> refunds.findByReceiptId(r.getId()).stream()
-                    .filter(refund -> refund.getStatus() == RefundStatus.SUCCEEDED)
-                    .mapToLong(Refund::getAmount).sum() >= r.getAmount() - r.getAllocatedAmount());
-            status = refunded ? "REFUNDED" : "REFUND_PENDING";
+        boolean hasRefund = false, refundPending = false;
+        for (var receipt : received) {
+            var requested = refunds.findByReceiptId(receipt.getId());
+            boolean unallocated = receipt.getStatus() == PaymentReceiptStatus.REFUND_REQUIRED;
+            if (!unallocated && requested.isEmpty()) continue;
+            hasRefund = true;
+            long succeeded = requested.stream().filter(r -> r.getStatus() == RefundStatus.SUCCEEDED)
+                    .mapToLong(Refund::getAmount).sum();
+            refundPending |= requested.stream().anyMatch(r -> r.getStatus() != RefundStatus.SUCCEEDED)
+                    || unallocated && succeeded < receipt.getAmount() - receipt.getAllocatedAmount();
+        }
+        if (hasRefund) {
+            status = refundPending ? "REFUND_PENDING" : "REFUNDED";
         } else if (received.stream()
                 .anyMatch(r -> r.getStatus() == PaymentReceiptStatus.REVIEW_REQUIRED)) {
             status = "REVIEW_REQUIRED";

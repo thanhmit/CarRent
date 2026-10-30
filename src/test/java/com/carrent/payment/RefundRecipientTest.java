@@ -232,7 +232,10 @@ class RefundRecipientTest {
         assertThat(html).contains("&lt;script&gt;alert(1)&lt;/script&gt;").doesNotContain("<script>alert(1)</script>");
         String notifications=f.mvc.perform(get("/notifications").with(user(f.actor(4))))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(notifications).contains("/payment/refunds/"+id);
+        assertThat(notifications).contains("/payment/finances/refunds/"+id);
+        String summary=f.mvc.perform(get("/payment/finances/refunds/"+id).with(user(f.actor(4))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(summary).contains("/payment/refunds/"+id);
     }
 
     @Test void subscriptionRefundUsesAdminFundsAndIsConfirmedByTheOwnerRecipient() throws Exception {

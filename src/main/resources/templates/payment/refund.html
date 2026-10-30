@@ -4,7 +4,7 @@
 <body class="bg-surface font-body-md text-on-surface">
 <div th:replace="~{fragments/header :: header}"></div>
 <main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
-  <section class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md">
+  <section id="financial-status" th:attr="data-status-url=@{/payment/refunds/{id}/status(id=${refund.id})},data-state=${refund.status.name() + ':' + refund.overdue},data-terminal=${refund.status.name() == 'SUCCEEDED'}" class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md">
     <h1 class="font-headline-md text-headline-md">Khoản hoàn tiền của bạn</h1>
     <p class="font-bold" th:text="${#numbers.formatInteger(refund.amount, 0, 'POINT') + ' VNĐ'}"></p>
     <p th:switch="${refund.status.name()}" role="status">
@@ -58,9 +58,11 @@
       <button class="p-space-sm rounded-lg bg-primary text-on-primary" type="submit">Xác nhận tài khoản nhận hoàn tiền</button>
       <a th:href="@{/payment/refunds/{id}(id=${refund.id})}" class="text-secondary underline">Nhập lại thông tin</a>
     </form>
+    <p id="polling-message" role="status" aria-live="polite"></p>
     <a th:href="@{/payment/refunds/{id}(id=${refund.id})}" class="text-secondary underline">Tải lại trạng thái</a>
     <a th:href="@{/notifications}" class="text-secondary underline">Xem thông báo</a>
   </section>
 </main>
+<script th:src="@{/js/payment-polling.js}" defer></script>
 </body>
 </html>

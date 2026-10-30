@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Trạng thái hoàn tiền')}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
+  <section id="financial-status" th:attr="data-status-url=@{/payment/refunds/{id}/status(id=${refund.id})},data-state=${refund.status.name() + ':' + refund.overdue},data-terminal=${refund.status.name() == 'SUCCEEDED'}"
+           class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md">
+    <h1 class="font-headline-md text-headline-md" th:text="${'Khoản hoàn #' + refund.id}"></h1>
+    <p class="font-bold" th:text="${#numbers.formatInteger(refund.amount, 0, 'POINT') + ' VNĐ'}"></p>
+    <p role="status" th:text="${refund.status.message()}"></p>
+    <p th:if="${refund.overdue}" class="text-error">Quá thời hạn xử lý; hệ thống tiếp tục xử lý và đối soát.</p>
+    <p th:if="${refund.account != null}" class="break-all" th:text="${'Tài khoản nhận: ' + refund.account}"></p>
+    <p th:if="${refund.dueAt != null}">Hạn xử lý:
+      <time th:datetime="${refund.dueAt}" th:text="${#temporals.format(refund.dueAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time>
+    </p>
+    <a th:if="${refund.recipient}" th:href="@{/payment/refunds/{id}(id=${refund.id})}" class="text-secondary underline">Thông tin nhận hoàn tiền của tôi</a>
+    <p id="polling-message" role="status" aria-live="polite"></p>
+    <a th:href="@{/payment/finances/refunds/{id}(id=${refund.id})}" class="text-secondary underline">Tải lại trạng thái</a>
+    <a th:href="@{/payment/finances}" class="text-secondary underline">Về tài chính</a>
+  </section>
+</main>
+<script th:src="@{/js/payment-polling.js}" defer></script>
+</body>
+</html>

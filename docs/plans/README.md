@@ -1,6 +1,6 @@
 # CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
 
-**Ngày chốt:** 2026-10-27; cập nhật triển khai 2026-10-30. **Trạng thái:** Phase 7, P4.2 offline và P4.3–P4.8 nền tài chính đã triển khai/kiểm chứng. Full clean verify **344 test đạt** trên DB tạm; browser thông báo/hoàn tiền desktop/mobile đạt. DB ứng dụng chưa migration, fingerprint giữ nguyên. Chưa bật workflow tiền thật; lookup đích/provider/live vẫn ở P4.2-A. Bằng chứng tại [checkpoint đợt 5](phase-4-payment.md#checkpoint-đợt-5--p48-2026-10-30).
+**Ngày chốt:** 2026-10-27; cập nhật 2026-10-30. **Trạng thái:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản.
 
 **Spec:** các quyết định brainstorming được tổng hợp tại file này; [SDD](../SDD.md) §1.4–1.6 lưu backlog và phạm vi tiền thật. Những phần mock payment/inspection cũ trong SDD và D-04/D-06/D-07/D-12/D-25 là thiết kế hoặc checkpoint trước lần cập nhật này. Khi thực hiện các phase bên dưới, dùng hợp đồng mới tại đây cho workflow mới; giữ bằng chứng lịch sử và hành vi legacy. Đồng bộ các chương chi tiết của SDD trước khi kích hoạt workflow mới.
 
@@ -18,7 +18,7 @@ Giữ số phase đã tồn tại để không đổi định danh task lịch s
 
 Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P4.2 trở đi, Phase 5 và Phase 6 được lập lại theo yêu cầu mới. Không chạy lại P4.1 và không đánh dấu bất kỳ task mới nào hoàn thành chỉ vì có plan.
 
-**Tiến độ hiện tại:** **52/86 task hoàn thành, còn 34**; P4.8 đã hoàn thành nền/offline. **Tiếp theo đợt 6/P4.9 + P4.10**. P4.2-A hoãn theo tài khoản/provider/live, gồm xác minh đích thật; P4.9 scheduler và domain Phase 6/8 chưa triển khai. Không có human review mới.
+**Tiến độ hiện tại:** **55/86 task hoàn thành, còn 31**. P4.10 đã sửa đủ và P4.11 nghiệm thu nền/offline; Phase 4 còn P4.2-A. Tiếp theo phân tích P6.1 theo thứ tự 4 → 6 → 8 → 5; P4.2-A làm khi đủ tài khoản. [Handoff kỹ thuật](phase-4-handoff.md). Chưa live pass/human review mới.
 
 ### Phân công ba thành viên
 
@@ -26,7 +26,7 @@ Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P
 
 **Checkpoint 2026-10-29:** đợt 1 đạt đầu ra kỹ thuật/offline, verify lại 86 test không cần DB đạt và JAR đóng gói thành công; lần clean đầu có một timeout test queue, ghi cả hai lần ở [checkpoint đợt 1](phase-4-payment.md#checkpoint-đợt-1--p42-kỹ-thuậtoffline-2026-10-29). P4.2 còn gate provider/live, giữ 45/85; tiếp theo đợt 2/P4.3.
 
-**Quyết định sau checkpoint:** chuyển nguyên gate tài khoản/provider/live sang P4.2-A; checkpoint 45/85 phía trên là lịch sử trước tách. Giữ 8 đợt offline; P4.2-A chạy theo điều kiện tài khoản và các phần code cần kiểm chứng, không chặn P4.3. P4.11 tổng hợp trạng thái P4.2-A; chưa đạt thì không bật live. Tiến độ mới 46/86, còn 40, chưa có kiểm chứng thật mới.
+**Quyết định lịch sử sau checkpoint P4.2:** chuyển nguyên gate tài khoản/provider/live sang P4.2-A; tiến độ khi tách là 46/86, còn 40. Kế hoạch 8 đợt lúc đó đã được thay bằng 7 đợt được duyệt ở trên. P4.2-A chạy theo điều kiện tài khoản và các phần code cần kiểm chứng; P4.11 tổng hợp trạng thái, chưa đạt thì không bật live.
 
 Đã kiểm tra ba contributor trực tiếp trên GitHub và phân công tại [team-assignment.md](team-assignment.md):
 
@@ -146,9 +146,11 @@ Các giá trị dưới đây là lựa chọn triển khai có thể review, kh
 
 ### 6.1. Biên module và giao diện
 
+**Handoff nghiệm thu P4.11:** [interface thực tế, handler registration, money states, sequence và cutover](phase-4-handoff.md); dùng trước khi nối Phase 6/8.
+
 Bảng dưới gồm các module đã triển khai và các đích dự kiến ở task/phase tiếp theo; trạng thái cụ thể theo checkpoint từng task. Package gốc `com.carrent`.
 
-**Cập nhật contract đợt 3 — 2026-10-30:** P4.4–P4.6 đã được kiểm chứng theo các seam dưới đây. Core tạo/allocation receipt và cập nhật amountSettled/status tài chính; handler `apply(receiptId)` đọc kết quả đã flush để áp dụng quyền lợi domain và yêu cầu refund cho phần chưa phân bổ. Handler không cộng tiền lần nữa, không mở transaction/queue lồng và không gọi mạng provider. P4.7 đã bổ sung RefundService/RefundRecipientService, recipient MVC và saved-account prefill; P4.8 đã bổ sung PayoutWorker/PayoutTransactions/PayoutChannelResolver: durable attempt/lease trước HTTP, đối soát query-only khi UNKNOWN và retry có phân loại; nguồn kênh bất biến theo vận hành, không repoint credential reference có lịch sử. Job tự quét inbox/expiry vẫn thuộc P4.9; endpoint webhook chỉ lưu inbox trước ACK, không khởi chạy worker trong request.
+**Cập nhật contract đợt 3 — 2026-10-30:** P4.4–P4.6 đã được kiểm chứng theo các seam dưới đây. Core tạo/allocation receipt và cập nhật amountSettled/status tài chính; handler `apply(receiptId)` đọc kết quả đã flush để áp dụng quyền lợi domain và yêu cầu refund cho phần chưa phân bổ. Handler không cộng tiền lần nữa, không mở transaction/queue lồng và không gọi mạng provider. P4.7 đã bổ sung RefundService/RefundRecipientService, recipient MVC và saved-account prefill; P4.8 đã bổ sung PayoutWorker/PayoutTransactions/PayoutChannelResolver: durable attempt/lease trước HTTP, đối soát query-only khi UNKNOWN và retry có phân loại; nguồn kênh bất biến theo vận hành, không repoint credential reference có lịch sử. P4.9 đã thêm scheduler quét DB 30 giây, bounded executors và cảnh báo atomic, mặc định tắt; endpoint webhook chỉ lưu inbox trước ACK, không khởi chạy worker trong request. P4.10 thêm scoped financial views và polling; không cấp quyền sửa đích cho collector/Admin.
 
 | Module | Trách nhiệm / giao diện chính |
 |---|---|
@@ -161,6 +163,9 @@ Bảng dưới gồm các module đã triển khai và các đích dự kiến �
 | `payment/RefundRecipientService` | `void submit(Long refundId, RefundRecipientForm form, CustomUserPrincipal actor)`; chỉ người nhận đúng khoản, snapshot đích trước dispatch |
 | `payment/PayoutTransactions` | transaction claim/beginSend/finish độc lập, READ_COMMITTED, khóa Receipt → Refund → Attempt và lease fencing; persist snapshot/key trước HTTP |
 | `payment/PayoutChannelResolver` | đọc ID kênh → credential reference phía server, chỉ kênh PAYOS/PAYOUT hợp lệ; đổi nguồn phải tạo kênh mới |
+| `payment/PaymentMaintenanceJob` | `scan()` quét ID bounded/keyset rồi giao cho executor domain/payout riêng; DB work giữ nguyên khi queue đầy, thiếu handler hoặc restart; schedule 30 giây opt-in |
+| `payment/PaymentMaintenanceWork` | discovery ngắn và `notifyOverdue(refundId)` khóa Receipt → Refund, thông báo parties/Admin cùng marker trong một transaction |
+| `payment/FinancialViews` | scoped page/detail theo ACTIVE user/role; refund status chỉ id/status/dueAt/overdue, read-only và không trả bank/credential/raw payload |
 | `payment/PayoutWorker` | `void dispatch(Long refundId)`; `void reconcile(Long attemptId)`; không giữ transaction/Car queue lúc gọi API ngoài |
 | `booking/BookingService` | giữ create/Owner accept/cancel; bổ sung `acceptBefore`, `confirmHandover`, `confirmReturn`, `applyAdvance`, `applyBalance` theo Phase 6 |
 | `inspection/InspectionService` | nháp, ảnh private, gửi BEFORE/AFTER và ghi nhận bất đồng; không tự sửa tổng tiền |

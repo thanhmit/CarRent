@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
     private static final Set<String> TYPES = Set.of("CAR_PENDING_APPROVAL", "CAR_APPROVED", "CAR_REJECTED",
             "BOOKING_CREATED", "BOOKING_CONFIRMED", "BOOKING_REJECTED", "BOOKING_CANCELLED", "BOOKING_COMPLETED",
-            "PAYMENT_PAID", "PAYMENT_FAILED", "REFUND_WAITING_RECIPIENT", "REFUND_SUCCEEDED", "REFUND_WAITING_FUNDS");
+            "PAYMENT_PAID", "PAYMENT_FAILED", "REFUND_WAITING_RECIPIENT", "REFUND_SUCCEEDED", "REFUND_WAITING_FUNDS", "REFUND_OVERDUE");
 
     private final NotificationRepository notifications;
     private final UserRepository users;
