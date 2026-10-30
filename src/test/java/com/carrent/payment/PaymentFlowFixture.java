@@ -37,6 +37,7 @@ final class PaymentFlowFixture implements AutoCloseable {
     PaymentObligationService payments;
     EntityManager em;
     final boolean verifierEnabled;
+    final boolean maintenanceEnabled;
     final Class<?>[] extraConfiguration;
 
     PaymentFlowFixture() throws Exception { this(true); }
@@ -44,7 +45,12 @@ final class PaymentFlowFixture implements AutoCloseable {
     PaymentFlowFixture(boolean handlersEnabled) throws Exception { this(handlersEnabled, true); }
 
     PaymentFlowFixture(boolean handlersEnabled, boolean verifierEnabled, Class<?>... extraConfiguration) throws Exception {
+        this(handlersEnabled, verifierEnabled, false, extraConfiguration);
+    }
+
+    PaymentFlowFixture(boolean handlersEnabled, boolean verifierEnabled, boolean maintenanceEnabled, Class<?>... extraConfiguration) throws Exception {
         this.verifierEnabled = verifierEnabled;
+        this.maintenanceEnabled = maintenanceEnabled;
         this.extraConfiguration = extraConfiguration;
         db = new PaymentTestDatabase();
         try {
@@ -72,6 +78,7 @@ final class PaymentFlowFixture implements AutoCloseable {
                             "--logging.level.root=WARN", "--logging.level.org.hibernate.SQL=OFF", "--debug=false",
                             "--fixture.payment-handlers.enabled=" + handlersEnabled,
                             "--fixture.refund-verifier.enabled=" + verifierEnabled,
+                            "--carrent.payment.maintenance.enabled=" + maintenanceEnabled,
                             "--carrent.payment.providers.payos.owner-payout-fixture.enabled=true",
                             "--carrent.payment.providers.payos.owner-payout-fixture.client-id=fixture-owner",
                             "--carrent.payment.providers.payos.owner-payout-fixture.api-key=fixture-owner-api-key",
@@ -97,11 +104,12 @@ final class PaymentFlowFixture implements AutoCloseable {
         jdbc.update("DELETE FROM refund_recipient_accounts");
         for (String table : new String[]{"payout_attempts", "refunds", "payment_receipts", "webhook_inbox",
                 "payment_intents", "payment_obligations", "payment_channels"}) jdbc.update("DELETE FROM " + table);
-        jdbc.update("DELETE FROM notifications WHERE type IN ('PAYMENT_FIXTURE','REFUND_WAITING_RECIPIENT','REFUND_SUCCEEDED','REFUND_WAITING_FUNDS')");
+        jdbc.update("DELETE FROM notifications WHERE type IN ('PAYMENT_FIXTURE','REFUND_WAITING_RECIPIENT','REFUND_SUCCEEDED','REFUND_WAITING_FUNDS','REFUND_OVERDUE')");
         jdbc.update("UPDATE bookings SET status='PENDING' WHERE id=1");
         jdbc.update("UPDATE users SET status='ACTIVE' WHERE id IN (1,2,4)");
         clock.at.set(NOW);
         app.getBean(FixtureState.class).failApply = false;
+        app.getBean(FixtureState.class).refundUnallocated = false;
         app.getBean(FixtureState.class).verifier = (channel, bank, account) ->
                 new com.carrent.payment.provider.RefundDestinationVerifier.Destination(bank, account, "NGUYEN TEST");
         var at = java.time.LocalDateTime.ofInstant(NOW, ZoneOffset.UTC);
@@ -162,6 +170,7 @@ final class PaymentFlowFixture implements AutoCloseable {
 
     static final class FixtureState {
         volatile boolean failApply;
+        volatile boolean refundUnallocated;
         volatile com.carrent.payment.provider.RefundDestinationVerifier verifier;
     }
 
@@ -180,19 +189,19 @@ final class PaymentFlowFixture implements AutoCloseable {
             };
         }
         @Bean @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="fixture.payment-handlers.enabled", havingValue="true")
-        PaymentDomainHandler fixtureAdvance(EntityManager em, JdbcTemplate jdbc, FixtureState state) {
-            return handler(PaymentSubject.BOOKING_ADVANCE, em, jdbc, state);
+        PaymentDomainHandler fixtureAdvance(EntityManager em, JdbcTemplate jdbc, FixtureState state, RefundService refunds) {
+            return handler(PaymentSubject.BOOKING_ADVANCE, em, jdbc, state, refunds);
         }
         @Bean @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="fixture.payment-handlers.enabled", havingValue="true")
-        PaymentDomainHandler fixtureBalance(EntityManager em, JdbcTemplate jdbc, FixtureState state) {
-            return handler(PaymentSubject.BOOKING_BALANCE, em, jdbc, state);
+        PaymentDomainHandler fixtureBalance(EntityManager em, JdbcTemplate jdbc, FixtureState state, RefundService refunds) {
+            return handler(PaymentSubject.BOOKING_BALANCE, em, jdbc, state, refunds);
         }
         @Bean @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="fixture.payment-handlers.enabled", havingValue="true")
-        PaymentDomainHandler fixtureSubscription(EntityManager em, JdbcTemplate jdbc, FixtureState state) {
-            return handler(PaymentSubject.SUBSCRIPTION, em, jdbc, state);
+        PaymentDomainHandler fixtureSubscription(EntityManager em, JdbcTemplate jdbc, FixtureState state, RefundService refunds) {
+            return handler(PaymentSubject.SUBSCRIPTION, em, jdbc, state, refunds);
         }
         private PaymentDomainHandler handler(PaymentSubject subject, EntityManager em, JdbcTemplate jdbc,
-                                             FixtureState state) {
+                                             FixtureState state, RefundService refunds) {
             return new PaymentDomainHandler() {
                 public PaymentSubject subject() { return subject; }
                 public void lockSubject(Long id) {
@@ -205,6 +214,11 @@ final class PaymentFlowFixture implements AutoCloseable {
                     }
                 }
                 public void apply(Long receiptId) {
+                    var receipt = em.find(PaymentReceipt.class, receiptId);
+                    if (state.refundUnallocated && receipt.getStatus() == PaymentReceiptStatus.REFUND_REQUIRED) {
+                        refunds.request("DUPLICATE:" + receiptId, receiptId,
+                                receipt.getAmount() - receipt.getAllocatedAmount(), RefundReason.DUPLICATE_PAYMENT);
+                    }
                     jdbc.update("""
                             INSERT INTO notifications(user_id,title,message,type,is_read,created_at)
                             VALUES(4,'Fixture','Applied receipt','PAYMENT_FIXTURE',0,CURRENT_TIMESTAMP(6))

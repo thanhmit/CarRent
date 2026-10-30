@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/head :: head(title='Tài chính')}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
+  <section class="max-w-5xl mx-auto my-space-xl flex flex-col gap-space-lg">
+    <h1 class="font-headline-md text-headline-md">Tài chính</h1>
+    <nav aria-label="Phạm vi tài chính" class="flex flex-wrap gap-space-md">
+      <a th:href="@{/payment/finances(view='paid')}" th:attr="aria-current=${view == 'paid' ? 'page' : null}" class="text-secondary underline">Khoản tôi thanh toán</a>
+      <a sec:authorize="hasAnyRole('OWNER','ADMIN')" th:href="@{/payment/finances(view='collected')}" th:attr="aria-current=${view == 'collected' ? 'page' : null}" class="text-secondary underline">Khoản tôi thu</a>
+      <a th:href="@{/payment/finances(view='refunds')}" th:attr="aria-current=${view == 'refunds' ? 'page' : null}" class="text-secondary underline">Khoản tôi nhận hoàn</a>
+      <a sec:authorize="hasRole('ADMIN')" th:href="@{/payment/finances(view='managed')}" th:attr="aria-current=${view == 'managed' ? 'page' : null}" class="text-secondary underline">Quản trị tài chính</a>
+    </nav>
+    <p th:if="${view == 'managed'}">Tra cứu trạng thái tài chính. Các khoản tiền chỉ được cập nhật qua luồng xử lý và đối soát.</p>
+    <section th:if="${view != 'refunds'}" aria-labelledby="obligations-heading" class="flex flex-col gap-space-md">
+      <h2 id="obligations-heading" class="font-title-md text-title-md">Nghĩa vụ thanh toán</h2>
+      <p th:if="${obligations.empty}">Chưa có khoản thanh toán trong phạm vi này.</p>
+      <article th:each="o : ${obligations}" class="p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-sm break-words">
+        <h3 th:text="${'Khoản #' + o.id + ' · ' + o.purpose.message() + ' · Tham chiếu #' + o.subjectId}"></h3>
+        <p th:text="${'Phải trả: ' + #numbers.formatInteger(o.amountDue, 0, 'POINT') + ' VNĐ · Đã ghi nhận: ' + #numbers.formatInteger(o.amountSettled, 0, 'POINT') + ' VNĐ'}"></p>
+        <p th:text="${o.status.message()}"></p>
+        <p th:if="${o.latestIntent != null}" th:text="${'Lần thanh toán gần nhất: ' + o.latestIntent.message}"></p>
+        <a th:if="${o.payer and o.latestIntent != null}" th:href="@{/payment/intents/{id}(id=${o.latestIntent.id})}" class="text-secondary underline">Xem lần thanh toán gần nhất</a>
+      </article>
+    </section>
+    <section aria-labelledby="refunds-heading" class="flex flex-col gap-space-md">
+      <h2 id="refunds-heading" class="font-title-md text-title-md" th:text="${view == 'collected' ? 'Khoản tôi hoàn trả' : (view == 'managed' ? 'Các khoản hoàn tiền' : 'Khoản tôi nhận hoàn')}"></h2>
+      <p th:if="${refunds.empty}">Chưa có khoản hoàn tiền trong phạm vi này.</p>
+      <article th:each="r : ${refunds}" class="p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-sm break-words">
+        <h3 th:text="${'Khoản hoàn #' + r.id + ' · ' + #numbers.formatInteger(r.amount, 0, 'POINT') + ' VNĐ'}"></h3>
+        <p th:text="${r.status.message()}"></p>
+        <p th:if="${r.overdue}" class="text-error">Quá thời hạn xử lý · tiếp tục xử lý và đối soát</p>
+        <p th:if="${r.account != null}" th:text="${'Tài khoản nhận: ' + r.account}"></p>
+        <a th:href="@{/payment/finances/refunds/{id}(id=${r.id})}" class="text-secondary underline">Xem khoản hoàn tiền</a>
+      </article>
+    </section>
+    <section th:if="${view != 'refunds'}" aria-labelledby="review-heading" class="flex flex-col gap-space-md">
+      <h2 id="review-heading" class="font-title-md text-title-md">Giao dịch cần kiểm tra</h2>
+      <p>Tiền đã được ghi nhận vào hệ thống nhưng chưa được xác nhận để thanh toán nghĩa vụ tương ứng.</p>
+      <p th:if="${reviewReceipts.empty}">Chưa có giao dịch cần kiểm tra trong phạm vi này.</p>
+      <article th:each="r : ${reviewReceipts}" class="p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-sm break-words">
+        <h3 th:text="${'Giao dịch #' + r.id + ' · ' + #numbers.formatInteger(r.amount, 0, 'POINT') + ' VNĐ'}"></h3>
+        <p th:text="${r.message}"></p>
+        <p>Thời điểm ghi có: <time th:text="${#temporals.format(r.creditedAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss')} + ' (giờ Việt Nam)'" th:datetime="${r.creditedAt}"></time></p>
+      </article>
+    </section>
+    <nav aria-label="Trang tài chính" class="flex gap-space-lg">
+      <a th:if="${pageNumber > 0}" th:href="@{/payment/finances(view=${view},page=${pageNumber - 1})}" class="text-secondary underline">Trang trước</a>
+      <span th:text="${'Trang ' + (pageNumber + 1)}"></span>
+      <a th:if="${obligations.hasNext() or refunds.hasNext() or reviewReceipts.hasNext()}" th:href="@{/payment/finances(view=${view},page=${pageNumber + 1})}" class="text-secondary underline">Trang sau</a>
+    </nav>
+    <a th:href="@{/payment/finances(view=${view},page=${pageNumber})}" class="text-secondary underline">Tải lại trạng thái</a>
+  </section>
+</main>
+</body>
+</html>

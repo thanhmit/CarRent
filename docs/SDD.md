@@ -1,7 +1,7 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.28
-**Trạng thái:** Phase 0–3/P4.1, Phase 7, P4.2 offline và P4.3–P4.8 nền tài chính đã triển khai/kiểm chứng trên DB riêng; DB ứng dụng chưa migration, P4.2-A chờ tài khoản/provider/lookup đích, chưa có live pass
+**Phiên bản:** 2.30
+**Trạng thái:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản.
 **Ngày:** 2026-10-30
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
@@ -39,6 +39,10 @@
 > **Bổ sung v2.27 — P4.7, 2026-10-30:** RefundService tạo nghĩa vụ một lần và giới hạn tiền từ receipt; recipient form hai bước, đúng nguồn Owner/Admin, snapshot/attempt guard, deadline không reset và saved-account prefill opt-in. Migration mới chỉ trên DB kiểm chứng. Full clean verify **311 test đạt** và browser refund desktop/mobile đạt; DB ứng dụng giữ nguyên. Production xác minh tài khoản mặc định bị chặn tới P4.2-A; chưa có dispatch/scheduler/live. Tiến độ **51/86**, còn 35; tiếp theo **đợt 5/P4.8**. Xem §14.22.
 
 > **Bổ sung v2.28 — P4.8, 2026-10-30:** PayoutWorker dispatch/reconcile có durable attempt/reference/key/source/beneficiary, lease fencing và HTTP ngoài transaction/Car queue. UNKNOWN chỉ query, không POST lại; NOT_SENT có phân loại mới retry, funding nhắc đúng Owner/Admin một lần. Full clean verify **344 test đạt**, browser thông báo/hoàn tiền đạt; DB ứng dụng giữ nguyên. Scheduler P4.9 và provider/live P4.2-A còn pending. Tiến độ **52/86**, còn 34; tiếp theo **đợt 6/P4.9 + P4.10**. Xem §14.23.
+
+> **Bổ sung v2.29 — P4.9 + P4.10, 2026-10-30:** Job quét DB 30 giây với executor giới hạn, phục hồi theo deadline/lease và cảnh báo quá hạn atomic một lần; scheduler mặc định tắt. UI tài chính scope payer/recipient/collector/Admin, số tài khoản che, status DTO tối thiểu và polling có kiểm soát. Full clean verify **359 JUnit test đạt**, polling **6/6**, browser desktop/mobile đạt; DB ứng dụng giữ nguyên. Tiến độ **54/86**, còn 32; tiếp theo **P4.11**, P4.2-A và handler Phase 6/8 vẫn pending. Xem §14.24.
+
+> **Bổ sung v2.30 — P4.10 hoàn thiện/P4.11, 2026-10-30:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản. Xem §14.25 và handoff.
 
 ---
 
@@ -407,7 +411,9 @@ stateDiagram-v2
 
 `COMPLETED` là thao tác thủ công của Owner — không tự động (D-07). Phase 0–5 và đơn cũ dùng điều kiện ngày đã qua. Phase 6 với `inspection_required=true` dùng nhận/trả thực tế + biên bản + PAID tại BR-13; không thêm enum Booking. Tiến độ thuê xe, tình trạng thanh toán và bất đồng hiển thị riêng.
 
-### FR-12. Mock Payment
+### FR-12. Thanh toán legacy và nền tài chính mới
+
+**Phạm vi legacy:** các quy tắc mock bên dưới giữ làm hợp đồng lịch sử; không cho phép endpoint giả lập ghi nhận tiền thật. Với workflow mới, dùng payment-core và handler Phase 6/8 theo hợp đồng sau.
 
 - Chỉ Customer là chủ booking, booking `CONFIRMED`, chưa có Payment `PAID` → mới được thanh toán.
 - Trang `/bookings/{id}/payment`: chọn method (`MOCK_CARD` / `MOCK_BANK_TRANSFER` / `CASH_SIMULATED`) + checkbox "Giả lập thất bại (test)".
@@ -417,6 +423,8 @@ stateDiagram-v2
 - Notification: PAID → customer + owner; FAILED → customer.
 - Không thu thập thông tin thẻ/ngân hàng thật.
 - **Phase 6:** việc nhận xe không đòi PAID. Khi xe đã trả nhưng chưa PAID, booking vẫn CONFIRMED để Customer thanh toán qua luồng này. Owner có thao tác riêng ghi nhận đã thu tiền mặt giả lập (method `CASH_SIMULATED`, amount từ booking); không đổi nghĩa endpoint thanh toán Customer và không tạo PAID lần hai. Chưa PAID là chưa thanh toán đủ tổng tiền; không làm trả góp, nhắc nợ tự động hay thu tiền thật.
+
+**Nền tài chính hiện hành:** POST `/payment/obligations/{id}/attempts`, POST cancel intent và GET checkout/result/status dùng obligation/intent/receipt/refund riêng; amount/source/payer do server quyết định, QR tối đa 15 phút. SePay xác thực và commit inbox trước ACK; core apply một lần cùng handler transaction. Payout payOS lưu attempt trước HTTP, UNKNOWN chỉ query, SUCCEEDED khớp mới hoàn tất. UI tài chính có receipt cần kiểm tra theo scope và cùng trạng thái tổng hợp với checkout. Lookup/provider/live còn P4.2-A; handler thuê/gói thật còn Phase 6/8, chưa bật workflow. Xem [handoff P4.11](plans/phase-4-handoff.md).
 
 ### FR-13. Notification
 
@@ -552,10 +560,14 @@ Nhân tiền bằng `Math.multiplyExact`, overflow trả business error. Địa 
 
 ### BR-09. Payment
 
+**Legacy:** các quy tắc Payment thuộc booking dưới đây áp dụng dữ liệu/luồng giả lập lịch sử. Không diễn giải PAID/REFUNDED legacy thành đã thu/hoàn qua ngân hàng.
+
 - Payment thuộc 1 booking; amount lấy từ `booking.total_amount` phía server.
 - Customer của booking đó được thanh toán; booking phải `CONFIRMED`. Phase 6 bổ sung Owner của xe ghi nhận đã thu tiền mặt giả lập (FR-12), dùng cùng guard CONFIRMED/chưa PAID và amount server.
 - Tối đa **1 Payment `PAID`** mỗi booking (Service chặn trước khi tạo mới).
 - Theo D-13: khóa Car → Booking → Payment và kiểm tra CONFIRMED/chưa PAID bằng dữ liệu hiện tại trước insert; thanh toán đồng thời hoặc tranh chấp với cancel không tạo PAID trùng hay CANCELLED+PAID.
+
+**Payment-core mới:** VND BIGINT; một receipt cho mỗi `(channel, providerTransactionId)`, một ACTIVE intent cho nghĩa vụ dưới khóa. Core phân bổ một lần; handler không cộng lại amountSettled. Payer/collector/source phải khớp subject, recipient chỉ sửa đích của mình trước attempt. Tổng hoàn không vượt budget receipt; readyAt/dueAt không reset; overdue chỉ cảnh báo. Thuê: Owner → Customer; gói: Admin → Owner. UNKNOWN không resend; NOT_SENT chỉ retry khi có bảo đảm chưa chuyển và lỗi cho phép. Toàn bộ luật giao dịch/khóa/handler tại [handoff §1–3](plans/phase-4-handoff.md). Handler thật và cutover còn theo gate Phase 6/8/P4.2-A.
 
 ### BR-10. Data Integrity
 
@@ -751,7 +763,7 @@ FK `car_images.car_id` dùng `ON DELETE CASCADE`; 6 FK còn lại dùng `ON DELE
 
 ### 7.6. Hợp đồng DB-first cho các phase sau
 
-- Đã provision 7 bảng của Phase 0–5 bằng `scriptDB.sql`; P1/P2/P3/P4/P5 chỉ viết entity, repository, service, controller và UI trên schema này. Module Phase 6 được duyệt sau bootstrap, cần migration riêng tại §7.9 trước khi map entity mới.
+- DB ứng dụng đã provision 7 bảng legacy bằng `scriptDB.sql`. Core tài chính mới có 7 bảng tại §7.10 và bảng tài khoản nhận tại §7.11; các migration này chưa áp dụng lên DB ứng dụng. Phase 6 cần migration riêng tại §7.9 trước khi map entity mới; Phase 8 bổ sung schema gói theo kế hoạch đã duyệt.
 - Giữ nguyên tên bảng/cột, length, nullability và enum ở §7.2. JPA dùng `@GeneratedValue(strategy=IDENTITY)`, `@Enumerated(EnumType.STRING)`, `@JoinColumn` đúng tên FK; dùng `Long` cho tiền VND, `LocalDate` cho ngày thuê, `LocalDateTime` cho timestamp, `boolean read` map `is_read`.
 - DB timestamp defaults giúp INSERT bằng SQL; Java vẫn có thể dùng `@PrePersist`/`@PreUpdate` như plan. Không thêm bảng `roles`, `user_roles`, `locations`.
 - `application.properties`: `spring.jpa.hibernate.ddl-auto=none`. Không dùng `update/create/create-drop`, không thêm `schema.sql/data.sql` tự chạy ở mỗi lần boot. Khi đã có entity, có thể chạy kiểm tra mapping bằng override `--spring.jpa.hibernate.ddl-auto=validate`; không dùng Hibernate để thay schema.
@@ -887,7 +899,7 @@ Không có cascade xóa lịch sử tài chính. Amount phải dương; settled/
 
 Java `Instant` dùng `TIMESTAMP_UTC` để ghi UTC `DATETIME(6)`; caller cung cấp Clock/time, không đổi timezone toàn cục của legacy và không dựa vào default timestamp session. Deadline refund cùng NULL khi chưa ready hoặc due_at đúng ready_at + 1 giờ; P4.7 giữ mốc này không reset.
 
-Tại checkpoint P4.3, entity/repository chưa kích hoạt nghiệp vụ và các guard xuyên bảng thuộc service. P4.4–P4.6 nay đã bổ sung guard intent/payer/collector, resolver webhook, checkout và receipt processor tại §14.21; P4.7 đã bổ sung giới hạn hoàn, nguồn/recipient và deadline tại §14.22; P4.8 đã bổ sung dispatch/reconcile và guard attempt/source/lease tại §14.23; job tự quét còn thuộc P4.9. Unique/CHECK từng dòng không thay thế các guard này. DB ứng dụng vẫn chưa migration; không suy ra workflow tiền đã được bật.
+Tại checkpoint P4.3, entity/repository chưa kích hoạt nghiệp vụ và các guard xuyên bảng thuộc service. P4.4–P4.6 nay đã bổ sung guard intent/payer/collector, resolver webhook, checkout và receipt processor tại §14.21; P4.7 đã bổ sung giới hạn hoàn, nguồn/recipient và deadline tại §14.22; P4.8 đã bổ sung dispatch/reconcile và guard attempt/source/lease tại §14.23; P4.9 đã thêm job tự quét và cảnh báo atomic, P4.10 thêm read scope/UI tại §14.24. Các sửa chữa P4.10 và nghiệm thu P4.11 được ghi tại §14.25 và [handoff](plans/phase-4-handoff.md); scheduler mặc định tắt. Unique/CHECK từng dòng không thay thế các guard này. DB ứng dụng vẫn chưa migration; không suy ra workflow tiền đã được bật.
 
 ### 7.11. Tài khoản nhận hoàn tùy chọn — P4.7
 
@@ -1226,7 +1238,7 @@ sequenceDiagram
 
 > D-13 đã duyệt: khóa Car giữ đến commit/rollback để serialize mutation cùng xe; conflict query là locking read. Verify bằng hai transaction/kết nối MySQL độc lập, gồm snapshot cũ, tạo trùng, chuyển trạng thái tranh chấp và tạo cùng lúc xóa/ẩn xe. Không dùng Java `synchronized` thay khóa DB; giữ transaction ngắn và xử lý lỗi chờ khóa có kiểm soát.
 
-### 11.3. Mock payment
+### 11.3. Mock payment — hợp đồng legacy, không dùng để bật tiền thật
 
 ```mermaid
 sequenceDiagram
@@ -1247,6 +1259,10 @@ sequenceDiagram
 ```
 
 ---
+
+### 11.4. Payment-core — inbox, apply và payout recovery
+
+Sequence hiện hành: `SePay → xác thực/commit inbox → ACK → job claim → aggregate lock/transaction apply + handler/refund → commit → job persist payout attempt → HTTP ngoài transaction → fenced result/notification commit`. Mất response giữ UNKNOWN, restart chỉ query ID/reference cùng nguồn. Browser chỉ đọc trạng thái đã commit. [Sequence diagram và handoff P4.11](plans/phase-4-handoff.md#4-sequence-nền-tài-chính) ghi đầy đủ transaction boundary và error paths. Schema core tại §7.10/7.11 đã có migration/bootstrap; bảng/cột booking/subscription mới vẫn là kế hoạch Phase 6/8.
 
 ## 12. Non-functional Requirements
 
@@ -1378,7 +1394,7 @@ Hợp đồng nghiệp vụ, money model, default kỹ thuật, interface, schem
 | Thứ tự | Phase / plan | Task mới | Nội dung |
 |---|---|---|---|
 | 1 | [Phase 7 — Queue theo carId](plans/phase-7-car-queue.md) | P7.1–P7.4 | FIFO, bounded worker, request đợi commit/rollback; reads bypass queue; DB locking giữ nguyên |
-| 2 | [Phase 4 — Thanh toán thật](plans/phase-4-payment.md) | P4.2–P4.11 + P4.2-A | P4.2 offline và P4.3–P4.8 nền tài chính đã xong trên DB kiểm chứng; P4.2-A hoãn theo tài khoản/provider/live; tiếp theo P4.9 + P4.10, chưa bật workflow tiền; lookup đích thật còn chặn tại P4.2-A |
+| 2 | [Phase 4 — Thanh toán thật](plans/phase-4-payment.md) | P4.2–P4.11 + P4.2-A | P4.2 offline/P4.3–P4.11 đã nghiệm thu nền; P4.10 sửa đủ. P4.2-A còn pending tài khoản/provider/live; scheduler/workflow ứng dụng chưa bật, handoff Phase 6/8 đã có |
 | 3 | [Phase 6 — Thuê xe và biên bản](plans/phase-6-inspection.md) | P6.1–P6.13 | BEFORE, 30%, Owner xác nhận hợp đồng/giao xe, AFTER/return, 70%, cancel/refund, deadline |
 | 4 | [Phase 8 — Gói Owner](plans/phase-8-owner-subscriptions.md) | P8.1–P8.8 | 4/8/16 xe, 5.000/10.000/15.000 VND mỗi 30 ngày, gia hạn/hết hạn/quota và hoàn từ Admin |
 | 5 | [Phase 5 — Admin và hoàn thiện](plans/phase-5-admin-polish.md) | P5.1–P5.9 | Doanh thu phí gói riêng, quyền/admin/profile, theo dõi nợ/hoàn và E2E cuối |
@@ -1390,7 +1406,7 @@ Hợp đồng nghiệp vụ, money model, default kỹ thuật, interface, schem
 - **Phase 5:** doanh thu Admin từ gói hợp lệ, không SUM tiền thuê. Kết quả fixture/live được ghi riêng, không tick từ kế hoạch.
 - Cộng dồn/hoàn lệch tiền trả trước 30% tạm hoãn tại §1.4. Một Owner thật + Admin trước; live capability của nhà cung cấp cần kiểm chứng.
 
-**Tiến độ lịch sử:** 41 task đã hoàn thành (Phase 0–3 + P4.1). **Roadmap hiện hành:** 45 task mới, đã hoàn thành 11 (P7.1–P7.4 + P4.2 offline + P4.3–P4.8 trên DB kiểm chứng), còn 34 (P4.2-A chờ tài khoản/provider + 33 task chưa thực hiện); tổng **52/86 task hoàn thành** trên 9 phase. Không có live pass hoặc migration DB ứng dụng. Checkpoint cũ giữ số liệu tại thời điểm kiểm chứng.
+**Tiến độ lịch sử:** 41 task hoàn thành (Phase 0–3/P4.1). Roadmap hiện hành: 45 task mới, đã hoàn thành 14 (P7.1–P7.4 + P4.2 offline + P4.3–P4.11), còn 31. Tổng **55/86**; P4.2-A chờ tài khoản/provider/live. Không migration DB ứng dụng hoặc live pass.
 
 #### Phase 4 — 7 đợt, cập nhật được duyệt ngày 2026-10-30
 
@@ -1631,8 +1647,25 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - DB tạm đã dọn; DB ứng dụng vẫn 7 bảng, fingerprint giữ nguyên; không migration ứng dụng/tiền thật/human review/commit/push. **52/86**, còn 34; tiếp theo **P4.9 + P4.10**. Test gọi worker thủ công/restart context không thay scheduler tự phục hồi; P4.2-A/P4.9–P4.11 và domain Phase 6/8 còn pending.
 
 
+### 14.24. Đợt 6 — P4.9 + P4.10, 2026-10-30
+
+- Job 30 giây quét inbox/expiry/refund retry/attempt reconcile/overdue từ DB, batch 50 và keyset quay vòng. Executor domain/payout riêng, mỗi bên 2 worker + queue 50; scheduler/discovery không đợi mạng, queue reject giữ việc trong DB. Processors recheck state/lease dưới khóa; handler thiếu vẫn pending, UNKNOWN chỉ query. `carrent.payment.maintenance.enabled=false` mặc định; không DDL/startup migration.
+- Cảnh báo REFUND_OVERDUE tới recipient/collector/Admin không trùng user; khóa Receipt → Refund, notification cùng overdueNotifiedAt atomic. Không đổi deadline, không khóa Owner và không đảo SUCCEEDED thành failure; log không chứa raw provider/bank/exception body.
+- UI tài chính phân trang theo payer/recipient/collector/Admin, Owner phân biệt trả gói/thu thuê/nhận hoàn; chi tiết read-only che số tài khoản. Form recipient giữ quyền riêng. Status GET tối thiểu/no-store; polling 2 giây sau mỗi request, timeout/hidden tab/page exit/auth expiry/network/bfcache. No JS vẫn reload; chưa có schema thì hiển thị chưa sẵn sàng.
+- Full clean verify **359 JUnit test, 0 failure/error/skip**, thêm **6/6 Node polling test**. Có scheduler thật tự quét, restart/lease/race/queue rejection/slow provider/UNKNOWN query-only, atomic notification rollback/dedupe, fair batches, IDOR/CSRF/banned/source/DTO. Browser fixture bật scheduler: desktop/mobile/no-JS/XSS, collector/Admin/recipient, overdue và WAITING_FUNDS → SUCCEEDED theo commit. Bằng chứng [checkpoint đợt 6](plans/phase-4-payment.md#checkpoint-đợt-6--p49--p410-2026-10-30), log/ảnh `.scratch/phase4/batch6/`.
+- DB tạm đã dọn, DB ứng dụng vẫn 7 bảng/fingerprint giống nhau; file phase-0-init.md giữ hash. Chưa migration ứng dụng/tiền thật/human review/commit/push. **54/86**, còn 32; tiếp theo **P4.11**. P4.2-A/provider/lookup/live và handler Phase 6/8 chưa hoàn thành; JAR chạy lại trên DB hiện có với scheduler tắt.
+
+
 ---
+
+### 14.25. Đợt 7 — hoàn thiện P4.10 và chốt P4.11, 2026-10-30
+
+- P4.10 đã bổ sung receipt REVIEW_REQUIRED đúng collector/payer/Admin, unmatched giữ read-only theo kênh và không lộ dữ liệu provider. Pagination20; list/checkout dùng chung trạng thái, cả refund sau cancellation trên receipt đã phân bổ.
+- FinancialViewsTest10, PaymentFoundationTest3 và full clean verify **367 JUnit test đạt**, polling6/6. Composite dùng scheduler thật qua HTTP webhook/recipient, nguồn Owner/Admin độc lập, lost response/restart/query-only và atomic receipt/refund rollback. Stale managed entity test xác nhận hai connection ID khác nhau.
+- Browser desktop/mobile320, Admin no-JS390/reload, paging20+2 và payer state/scoping đạt. Fingerprint schema/rows DB ứng dụng giữ nguyên 7 bảng; file phase-0 giữ hash; DB kiểm chứng được dọn.
+- FR12/BR09/schema/sequence, D-27 và migration docs đồng bộ; [handoff](plans/phase-4-handoff.md) chốt service signatures/handler registration/khóa/money states/cutover. [Checkpoint đợt7](plans/phase-4-payment.md#checkpoint-đợt-7--hoàn-thiện-p410-và-chốt-p411-2026-10-30) có bảng từng điều kiện và giới hạn.
+- **55/86**, còn31; P4.2-A vẫn pending lookup/provider/live, handler thật thuộc Phase6/8. Không bật VIETQR_V1/scheduler ứng dụng, migration ứng dụng, tiền thật, human review hoặc commit/push.
 
 ## 15. Kết luận
 
-CarRent hiện là monolith Spring Boot/Thymeleaf/MySQL. Phase 0–3/P4.1, Phase 7, P4.2 offline và P4.3–P4.8 nền tài chính đã được triển khai/kiểm chứng. Full clean verify mới nhất **344 test đạt**, browser thông báo/hoàn tiền desktop/mobile đạt và JAR đã đóng gói. **DB ứng dụng chưa migration, fingerprint giữ nguyên**; đã có worker dispatch/reconcile, chưa có P4.9 scheduler hoặc handler Phase 6/8. Xác minh đích thật/provider/live vẫn bị chặn ở P4.2-A. Tổng **52/86**, còn 34; tiếp theo **đợt 6/P4.9 + P4.10 — scheduler, recovery và UI tích hợp**. Giữ thứ tự **4 → 6 → 8 → 5**, nguồn Owner/Admin riêng và gate provider/human review theo task. Chi tiết tại [plans/README.md](plans/README.md).
+CarRent là monolith Spring Boot/Thymeleaf/MySQL. P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản. Giữ thứ tự 4 → 6 → 8 → 5; [handoff P4.11](plans/phase-4-handoff.md) và [roadmap](plans/README.md) ghi boundary kỹ thuật/live.

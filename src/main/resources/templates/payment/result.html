@@ -4,14 +4,17 @@
 <body class="bg-surface font-body-md text-on-surface">
 <div th:replace="~{fragments/header :: header}"></div>
 <main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
-  <section class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md">
+  <section id="financial-status" data-intent="true" th:attr="data-status-url=@{/payment/intents/{id}/status(id=${payment.id})},data-state=${payment.status},data-terminal=${payment.status != 'REFUND_PENDING' and payment.status != 'RECEIVED' and payment.status != 'ACTIVE'}" class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md">
     <h1 class="font-headline-md text-headline-md">Trạng thái thanh toán</h1>
     <p id="payment-status" role="status" th:text="${payment.message()}"></p>
     <p class="break-all" th:text="${payment.code}"></p>
     <p th:text="${#numbers.formatInteger(payment.amount, 0, 'POINT') + ' VNĐ'}"></p>
+    <p id="polling-message" role="status" aria-live="polite"></p>
+    <a th:href="@{/payment/finances(view='refunds')}" class="text-secondary underline">Xem khoản tôi nhận hoàn</a>
     <a th:href="@{/payment/intents/{id}(id=${payment.id})}" class="text-secondary underline">Tải lại trạng thái</a>
     <a th:href="@{/}" class="text-secondary underline">Về trang chủ</a>
   </section>
 </main>
+<script th:src="@{/js/payment-polling.js}" defer></script>
 </body>
 </html>

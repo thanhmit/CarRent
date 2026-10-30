@@ -93,3 +93,11 @@ P4.2-A giữ nguyên gate kiểm chứng khả năng lookup, quyền/cấu hình
 Worker/transactions đã kiểm chứng lưu attempt trước HTTP, lease fencing, đối soát theo ID/reference cùng nguồn và không repost UNKNOWN. NOT_SENT có thêm NotSentReason (INSUFFICIENT_FUNDS/RETRYABLE/PERMANENT); constructor cũ giữ tương thích. **HTTP adapter production vẫn không trả NOT_SENT**, không tự suy diễn từ FAILED/CANCELLED/HTTP error. Funding/retry là capability fixture cho tới P4.2-A kiểm chứng provider bảo đảm chưa chi và loại lỗi tương ứng.
 
 Định danh nguồn kênh (ID/user/role/credential reference) bất biến theo vận hành; đổi tài khoản phải tạo kênh mới, không repoint nguồn có lịch sử tài chính. Crash sau lưu PREPARED nhưng trước actual send vẫn chỉ query và có thể giữ UNKNOWN lâu dài khi lookup rỗng; chưa có hợp đồng replay/certainty để tự resend. P4.9 mới cung cấp scheduler; test worker/restart hiện tại không chứng minh tự phục hồi runtime. Live và lookup đích độc lập vẫn pending P4.2-A.
+
+## Cập nhật P4.9 + P4.10 — 2026-10-30
+
+Đã có scheduler offline tự quét inbox/expiry/refund retry/attempt reconcile/overdue mỗi 30 giây, mặc định `carrent.payment.maintenance.enabled=false`; bật trong fixture đã chứng minh tự xử lý không phụ thuộc browser. UI và status polling theo scope được kiểm chứng offline. Không thay recovery policy hoặc mapping HTTP: UNKNOWN vẫn chỉ query, NOT_SENT production chưa được provider bảo đảm. Gate lookup đích/tài khoản/live ở P4.2-A và domain Phase 6/8 giữ nguyên; chưa migration DB ứng dụng hoặc bật chuyển tiền thật. Các mục nói chưa có scheduler ở checkpoint P4.8 là trạng thái lịch sử.
+
+## Nghiệm thu P4.11 — 2026-10-30
+
+P4.10 đã sửa receipt review và display state; P4.11 full clean verify 367 test đạt, composite có scheduler thật và fake provider chứng minh lost-response/restart/query-only trên cả nguồn Owner/Admin. [Handoff](phase-4-handoff.md) chốt contract tích hợp. Đây là nghiệm thu nền/offline, không thay capability/live. P4.2-A vẫn pending lookup không chuyển tiền, quyền/fee/minimum/retention/replay/NOT_SENT và bằng chứng thật; production verifier fail-closed, UNKNOWN không resend. DB ứng dụng chưa migration và scheduler vẫn mặc định tắt. Các mô tả chưa có scheduler tại checkpoint P4.8 là lịch sử.

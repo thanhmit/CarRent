@@ -127,6 +127,20 @@ Ngày 2026-10-10, chủ dự án yêu cầu provision ngay tất cả bảng và
 
 Xóa form và xử lý kiểm tra khả dụng riêng ở chi tiết xe. Truyền `startDate/endDate` từ danh sách qua chi tiết sang form đặt thuê, điền sẵn và cho sửa tại form. Lỗi tạo đơn giữ ngày/ghi chú. Tái dùng BR-04/BR-05: PENDING/CONFIRMED chặn lịch, hai khoảng chạm biên không trùng; không giữ chỗ từ kết quả tìm kiếm, tạo đơn vẫn kiểm tra dưới khóa D-13. Không đổi schema hay cơ chế phân quyền; bộ lọc nằm trên trang public dùng chung với Customer. D-26 điều chỉnh hành vi UI cũ của P3.6/D-23 theo yêu cầu trực tiếp, không triển khai Phase 4–6.
 
+### D-27. Nền tài chính và gate workflow mới — tổng hợp các quyết định đã duyệt
+
+Tổng hợp quyết định Phase 4–8 ngày 2026-10-27 đến 2026-10-30; không tự mở rộng phạm vi hoặc bật workflow:
+
+- Thu qua SePay đúng Owner/Admin; chi qua payOS từ nguồn Bảo Kim đúng chủ thể. Credit dịch vụ và tiền nguồn riêng; capability/lookup/live thuộc P4.2-A. Không tích hợp API Bảo Kim trực tiếp hoặc fallback tiền thuê qua Admin.
+- Tách obligation/intent/inbox/receipt/refund/attempt, durable trước ACK/HTTP; exact VND, idempotency/lease/current locks và atomic notification. UNKNOWN chỉ query cùng nguồn, không tạo lệnh chi mới.
+- Handler Phase 6/8 nối nghiệp vụ; core không tự cấp gói/hoàn thành booking. Workflow mới dùng chính sách thuê 30/70, bàn giao/trả và gói đã chốt trong README; các điều nhận xe chưa PAID/tiền mặt giả lập ở D-25 là lịch sử, không thắng hợp đồng mới.
+- Giữ payments/seed legacy và DB-first; migration diễn tập/backup trước vận hành. Scheduler mặc định tắt. P4.11 nghiệm thu nền offline, P4.2-A nghiệm thu provider/live; E2E thuê/gói ở Phase 6/8. Không bật VIETQR_V1 khi mới pass core.
+- Task chỉ đóng khi đủ yêu cầu đã duyệt và bằng chứng kiểm chứng; lỗi thuộc task phải sửa trước đóng, không tự chuyển sang task khác. Không suy ra human review từ test tự động.
+
+Interface, money states, khóa, transaction, sequence và cutover: [handoff P4.11](plans/phase-4-handoff.md).
+
+---
+
 ## Tóm tắt nhanh
 
 | # | Quyết định |
@@ -157,3 +171,4 @@ Xóa form và xử lý kiểm tra khả dụng riêng ở chi tiết xe. Truyề
 | D-24 | DB-first: scriptDB.sql + seed trước Phase 1, Hibernate không sửa schema |
 | D-25 | Phase 6: biên bản BEFORE/AFTER, xác nhận chéo, nhận chưa PAID, trả rồi chờ PAID, Admin bất đồng, ảnh riêng tư/legacy |
 | D-26 | Chọn khoảng thuê ở sidebar Tìm xe, lọc lịch trước phân trang, bỏ kiểm tra riêng tại chi tiết, điền sẵn ngày đặt thuê |
+| D-27 | Nền tài chính: SePay/payOS, durable money states, handler Phase 6/8, giữ legacy và tách offline/live gates |

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Dùng superpowers:executing-plans theo task, checkbox phản ánh kết quả thật. Không tự stage/commit/push. Chỉ dùng subagent khi được yêu cầu.
 
-**Ngày cập nhật:** 2026-10-30. **Trạng thái:** P4.1, P4.2 offline và P4.3–P4.8 đã hoàn thành/kiểm chứng nền/offline trên DB riêng. Full clean verify **344 test đạt**; browser thông báo/hoàn tiền desktop/mobile đạt. DB ứng dụng chưa migration; P4.2-A vẫn chờ tài khoản/provider/lookup đích/live. **Tiếp theo đợt 6/P4.9 + P4.10**. Tiến độ **52/86**, còn 34; chưa có live pass hoặc human review mới.
+**Ngày cập nhật:** 2026-10-30. **Trạng thái:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản.
 
 **Goal:** Tích hợp SePay VietQR và API chi hộ payOS (nguồn tiền ví Bảo Kim) với ghi nhận tiền, đối soát và hoàn tự động có khả năng phục hồi sau restart.
 
@@ -16,7 +16,7 @@
 
 ## 7 đợt triển khai — cập nhật được duyệt 2026-10-30
 
-Nguồn duyệt: SDD §14.1 và chấp thuận trong chat 2026-10-30: gộp P4.4 + P4.5 + P4.6 cùng phiên. Năm đợt đầu đã hoàn thành nền/offline; còn hai phiên theo bảng dưới và P4.2-A theo điều kiện tài khoản. Giữ nguyên ID/checklist từng task; gộp phiên không đồng nghĩa gộp điều kiện hoàn thành.
+Nguồn duyệt: SDD §14.1 và chấp thuận trong chat 2026-10-30: gộp P4.4 + P4.5 + P4.6 cùng phiên. Cả 7 đợt đã hoàn thành nền/offline; P4.10 đã được mở lại và sửa thiếu sót trước chốt P4.11. P4.2-A còn theo điều kiện tài khoản/provider/live. Giữ nguyên ID/checklist từng task; gộp phiên không đồng nghĩa gộp điều kiện hoàn thành.
 
 | Đợt | Task | Checkpoint |
 |---|---|---|
@@ -248,36 +248,41 @@ idempotencyKey = giá trị ổn định lưu cùng attempt đó
 
 **Phụ trách:** `@thanhmit` · **Review:** `@huy69332`.
 
-**Files:** PaymentMaintenanceJob; Clock bean cấu hình rõ ở config.
+**Files:** PaymentMaintenanceJob, PaymentMaintenanceWork, PaymentMaintenanceConfiguration; dùng lại Clock UTC bean và các processor hiện có.
 
-- [ ] Quét inbox chưa xong, intent hết hạn, attempt chưa rõ và refund đến lịch retry từ DB mỗi 30 giây; dùng lease và mốc sự kiện lưu bền vững.
-- [ ] Hết QR gọi transaction expiry: lockSubject(subjectId) trước các hàng tài chính rồi handler.expire(intentId). ADVANCE giải phóng booking; BALANCE chỉ đóng QR; SUBSCRIPTION kết thúc yêu cầu mua. Cùng carId qua queue; hàng đợi đầy giữ việc retry trong DB. Subject chưa có handler vẫn giữ việc chờ domain, không đánh dấu đã làm.
-- [ ] Refund quá 1 giờ từ readyAt: cảnh báo một lần cho các bên/Admin, không khóa Owner hoặc giả lập hoàn. App dừng qua deadline rồi mở lại phải quét bù.
-- [ ] Transport backoff tối đa 5 phút, giữ dueAt; error log redacted, không busy loop.
-- [ ] Test fake Clock vượt biên, restart/recovery và race job/webhook, không dùng chờ 1 giờ thật.
+- [x] Quét inbox chưa xong, intent hết hạn, attempt chưa rõ và refund đến lịch retry từ DB mỗi 30 giây; dùng lease và mốc sự kiện lưu bền vững.
+- [x] Hết QR gọi transaction expiry: lockSubject(subjectId) trước các hàng tài chính rồi handler.expire(intentId). ADVANCE giải phóng booking; BALANCE chỉ đóng QR; SUBSCRIPTION kết thúc yêu cầu mua. Cùng carId qua queue; hàng đợi đầy giữ việc retry trong DB. Subject chưa có handler vẫn giữ việc chờ domain, không đánh dấu đã làm.
+- [x] Refund quá 1 giờ từ readyAt: cảnh báo một lần cho các bên/Admin, không khóa Owner hoặc giả lập hoàn. App dừng qua deadline rồi mở lại phải quét bù.
+- [x] Transport backoff tối đa 5 phút, giữ dueAt; error log redacted, không busy loop.
+- [x] Test fake Clock vượt biên, restart/recovery và race job/webhook, không dùng chờ 1 giờ thật.
 
 ### Task P4.10 — UI refund và quyền truy cập
 
 **Phụ trách:** `@thanhmit` · **Review:** `@huy69332`.
 
-**Files:** PaymentController/RefundController, templates và polling script.
+**Files:** FinancialViews/FinancialController, RefundStatus, finance/refund/result/notification/header templates và payment-polling.js; giữ nguyên guard sửa recipient.
 
-- [ ] Người trả xem intent của mình; recipient xem refund của mình; collector xem nghĩa vụ gắn đúng xe/kênh; Admin xem theo quyền quản trị, không lộ secret hoặc thông tin ngân hàng đầy đủ trong list.
-- [ ] Render WAITING_RECIPIENT/WAITING_FUNDS/PROCESSING/OVERDUE/SUCCEEDED rõ ràng; quá hạn là thuộc tính thời gian, không thay SUCCEEDED thành thất bại.
-- [ ] UI success điều hướng từ backend đã commit; cancel không tuyên bố tiền ngân hàng đã được đảo. Polling GET bị giới hạn tần suất, tab đóng không dừng worker.
-- [ ] Test desktop/mobile, XSS nội dung webhook/note, CSRF/IDOR, không JS vẫn xem được trạng thái qua reload. Không thêm websocket.
+- [x] Người trả xem intent của mình; recipient xem refund của mình; collector xem nghĩa vụ gắn đúng xe/kênh; Admin xem theo quyền quản trị, không lộ secret hoặc thông tin ngân hàng đầy đủ trong list.
+- [x] Render WAITING_RECIPIENT/WAITING_FUNDS/PROCESSING/OVERDUE/SUCCEEDED rõ ràng; quá hạn là thuộc tính thời gian, không thay SUCCEEDED thành thất bại.
+- [x] UI success điều hướng từ backend đã commit; cancel không tuyên bố tiền ngân hàng đã được đảo. Polling GET bị giới hạn tần suất, tab đóng không dừng worker.
+- [x] Test desktop/mobile, XSS nội dung webhook/note, CSRF/IDOR, không JS vẫn xem được trạng thái qua reload. Không thêm websocket.
+
+- [x] Bổ sung receipt REVIEW_REQUIRED theo đúng collector/payer/Admin, gồm unmatched code, phân trang 20; không raw payload/secret/tài khoản đầy đủ.
+- [x] Dùng chung trạng thái tổng hợp với checkout: review/expiry/unavailable/refund, kể cả hoàn hủy từ receipt đã phân bổ; test và browser kiểm chứng.
 
 ### Task P4.11 — Gate kết thúc nền thanh toán
 
 **Phụ trách:** `@thanhmit` · **Review:** `@huy69332`.
 
-- [ ] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`.
-- [ ] Kiểm chứng DB hai connection: duplicate inbox/apply, duplicate refund dispatch, stale managed entity, lost provider response. Đối chiếu seed legacy nguyên trạng.
-- [ ] Tổng hợp contract offline P4.2 và gate tài khoản/provider/live P4.2-A; fixture pass và live capability được phân biệt. Nếu P4.2-A chưa đạt, ghi rõ core đã kiểm chứng offline nhưng live bị chặn, không tick live hoặc bật workflow.
-- [ ] Handoff Phase 6/8: các service signatures, money state và handler registration theo đúng README; không mở endpoint thanh toán legacy thành tiền thật.
-- [ ] Trước workflow cutover, đồng bộ SDD FR-12/BR-09/schema/sequence diagram và decisions mới. Chưa bật VIETQR_V1 chỉ vì core phase pass.
+- [x] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`.
+- [x] Kiểm chứng DB hai connection: duplicate inbox/apply, duplicate refund dispatch, stale managed entity, lost provider response. Đối chiếu seed legacy nguyên trạng.
+- [x] Tổng hợp contract offline P4.2 và gate tài khoản/provider/live P4.2-A; fixture pass và live capability được phân biệt. Nếu P4.2-A chưa đạt, ghi rõ core đã kiểm chứng offline nhưng live bị chặn, không tick live hoặc bật workflow.
+- [x] Handoff Phase 6/8: các service signatures, money state và handler registration theo đúng README; không mở endpoint thanh toán legacy thành tiền thật.
+- [x] Trước workflow cutover, đồng bộ SDD FR-12/BR-09/schema/sequence diagram và decisions mới. Chưa bật VIETQR_V1 chỉ vì core phase pass.
 
 **Hoàn thành khi:** inbox durable + apply idempotent + payout/recovery + quyền UI có bằng chứng; schema legacy giữ nguyên; các gate nhà cung cấp được ghi trung thực. Luồng end-to-end rental/subscription được chốt ở Phase 6/8.
+
+**Bàn giao:** [Interface, money states, handler registration, sequence và cutover](phase-4-handoff.md). Bằng chứng chạy cuối tại checkpoint đợt 7 bên dưới.
 
 ## Checkpoint P4.2 — SePay offline, 2026-10-27
 
@@ -420,3 +425,56 @@ git diff --check
 - Browser trên DB fixture riêng: Owner thấy nhắc bổ sung số dư, không lộ tài khoản người nhận hoặc link tới trang chỉ người nhận được phép xem; sau retry fixture, Customer thấy thông báo và trang hoàn SUCCEEDED, không còn form sửa đích. Kiểm tra desktop/mobile; ảnh và kết quả ở `.scratch/phase4/batch5/`. Fixture provider không phải giao dịch live.
 - DB tạm đã dọn; fingerprint schema/danh sách bảng/mọi row legacy của DB ứng dụng trước/sau giống nhau, vẫn 7 bảng legacy. Không migration DB ứng dụng, chuyển tiền thật, commit/push hoặc human review mới. Bản JAR mới chạy lại home/catalog trên DB hiện có.
 - **P4.8 hoàn thành nền/offline; tiến độ 52/86, còn 34. Tiếp theo đợt 6: P4.9 + P4.10**. P4.2-A giữ nguyên gate tài khoản/provider/lookup/live; P4.11 và domain Phase 6/8 còn pending. Test gọi worker/restart context không chứng minh scheduler runtime tự phục hồi.
+
+## Checkpoint đợt 6 — P4.9 + P4.10, 2026-10-30
+
+### P4.9 — Job bền vững và cảnh báo
+
+- PaymentMaintenanceJob quét inbox RECEIVED/PROCESSING, ACTIVE intent hết hạn, refund READY/WAITING_FUNDS, attempt PREPARED/UNKNOWN/PROCESSING và refund quá dueAt. Mỗi nhóm lấy tối đa 50 ID theo keyset; cursor quay vòng, reset khi hết, không để 50 dòng domain lỗi đầu tiên chặn các dòng sau. Cursor chỉ điều khiển discovery; deadline/retry/lease/trạng thái trong DB là nguồn phục hồi sau restart.
+- Discovery transaction ngắn, không giữ transaction hoặc scheduler thread qua HTTP. Hai executor riêng cho domain và payout, mỗi executor 2 worker + 50 chỗ chờ; queue đầy giữ việc trong DB, vòng sau thử lại. Set trong bộ nhớ chỉ tránh xếp trùng cùng instance; khóa/lease/fencing sẵn có mới bảo vệ giữa các worker/instance. Provider chậm không chặn expiry và thông báo.
+- Spring fixed-delay 30 giây, có lượt quét đầu khi khởi động. `carrent.payment.maintenance.enabled=false` mặc định; cấu hình mẫu đã cập nhật. Chỉ bật sau cutover schema/provider/domain được duyệt. Không handler Phase 6/8 thì giữ pending; expiry không giả lập xong. Inbox/payout giữ backoff tối đa 300 giây và không reset readyAt/dueAt; UNKNOWN chỉ query, không POST lại.
+- REFUND_OVERDUE gửi recipient, collector của nghĩa vụ và Admin, loại người trùng. Receipt → Refund lock/current read, notification và overdueNotifiedAt cùng commit; lỗi notification rollback toàn bộ. SUCCEEDED không cảnh báo quá hạn, không khóa Owner hoặc suy ra đã chuyển/failure. Log job chỉ ghi kind/ID/mã cố định, không raw payload/bank/exception body.
+- PaymentMaintenanceJobTest 6, PaymentMaintenancePayoutTest 3 và PaymentMaintenanceScheduleTest 1 kiểm thử mới: restart/qua deadline, handler thiếu, keyset chống starvation, webhook/expiry race, cảnh báo hai luồng/restart/rollback/dedupe, queue đầy, provider chậm, UNKNOWN recovery không create lại, success sau deadline. Scheduler test bật thật và đợi job tự chạy, không gọi scan hoặc HTTP.
+
+### P4.10 — UI tài chính và quyền
+
+- `/payment/finances?view=paid|collected|refunds|managed`: mỗi nhóm phân trang 20, scope theo user đang ACTIVE/role thật trong DB. Owner phân biệt khoản trả cho gói, khoản thu từ thuê và khoản nhận hoàn. Collector chỉ đọc đúng obligation/receipt/source của mình; Admin tra cứu quản trị read-only. Payer có link tới intent gần nhất của mình; không cấp quyền checkout cho collector/Admin.
+- `/payment/finances/refunds/{id}` là chi tiết read-only theo scope; số tài khoản chỉ hiển thị suffix đã che, không trả tên/credential/raw webhook. Link từ thông báo nay dùng trang này để recipient/collector/Admin đều đi đúng quyền. Form sửa đích `/payment/refunds/{id}` giữ guard recipient riêng; không mở rộng cho collector/Admin. Schema chưa provision thì UI báo chưa sẵn sàng, không tự DDL hoặc trả lỗi SQL.
+- GET `/payment/refunds/{id}/status` chỉ trả id/status/dueAt/overdue, no-store. WAITING_RECIPIENT/READY/WAITING_FUNDS/PROCESSING/REVIEW_REQUIRED/SUCCEEDED được render rõ; overdue là cờ thời gian, không sửa enum và không đảo success. Dùng chung payment-polling.js cho checkout/refund/result: 2 giây sau request trước, timeout 10 giây, không request chồng, tạm dừng/abort khi tab ẩn, dừng khi rời trang/hết phiên, retry mạng lỗi, phục hồi bfcache. Chuyển/reload success theo trạng thái backend đã commit; đóng tab không dừng job. Không JS vẫn reload được, cancel không hứa đảo chuyển khoản.
+- FinancialViewsTest 5 kiểm thử mới: payer/collector/Admin/Owner subscription, Owner/Customer khác, role tampering, stale banned session, IDOR/CSRF, DTO redaction, legacy schema unavailable và SUCCEEDED sau deadline. Bộ hồi quy recipient giữ kiểm tra XSS/CSRF/tampering. Node built-in test runner đạt 6/6 ca polling, không thêm dependency.
+
+### Gate và bằng chứng
+
+- Fresh full isolated clean verify: **359 JUnit test, 0 failure/error/skip**, JAR đóng gói. Lệnh `.\mvnw.cmd -f .scratch/phase4/batch6/verification-pom.xml -o '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`; POM chỉ tách build output khỏi IDE, root pom/dependency giữ nguyên. Thêm `node --test src/test/js/payment-polling.test.cjs`: **6/6 đạt**. Log `.scratch/phase4/batch6/full-clean-verify.log` và `js-verify.log`.
+- Browser fixture riêng bật scheduler thật: collector/Admin/customer, desktop/mobile, mask/IDOR, no-JS reload, cảnh báo quá hạn và polling WAITING_FUNDS → SUCCEEDED sau commit tự động. Có kiểm tra XSS và không tràn ngang. Ảnh/kết quả tại `.scratch/phase4/batch6/`; provider giả, không giao dịch thật. Fixture browser đã dọn.
+- DB full-suite đã dọn; fingerprint schema/danh sách bảng/toàn bộ row legacy DB ứng dụng trước/sau giống nhau, vẫn 7 bảng. File riêng phase-0-init.md giữ hash cũ. Không migration DB ứng dụng, chuyển tiền thật, dependency mới, commit/push hoặc human review mới. JAR mới chạy trên DB hiện có, scheduler tắt.
+- **P4.9 + P4.10 hoàn thành nền/offline; tiến độ 54/86, còn 32. Tiếp theo P4.11**. P4.2-A vẫn chờ tài khoản/provider/lookup/live; handler rental/subscription thật thuộc Phase 6/8. Nền tài chính đã kiểm chứng offline không đồng nghĩa live được bật.
+
+## Checkpoint đợt 7 — hoàn thiện P4.10 và chốt P4.11, 2026-10-30
+
+### P4.10 — sửa đủ yêu cầu đã duyệt
+
+- Mở lại task sau review: receipt REVIEW_REQUIRED đã lưu nhưng chưa có danh sách; list dùng enum intent nên lệch checkout. Đã sửa trong chính P4.10, không chuyển lỗi sang backlog khác.
+- Thêm danh sách read-only đúng kênh Owner/Admin, payer chỉ thấy receipt đã khớp nghĩa vụ của mình; unmatched không suy đoán payer. Explicit LEFT JOIN giữ receipt thiếu intent, lọc scope trước pagination, 20/trang. Chỉ id/amount/creditedAt/fixed message; không raw payload, bank đầy đủ hoặc credential.
+- List và checkout dùng chung phép tính trạng thái. Bổ sung trường hợp cancellation refund trên receipt đã APPLIED: chờ refund → REFUND_PENDING, mọi khoản hoàn cần thiết SUCCEEDED → REFUNDED. Không sửa enum/schema hoặc fake banking success.
+- RED review-receipts/status/cancellation tái hiện lỗi; GREEN FinancialViewsTest **10/10**. Lượt green đầu có assertion quá rộng bắt nhầm form logout, đã sửa assertion theo route tài chính; giữ log. Browser Owner desktop/mobile320, paging20+2, payer matched-only/status nhất quán và Admin no-JS390/reload đạt; đã xem ảnh mobile, không overflow.
+
+### P4.11 — từng điều kiện nghiệm thu
+
+| Điều kiện | Bằng chứng |
+|---|---|
+| Fresh full clean verify | **367 JUnit test**, 0 failure/error/skip, BUILD SUCCESS; thêm polling **6/6** |
+| Hai connection / stale managed entity | PaymentIntentTest xác nhận CONNECTION_ID khác nhau, entity cũ không vượt current guard; ReceiptApplicationTest/SePayInboxTest/PayoutWorkerTest kiểm tra cạnh tranh/dedupe/dispatch |
+| Tích hợp/recovery | PaymentFoundationTest **3/3**: HTTP signed webhook trùng → handler fixture tạo refund → recipient HTTP → scheduler thật → create response lost → restart → query cùng reference/source → UI SUCCEEDED, cả Owner/Admin; không có create thứ hai |
+| Atomic rollback | Handler lỗi sau tạo refund rollback receipt/refund/notification; retry chỉ một nghĩa vụ hoàn. Worker suite kiểm tra rollback/fencing và lost response |
+| Bảo toàn legacy | Fingerprint schema/danh sách bảng/toàn bộ row DB ứng dụng trước/sau giống nhau, **7 bảng**; phase-0-init.md giữ SHA256 F20EDF449FBE1680493684E44C44D9C85582EBB0C6E71ACD07104E8CA681B238 |
+| Handoff / SDD | FR-12/BR-09/schema/sequence cập nhật boundary legacy/core; D-27 tổng hợp quyết định; migration README sửa trạng thái worker/job; [handoff Phase 6/8](phase-4-handoff.md) chốt signature/handler/money states/cutover |
+| Gate provider/live | P4.2-A vẫn pending; production lookup fail-closed, NOT_SENT production chưa map khi thiếu bảo đảm provider; không bật scheduler/workflow tiền thật |
+
+Lệnh full: `.\mvnw.cmd -f .scratch/phase4/batch7/verification-pom.xml -o '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`, được runner đặt SPRING_DATASOURCE_URL vào DB bootstrap tạm và dọn sau chạy. POM chỉ tách output khỏi IDE, dependency/root pom giữ nguyên. Log `full-clean-verify.log`, `js-verify.log`, RED/GREEN, fingerprint và ảnh tại `.scratch/phase4/batch7/`.
+
+Lượt composite đầu lỗi test đọc attempt trước khi scheduler tạo row; đã sửa chờ COUNT/state/lease đã commit. Lượt chạy lại và full suite đạt; đây không phải lỗi provider/production hoặc bằng chứng live.
+
+Bản JAR đợt 7 đã chạy tại `http://localhost:8080/`, mở bằng trình duyệt; `/` và `/cars` trả HTTP 200. Giữ `ddl-auto=none`, SQL init `never`, maintenance `false`; DB ứng dụng vẫn chưa migration. Console trang chủ còn favicon 404 và cảnh báo Tailwind CDN có sẵn, không ảnh hưởng gate tài chính.
+
+**Kết luận:** P4.10 và toàn bộ 5 điều kiện P4.11 hoàn thành trong phạm vi đã duyệt. **55/86**, còn 31. Phase 4 còn **P4.2-A**; nghiệp vụ thuê/gói thật thuộc Phase 6/8. Không migration ứng dụng, chuyển tiền thật, human review mới hoặc commit/push. Reviewer được phân công huy69332 chưa có bằng chứng review trong checkpoint này.

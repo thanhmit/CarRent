@@ -145,9 +145,14 @@ class PaymentIntentTest {
         var route = f.app.getBean(PaymentRoutes.class).obligation(201L);
         var actor = f.actor(4);
         f.tx.executeWithoutResult(s -> {
+            Long reader = f.jdbc.queryForObject("SELECT CONNECTION_ID()", Long.class);
             var stale = f.em.find(PaymentObligation.class, 201L);
-            CompletableFuture.runAsync(() -> f.jdbc.update("UPDATE payment_obligations SET status='CANCELLED' WHERE id=201"))
-                    .join();
+            Long writer = CompletableFuture.supplyAsync(() -> f.tx.execute(other -> {
+                Long id = f.jdbc.queryForObject("SELECT CONNECTION_ID()", Long.class);
+                f.jdbc.update("UPDATE payment_obligations SET status='CANCELLED' WHERE id=201");
+                return id;
+            })).join();
+            assertThat(writer).isNotEqualTo(reader);
             assertThat(stale.getStatus()).isEqualTo(PaymentObligationStatus.OPEN);
             assertThatThrownBy(() -> f.app.getBean(PaymentIntentTransactions.class).open(route, actor))
                     .isInstanceOf(com.carrent.common.exception.BusinessException.class);

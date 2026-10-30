@@ -43,7 +43,7 @@ Số commit bao gồm merge, không phải tỷ lệ công sức. Git xác nhậ
 
 ## 3. Phần sắp làm — giao 45 task mới sau tách P4.2-A
 
-**Cập nhật phạm vi hiện hành — 2026-10-30:** P4.2 offline và P4.3–P4.8 nền tài chính đã hoàn thành trên DB kiểm chứng; full clean verify **344 test đạt**, browser thông báo/hoàn tiền desktop/mobile đạt. DB ứng dụng chưa migration; P4.2-A vẫn chờ tài khoản/provider/lookup đích. Tổng 45 task mới: đã xong 11, còn 34; toàn roadmap **52/86**. `thanhmit` còn 4 task (P4.2-A và P4.9–P4.11); hai thành viên còn lại mỗi người 15 task. Tiếp theo P4.9 + P4.10; chưa live pass hoặc human review mới. Checkpoint dưới giữ lịch sử.
+**Cập nhật phạm vi hiện hành — 2026-10-30:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản. Trong 45 task mới: xong 14, còn 31; thanhmit còn P4.2-A, huy69332 và ducbinhnguyen07ars mỗi người còn 15 task. Chưa ghi nhận human review mới.
 
 **Checkpoint 2026-10-27:** Phase 7/P7.1–P7.4 đã triển khai và kiểm chứng (19 lõi queue + 34 hồi quy + 41 HTTP queue + 9 transaction = 103 test đạt); `thanhmit` tiếp theo làm P4.2, còn P4.2–P4.11. Phân công reviewer `huy69332` giữ nguyên; chưa ghi nhận review của contributor khác. Tổng task mới còn lại: 40. Chi tiết tại [plan Phase 7](phase-7-car-queue.md). Nhánh triển khai P7.3: `feat/car-queue-http`; P7.4: `feat/car-queue-transaction`.
 

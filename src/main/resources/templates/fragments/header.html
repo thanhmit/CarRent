@@ -31,6 +31,7 @@
         <div class="absolute right-0 top-full mt-2 w-52 max-w-[calc(100vw-2rem)] bg-surface-container-lowest rounded-lg shadow-xl p-2 flex flex-col z-50 font-label-md text-label-md">
           <span class="px-3 py-2 text-on-surface truncate lg:hidden" sec:authentication="principal.fullName">Tài khoản</span>
           <a class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/profile}">Hồ sơ</a>
+          <a class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/payment/finances}">Tài chính</a>
           <a sec:authorize="hasRole('CUSTOMER')" class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/bookings}">Đơn thuê của tôi</a>
           <a sec:authorize="hasRole('OWNER')" class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/owner/cars}">Xe của tôi</a>
           <a sec:authorize="hasRole('ADMIN')" class="px-3 py-2 rounded-lg hover:bg-surface-container" th:href="@{/admin/dashboard}">Dashboard</a>
