@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
     private static final Set<String> TYPES = Set.of("CAR_PENDING_APPROVAL", "CAR_APPROVED", "CAR_REJECTED",
             "BOOKING_CREATED", "BOOKING_CONFIRMED", "BOOKING_REJECTED", "BOOKING_CANCELLED", "BOOKING_COMPLETED",
-            "PAYMENT_PAID", "PAYMENT_FAILED");
+            "PAYMENT_PAID", "PAYMENT_FAILED", "REFUND_WAITING_RECIPIENT", "REFUND_SUCCEEDED", "REFUND_WAITING_FUNDS");
 
     private final NotificationRepository notifications;
     private final UserRepository users;
@@ -34,7 +34,7 @@ public class NotificationService {
         }
         validateText(title, 150);
         validateText(message, 1000);
-        if (relatedEntityType != null && !Set.of("CAR", "BOOKING", "PAYMENT").contains(relatedEntityType)
+        if (relatedEntityType != null && !Set.of("CAR", "BOOKING", "PAYMENT", "REFUND").contains(relatedEntityType)
                 || (relatedEntityType == null) != (relatedEntityId == null)
                 || relatedEntityId != null && relatedEntityId <= 0) {
             throw new BusinessException("Tham chiếu thông báo không hợp lệ.");

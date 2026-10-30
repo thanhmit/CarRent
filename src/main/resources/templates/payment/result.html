@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Kết quả thanh toán')}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
+  <section class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md">
+    <h1 class="font-headline-md text-headline-md">Trạng thái thanh toán</h1>
+    <p id="payment-status" role="status" th:text="${payment.message()}"></p>
+    <p class="break-all" th:text="${payment.code}"></p>
+    <p th:text="${#numbers.formatInteger(payment.amount, 0, 'POINT') + ' VNĐ'}"></p>
+    <a th:href="@{/payment/intents/{id}(id=${payment.id})}" class="text-secondary underline">Tải lại trạng thái</a>
+    <a th:href="@{/}" class="text-secondary underline">Về trang chủ</a>
+  </section>
+</main>
+</body>
+</html>

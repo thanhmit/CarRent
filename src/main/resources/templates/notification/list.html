@@ -43,7 +43,8 @@
                th:href="@{/owner/cars/{id}/edit(id=${notification.relatedEntityId})}" class="text-secondary font-label-md text-label-md underline underline-offset-2">Xem xe của tôi</a>
             <a th:if="${notification.relatedEntityType == 'BOOKING' and notification.relatedEntityId != null}"
                th:href="@{/bookings/{id}(id=${notification.relatedEntityId})}" class="text-secondary font-label-md text-label-md underline underline-offset-2">Xem đơn thuê</a>
-            <!--/* shortcut: Payment links wait for their page in P4.4. */-->
+            <a th:if="${notification.relatedEntityType == 'REFUND' and notification.relatedEntityId != null and notification.type != 'REFUND_WAITING_FUNDS'}"
+               th:href="@{/payment/refunds/{id}(id=${notification.relatedEntityId})}" class="text-secondary font-label-md text-label-md underline underline-offset-2">Xem khoản hoàn tiền</a>
             <form th:unless="${notification.read}" method="post" th:action="@{/notifications/{id}/read(id=${notification.id})}">
               <button type="submit" class="inline-flex items-center gap-space-xs text-secondary font-label-md text-label-md hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">
                 <span class="material-symbols-outlined text-[18px]" aria-hidden="true">done</span>Đánh dấu đã đọc

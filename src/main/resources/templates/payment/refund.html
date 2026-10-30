@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Nhận hoàn tiền')}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
+  <section class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md">
+    <h1 class="font-headline-md text-headline-md">Khoản hoàn tiền của bạn</h1>
+    <p class="font-bold" th:text="${#numbers.formatInteger(refund.amount, 0, 'POINT') + ' VNĐ'}"></p>
+    <p th:switch="${refund.status.name()}" role="status">
+      <span th:case="'WAITING_RECIPIENT'">Vui lòng xác nhận tài khoản nhận hoàn tiền. Thời hạn hoàn bắt đầu khi tài khoản đã được xác minh và xác nhận.</span>
+      <span th:case="'READY'">Đã xác nhận tài khoản nhận. Khoản hoàn đang chờ xử lý, chưa xác nhận đã chuyển tiền.</span>
+      <span th:case="'WAITING_FUNDS'">Đang chờ bên hoàn tiền bổ sung số dư.</span>
+      <span th:case="'PROCESSING'">Đang đối soát kết quả chuyển tiền.</span>
+      <span th:case="'SUCCEEDED'">Nhà cung cấp đã xác nhận hoàn tiền thành công.</span>
+      <span th:case="*">Khoản hoàn cần được kiểm tra.</span>
+    </p>
+    <p th:if="${refund.overdue}" class="text-error" role="status">Khoản hoàn đã quá thời hạn xử lý; hệ thống cần tiếp tục đối soát.</p>
+    <p th:if="${refund.dueAt != null}">Hạn xử lý:
+      <time th:datetime="${refund.dueAt}" th:text="${#temporals.format(refund.dueAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time>
+    </p>
+    <p th:if="${successMessage}" th:text="${successMessage}" role="status"></p>
+    <p th:if="${errorMessage}" th:text="${errorMessage}" class="text-error" role="alert"></p>
+    <dl th:if="${refund.accountNumber != null}" class="break-all flex flex-col gap-space-sm">
+      <div><dt>Ngân hàng (BIN)</dt><dd th:text="${refund.bankBin}"></dd></div>
+      <div><dt>Số tài khoản đã xác nhận</dt><dd th:text="${refund.accountNumber}"></dd></div>
+      <div><dt>Tên do nhà cung cấp xác minh</dt><dd th:text="${refund.accountName}"></dd></div>
+    </dl>
+    <form th:if="${refund.editable and destination == null}" method="post"
+          th:action="@{/payment/refunds/{id}/recipient/preview(id=${refund.id})}" th:object="${recipientForm}" class="flex flex-col gap-space-md">
+      <div>
+        <label for="bankBin">Mã ngân hàng (BIN, 6 chữ số)</label>
+        <input id="bankBin" th:field="*{bankBin}" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required
+               class="block w-full border rounded-lg p-space-sm" aria-describedby="bank-help"/>
+        <p id="bank-help" class="text-on-surface-variant">Nhập mã BIN của ngân hàng nhận, ví dụ MB: 970422, Vietcombank: 970436.</p>
+        <p th:errors="*{bankBin}" class="text-error"></p>
+      </div>
+      <div>
+        <label for="accountNumber">Số tài khoản nhận</label>
+        <input id="accountNumber" th:field="*{accountNumber}" inputmode="numeric" pattern="[0-9]{1,50}" maxlength="50" required
+               class="block w-full border rounded-lg p-space-sm"/>
+        <p th:errors="*{accountNumber}" class="text-error"></p>
+      </div>
+      <label class="flex items-start gap-space-sm"><input type="checkbox" th:field="*{saveForLater}"/>Lưu tài khoản để điền sẵn cho lần hoàn sau.</label>
+      <button class="p-space-sm rounded-lg bg-primary text-on-primary" type="submit">Kiểm tra tài khoản nhận</button>
+    </form>
+    <form th:if="${refund.editable and destination != null}" method="post"
+          th:action="@{/payment/refunds/{id}/recipient(id=${refund.id})}" th:object="${recipientForm}" class="flex flex-col gap-space-md">
+      <p>Kiểm tra đúng người nhận trước khi xác nhận:</p>
+      <dl class="break-all">
+        <div><dt>Mã ngân hàng</dt><dd th:text="${destination.bankBin}"></dd></div>
+        <div><dt>Số tài khoản</dt><dd th:text="${destination.accountNumber}"></dd></div>
+        <div><dt>Tên do nhà cung cấp xác minh</dt><dd th:text="${destination.accountName}"></dd></div>
+      </dl>
+      <input type="hidden" th:field="*{bankBin}"/><input type="hidden" th:field="*{accountNumber}"/>
+      <input type="hidden" th:field="*{saveForLater}"/><input type="hidden" th:field="*{confirmedAccountName}"/>
+      <label class="flex items-start gap-space-sm"><input type="checkbox" name="confirmed" value="true" required/>Tôi đã kiểm tra đúng ngân hàng, số tài khoản và tên người nhận.</label>
+      <button class="p-space-sm rounded-lg bg-primary text-on-primary" type="submit">Xác nhận tài khoản nhận hoàn tiền</button>
+      <a th:href="@{/payment/refunds/{id}(id=${refund.id})}" class="text-secondary underline">Nhập lại thông tin</a>
+    </form>
+    <a th:href="@{/payment/refunds/{id}(id=${refund.id})}" class="text-secondary underline">Tải lại trạng thái</a>
+    <a th:href="@{/notifications}" class="text-secondary underline">Xem thông báo</a>
+  </section>
+</main>
+</body>
+</html>
