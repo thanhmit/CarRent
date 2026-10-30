@@ -2,3 +2,22 @@
 spring.datasource.url=jdbc:mysql://localhost:3306/carrent?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
 spring.datasource.username=root
 spring.datasource.password=YOUR_LOCAL_MYSQL_PASSWORD
+
+# SePay P4.2: optional, disabled until configured. Use distinct references/secrets for Test and Live.
+# Set secrets via environment variables; never put real secrets in this example or Git.
+# A later DB payment_channel resolves its credential reference on the server.
+carrent.payment.providers.sepay.owner-test.enabled=false
+carrent.payment.providers.sepay.owner-test.webhook-secret=${CARRENT_SEPAY_OWNER_TEST_SECRET:}
+carrent.payment.providers.sepay.admin-test.enabled=false
+carrent.payment.providers.sepay.admin-test.webhook-secret=${CARRENT_SEPAY_ADMIN_TEST_SECRET:}
+
+# payOS payout credentials: inactive until the channel is enrolled and verified.
+# P4.3/P4.8 resolve DB payout_channel_id -> this server credential reference.
+carrent.payment.providers.payos.owner-payout.enabled=false
+carrent.payment.providers.payos.owner-payout.client-id=${CARRENT_PAYOS_OWNER_CLIENT_ID:}
+carrent.payment.providers.payos.owner-payout.api-key=${CARRENT_PAYOS_OWNER_API_KEY:}
+carrent.payment.providers.payos.owner-payout.checksum-key=${CARRENT_PAYOS_OWNER_CHECKSUM_KEY:}
+carrent.payment.providers.payos.admin-payout.enabled=false
+carrent.payment.providers.payos.admin-payout.client-id=${CARRENT_PAYOS_ADMIN_CLIENT_ID:}
+carrent.payment.providers.payos.admin-payout.api-key=${CARRENT_PAYOS_ADMIN_API_KEY:}
+carrent.payment.providers.payos.admin-payout.checksum-key=${CARRENT_PAYOS_ADMIN_CHECKSUM_KEY:}

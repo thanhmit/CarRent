@@ -1,0 +1,597 @@
+{
+  "SUCCEEDED": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "75f5cde6c418f1d8739984cddf4c34748180c25103df524bff36331b74e61513"
+  },
+  "RECEIVED": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "RECEIVED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "ac17ebc898a3ca45f7f8c020a303f7ed676efcb7baf6b43a2de56f5d4259e076"
+  },
+  "PROCESSING": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "PROCESSING"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "c39ba07c1e74ee6df979fcfe324e9f532e6fe3a357148f428b524c9697672d38"
+  },
+  "ON_HOLD": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "ON_HOLD"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "8b70527b801578f5840227247836a4ac6ba8606a789ad80e84623c484aeeeda7"
+  },
+  "FAILED": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "FAILED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "35de52cfa8c7d22795b4f975cf946002d4c09743511422efcc291c2924e6ba4e"
+  },
+  "CANCELLED": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "CANCELLED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "4d6d9bfc5731b486353c8fece8d7dc31ee94f432bb5389cd04e3c3fe5a422bfe"
+  },
+  "REVERSED": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "REVERSED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "e623ba65cf8bf65f1ae1417739314b68b1e42f52987444787242e2fc98f0a7a9"
+  },
+  "FUTURE_STATE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "FUTURE_STATE"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "6575ac63335bf6cfcce6d620f90f7f5e6880622f4dbce6290046982b35724717"
+  },
+  "APPROVAL_ONLY": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "PROCESSING"
+          }
+        ],
+        "approvalState": "SUCCEEDED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "acc8989240ae40e871a1f9009de69db226574db2c65236c5be7292f7c30a3763"
+  },
+  "WRONG_AMOUNT": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5001,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "9c8a1527c91cbdab789027bbf562e2f442635828f17f115e6886b71a4fb6890c"
+  },
+  "WRONG_BANK": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970436",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "28a034ef3d2a496f44bcf0521f5474e5f965f1d9e76791b27e5bae101252031c"
+  },
+  "WRONG_ACCOUNT": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000999",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "ff521a852f4501b7f5fb636fda165d4b8297d11e2b064ac1e14f1b722bb22053"
+  },
+  "WRONG_REFERENCE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "another-refund",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "4abf4a65c369f6c8456b77fcc67e9243106f78116e12d5d17a1918bbc12f4cbb"
+  },
+  "WRONG_ID": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "another-payout",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "375ed28f0a80b4104e26071f6375d12057ba04089f2441bb79b094bd4cde9652"
+  },
+  "MULTIPLE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          },
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "624ac0abcc926a8a7031a4cbfd836495891ea59bf4a4a201002ac9a061fae005"
+  },
+  "EMPTY": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "refund-1-attempt-1",
+        "transactions": [],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "18780524ee6047ce64d98778405fd75432a52e8dc0fd3e24775f47de944d06bd"
+  },
+  "FIND_ONE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "payouts": [
+          {
+            "id": "payout_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "transactions": [
+              {
+                "id": "tx_fixture_1",
+                "referenceId": "refund-1-attempt-1",
+                "amount": 5000,
+                "description": "Hoàn tiền & cọc / 100%",
+                "toBin": "970422",
+                "toAccountNumber": "0000000123",
+                "state": "SUCCEEDED"
+              }
+            ],
+            "approvalState": "APPROVED",
+            "createdAt": "2026-10-27T03:00:00.000Z",
+            "category": []
+          }
+        ],
+        "pagination": {
+          "count": 1,
+          "hasMore": false
+        }
+      }
+    },
+    "signature": "a45e9c46c8e1ededf6616d18769ffdab9825d7694fdbc0588f348b55b387e3fb"
+  },
+  "FIND_NONE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "payouts": [],
+        "pagination": {
+          "count": 0,
+          "hasMore": false
+        }
+      }
+    },
+    "signature": "d70453062f158a89e0bc4dd389953afc9184e3d5c1826467ba15bc63dfbab6a9"
+  },
+  "FIND_MULTIPLE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "payouts": [
+          {
+            "id": "payout_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "transactions": [
+              {
+                "id": "tx_fixture_1",
+                "referenceId": "refund-1-attempt-1",
+                "amount": 5000,
+                "description": "Hoàn tiền & cọc / 100%",
+                "toBin": "970422",
+                "toAccountNumber": "0000000123",
+                "state": "SUCCEEDED"
+              }
+            ],
+            "approvalState": "APPROVED",
+            "createdAt": "2026-10-27T03:00:00.000Z",
+            "category": []
+          },
+          {
+            "id": "payout_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "transactions": [
+              {
+                "id": "tx_fixture_1",
+                "referenceId": "refund-1-attempt-1",
+                "amount": 5000,
+                "description": "Hoàn tiền & cọc / 100%",
+                "toBin": "970422",
+                "toAccountNumber": "0000000123",
+                "state": "SUCCEEDED"
+              }
+            ],
+            "approvalState": "APPROVED",
+            "createdAt": "2026-10-27T03:00:00.000Z",
+            "category": []
+          }
+        ],
+        "pagination": {
+          "count": 2,
+          "hasMore": false
+        }
+      }
+    },
+    "signature": "6cde692dd56839790f3c2f5762e8e57814c822a4a5f85472e551c293d64467b3"
+  },
+  "EMPTY_REFERENCE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": "",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": "",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "cd3bd8b229322ac71bad7fb1bfea746cbdf39809dda8031abe4428814322a0e6"
+  },
+  "NULL_REFERENCE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": null,
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": null,
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "58bb716f10a4a8cac795a6dabf8e5898b094401b8af16c72e24012feef9d185b"
+  },
+  "NUMERIC_REFERENCE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "referenceId": 123,
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "referenceId": 123,
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "7a2ab1b53ce443e967c512adbe5c7ad518e0841e29166eb8d36011b78cd52efe"
+  },
+  "MISSING_REFERENCE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_fixture_1",
+        "transactions": [
+          {
+            "id": "tx_fixture_1",
+            "amount": 5000,
+            "description": "Hoàn tiền & cọc / 100%",
+            "toBin": "970422",
+            "toAccountNumber": "0000000123",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED",
+        "createdAt": "2026-10-27T03:00:00.000Z",
+        "category": []
+      }
+    },
+    "signature": "f51da85ab78952b0636c028a0d58b8fa5840ac6fb4ef3ef50ec2ed06bcf970a0"
+  }
+}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Thanh toán')}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
+  <section class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md"
+           id="payment-checkout" th:attr="data-status-url=@{/payment/intents/{id}/status(id=${payment.id})},data-result-url=@{/payment/intents/{id}/result(id=${payment.id})},data-expires-at=${payment.expiresAt}">
+    <h1 class="font-headline-md text-headline-md">Thanh toán bằng chuyển khoản</h1>
+    <p id="payment-status" role="status" aria-live="polite" th:text="${payment.message()}">Đang chờ thanh toán</p>
+    <p>Chuyển đúng số tiền và giữ nguyên nội dung chuyển khoản.</p>
+    <dl class="flex flex-col gap-space-sm break-all">
+      <div><dt>Số tiền</dt><dd class="font-bold" th:text="${#numbers.formatInteger(payment.amount, 0, 'POINT') + ' VNĐ'}"></dd></div>
+      <div><dt>Nội dung</dt><dd th:text="${payment.code}"></dd></div>
+      <div><dt>Hạn thanh toán</dt><dd><time th:datetime="${payment.expiresAt}" th:text="${#temporals.format(payment.expiresAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time></dd></div>
+    </dl>
+    <img id="payment-qr" th:src="${payment.qrUrl}" alt="Mã QR chuyển khoản đúng số tiền và nội dung" referrerpolicy="no-referrer" class="w-full max-w-xs mx-auto"/>
+    <form method="post" th:action="@{/payment/intents/{id}/cancel(id=${payment.id})}" id="payment-cancel">
+      <button type="submit" class="w-full p-space-sm rounded-lg bg-error-container text-on-error-container">Hủy lần thanh toán</button>
+    </form>
+    <p>Đóng trang không hủy giao dịch ngân hàng. Chỉ trạng thái đã xác nhận từ hệ thống mới chứng minh đã nhận tiền.</p>
+    <a th:href="@{/payment/intents/{id}(id=${payment.id})}" class="text-secondary underline">Tải lại trạng thái</a>
+    <noscript><p>Vui lòng tải lại trang để kiểm tra kết quả. Không chuyển tiền sau hạn hiển thị.</p></noscript>
+  </section>
+</main>
+<script th:src="@{/js/payment-polling.js}" defer></script>
+</body>
+</html>

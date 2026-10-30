@@ -2,7 +2,7 @@
 
 **Ngày kiểm tra/phân công:** 2026-10-27. **Repo:** [thanhmit/CarRent](https://github.com/thanhmit/CarRent).
 
-**Mục tiêu:** ghi lại đóng góp Git hiện có, phân công bảo trì các module đã triển khai và giao toàn bộ 44 task mới cho ba thành viên. Đây là phân công trong tài liệu local; chưa tạo issue, gửi thông báo, đổi Git author hoặc cập nhật assignee trên GitHub.
+**Mục tiêu:** ghi lại đóng góp Git hiện có, phân công bảo trì các module đã triển khai và giao toàn bộ **45 task mới** sau khi thêm P4.2-A ngày 2026-10-29. Đây là phân công trong tài liệu local; chưa tạo issue, gửi thông báo, đổi Git author hoặc cập nhật assignee trên GitHub.
 
 ## 1. Kết quả kiểm tra GitHub
 
@@ -41,18 +41,22 @@ Số commit bao gồm merge, không phải tỷ lệ công sức. Git xác nhậ
 
 “Phụ trách từ nay” là quyền sở hữu công việc bảo trì/review được phân lại, không thay đổi tác giả hoặc người thực hiện lịch sử. Khi bàn giao module, người phụ trách mới đọc luồng hiện có và tái hiện smoke test trước khi sửa.
 
-## 3. Phần sắp làm — giao 44 task mới
+## 3. Phần sắp làm — giao 45 task mới sau tách P4.2-A
+
+**Cập nhật phạm vi hiện hành — 2026-10-30:** P4.2 offline và P4.3–P4.8 nền tài chính đã hoàn thành trên DB kiểm chứng; full clean verify **344 test đạt**, browser thông báo/hoàn tiền desktop/mobile đạt. DB ứng dụng chưa migration; P4.2-A vẫn chờ tài khoản/provider/lookup đích. Tổng 45 task mới: đã xong 11, còn 34; toàn roadmap **52/86**. `thanhmit` còn 4 task (P4.2-A và P4.9–P4.11); hai thành viên còn lại mỗi người 15 task. Tiếp theo P4.9 + P4.10; chưa live pass hoặc human review mới. Checkpoint dưới giữ lịch sử.
 
 **Checkpoint 2026-10-27:** Phase 7/P7.1–P7.4 đã triển khai và kiểm chứng (19 lõi queue + 34 hồi quy + 41 HTTP queue + 9 transaction = 103 test đạt); `thanhmit` tiếp theo làm P4.2, còn P4.2–P4.11. Phân công reviewer `huy69332` giữ nguyên; chưa ghi nhận review của contributor khác. Tổng task mới còn lại: 40. Chi tiết tại [plan Phase 7](phase-7-car-queue.md). Nhánh triển khai P7.3: `feat/car-queue-http`; P7.4: `feat/car-queue-transaction`.
 
 Mỗi người làm đầy đủ backend, UI liên quan, kiểm chứng và tài liệu của mảng mình; không dồn toàn bộ kiểm thử cho một thành viên.
 
+**Cập nhật P4.2 cùng ngày:** `thanhmit` đã triển khai cấu hình/verifier SePay và adapter payOS offline. Chủ dự án đã chốt payOS cho API chi hộ, nguồn tiền ví Bảo Kim của đúng Owner/Admin. Còn xác minh điều kiện provider và gate live. `huy69332` tiếp tục là reviewer được phân công, chưa ghi nhận human review. P4.2 chưa hoàn tất nên tổng còn 40 task. Nhánh: `feat/payment-provider-adapters`; xem [checkpoint Phase 4](phase-4-payment.md).
+
 | Thành viên | Mảng chính | Task chịu trách nhiệm | Số task mới |
 |---|---|---|---:|
-| **thanhmit** | Nền tảng concurrency và tài chính | **P7.1–P7.4**, **P4.2–P4.11** | **14** |
+| **thanhmit** | Nền tảng concurrency và tài chính | **P7.1–P7.4**, **P4.2–P4.11**, **P4.2-A** | **15** |
 | **huy69332** | Luồng thuê, biên bản/hợp đồng, profile | **P6.1–P6.13**, **P5.5–P5.6** | **15** |
 | **ducbinhnguyen07ars** | Gói Owner, quản trị, tích hợp cuối | **P8.1–P8.8**, **P5.1–P5.4**, **P5.7–P5.9** | **15** |
-| **Tổng** | | | **44** |
+| **Tổng** | | | **45** |
 
 Task không có độ khó bằng nhau: mảng thanh toán phải kiểm chứng provider, idempotency, payout và phục hồi sau crash. Số lượng gần nhau là cách theo dõi phạm vi, không phải cam kết công sức chính xác.
 
@@ -60,8 +64,9 @@ Task không có độ khó bằng nhau: mảng thanh toán phải kiểm chứng
 
 - Queue FIFO theo carId, giới hạn và transaction boundary; nối entry point hiện có.
 - Payment core: schema/mapping, nghĩa vụ/lần QR, SePay verifier/inbox, receipt idempotent, polling.
-- payOS/Bảo Kim, recipient, payout attempt, retry/reconcile và các cảnh báo hoàn.
+- API payOS (nguồn tiền ví Bảo Kim), recipient, payout attempt, retry/reconcile và các cảnh báo hoàn.
 - Kiểm chứng kênh Owner/Admin thật; ghi trung thực gate chưa được nhà cung cấp kích hoạt.
+- **P4.2-A:** thực hiện cấu hình tài khoản/provider/live sau đăng ký/kích hoạt đủ tài khoản và khi inbox/worker cần kiểm chứng đã có; không gộp kết quả offline P4.2 thành live pass.
 - Giữ vai trò điều phối schema/migration/bootstrap để ba nhánh không viết chồng `scriptDB.sql`.
 - **Reviewer chính:** huy69332, tập trung khóa DB, race, tiền và nguồn chi đúng chủ thể.
 
