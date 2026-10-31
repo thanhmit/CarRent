@@ -120,6 +120,9 @@ public class BookingService {
         if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
             throw new BusinessException("Chỉ có thể hủy đơn đang chờ hoặc đã xác nhận.");
         }
+        if (booking.getVehicleReceivedAt() != null) {
+            throw new BusinessException("Không thể hủy đơn thuê đã giao xe.");
+        }
         payments.findByBookingIdForUpdate(id).forEach(entityManager::detach);
         var currentPayments = payments.findByBookingIdForUpdate(id);
         booking.setStatus(BookingStatus.CANCELLED);
