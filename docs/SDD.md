@@ -1,7 +1,7 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.30
-**Trạng thái:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản.
+**Phiên bản:** 2.31
+**Trạng thái:** P6.1 hoàn thành phạm vi schema/model: migration giữ legacy, bootstrap parity, Booking/inspection mapping và EXPIRED. Full clean verify **407 JUnit test đạt, 0 failure/error/skip**, gồm 40 test P6.1 mới; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/dữ liệu trước–sau giống nhau; chưa migration hoặc bật workflow/scheduler mới. **56/86 task**, còn 30; tiếp theo **P6.2 — policy 30/70 và phí hủy**. P4.2-A tiếp tục tạm hoãn theo yêu cầu chủ dự án; chưa có live pass/human review mới.
 **Ngày:** 2026-10-30
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
@@ -45,6 +45,8 @@
 > **Bổ sung v2.30 — P4.10 hoàn thiện/P4.11, 2026-10-30:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản. Xem §14.25 và handoff.
 
 ---
+
+> **Bổ sung v2.31 — P6.1, 2026-10-30:** P6.1 hoàn thành phạm vi schema/model: migration giữ legacy, bootstrap parity, Booking/inspection mapping và EXPIRED. Full clean verify **407 JUnit test đạt, 0 failure/error/skip**, gồm 40 test P6.1 mới; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/dữ liệu trước–sau giống nhau; chưa migration hoặc bật workflow/scheduler mới. **56/86 task**, còn 30; tiếp theo **P6.2 — policy 30/70 và phí hủy**. P4.2-A tiếp tục tạm hoãn theo yêu cầu chủ dự án; chưa có live pass/human review mới. Contract schema tại §7.9; bằng chứng tại §14.26 và [plan Phase 6](plans/phase-6-inspection.md#checkpoint-p61--2026-10-30).
 
 ## 1. Tổng quan dự án
 
@@ -832,19 +834,27 @@ Ngày 2026-10-10 trên MySQL 8.0.45, `localhost:3306`, database `carrent`:
 
 ---
 
-### 7.9. Schema dự kiến và migration Phase 6 — chưa áp dụng DB
+### 7.9. Schema và migration Phase 6.1 — đã triển khai trên bootstrap, chưa áp dụng DB ứng dụng
 
-**Hiện tại:** 7 bảng trong `scriptDB.sql`. **Đích sau P6.1:** 10 bảng, giữ toàn bộ 7 bảng và record hiện hữu, thêm 3 bảng dưới đây; không đổi các enum Booking/Payment. SQL thực thi sẽ được viết khi triển khai P6.1 tại `docs/db/phase-6-inspection.sql` và cập nhật bootstrap `scriptDB.sql` cùng lúc. Không chạy migration trong lần cập nhật SDD này.
+**Bootstrap:** `scriptDB.sql` có 18 bảng (7 legacy, 7 payment-core, 1 refund account, 3 inspection) và giữ seed cũ. **DB ứng dụng:** vẫn chưa chạy migration. Migration one-shot là `docs/migrations/2026-10-27-02-rental-workflow.sql`; yêu cầu MySQL 8.0.16+, InnoDB, strict mode, backup marker và payment-core v1 đã tồn tại. Không chạy migration khi ứng dụng boot. BookingStatus/schema thêm `EXPIRED`; Payment legacy giữ nguyên.
 
 **Bổ sung `bookings`:**
 
 | Cột | Kiểu MySQL | Hợp đồng |
 |---|---|---|
+| workflow_version | VARCHAR(20) ASCII NOT NULL DEFAULT 'LEGACY' | Chỉ `LEGACY`/`VIETQR_V1`; row cũ giữ LEGACY |
 | inspection_required | BOOLEAN NOT NULL DEFAULT FALSE | Row có sẵn/seed cũ false; BookingService tạo mới đặt true sau kích hoạt Phase 6 |
-| vehicle_received_at | DATETIME NULL | Customer xác nhận nhận xe; server ghi một lần |
+| vehicle_received_at | DATETIME NULL | Owner xác nhận hợp đồng/giao xe; server ghi một lần |
 | vehicle_returned_at | DATETIME NULL | Owner xác nhận đã nhận lại xe; độc lập đồng ý tình trạng |
+| owner_accepted_at, before_accepted_at | DATETIME NULL | Mốc Owner nhận đơn và Customer đồng ý BEFORE |
+| hold_expires_at | DATETIME NULL | Hạn giữ chỗ trả trước |
+| advance_amount, balance_amount | BIGINT NULL | Snapshot 30/70, không backfill row legacy |
+| advance_paid_at | DATETIME NULL | Mốc tiền trả trước được xác nhận |
+| contract_confirmed_by, contract_confirmed_at | BIGINT/DATETIME NULL | Actor và thời gian luôn đi cùng; FK actor RESTRICT |
+| cancelled_at, cancellation_fee | DATETIME/BIGINT NULL | Snapshot hủy/fee khi policy Phase 6 chạy |
+| after_reminder_sent_at, balance_overdue_notified_at | DATETIME NULL | Cờ nhắc bền vững, chống gửi trùng |
 
-CHECK: trả xe phải có nhận xe và `vehicle_returned_at >= vehicle_received_at`; row `inspection_required=false` không có hai timestamp. Index `idx_bookings_custody(car_id, inspection_required, vehicle_returned_at, vehicle_received_at)` cho kiểm tra giữ xe thực tế. Cờ chính sách và timestamp không bind từ form.
+Tất cả timestamp mới dùng UTC `DATETIME(6)` ↔ Java `Instant`/`TIMESTAMP_UTC`; `created_at`/`updated_at` legacy giữ kiểu cũ. CHECK: trả xe phải có nhận xe và `vehicle_returned_at >= vehicle_received_at`; row `inspection_required=false` không có hai timestamp. Actor/thời gian hợp đồng và thời gian giao xe cùng NULL hoặc cùng có giá trị, `contract_confirmed_at = vehicle_received_at`; actor FK users RESTRICT. Index `idx_bookings_custody(car_id, inspection_required, vehicle_returned_at, vehicle_received_at)` cho kiểm tra giữ xe thực tế. Cờ chính sách và timestamp không bind từ form; các guard actor/role/tiền và chuyển trạng thái thuộc task service sau P6.1.
 
 **`booking_inspections`:**
 
@@ -865,9 +875,11 @@ CHECK: trả xe phải có nhận xe và `vehicle_returned_at >= vehicle_receive
 
 UNIQUE `uk_inspection_booking_phase(booking_id, phase)`; index `idx_inspection_status(status, submitted_at, id)` cho danh sách Admin. CHECK numeric bounds, DRAFT có submitted_at NULL và mọi status khác có submitted_at; Service kiểm tra đầy đủ text/numeric/4–10 ảnh trước submit. Địa chỉ đọc từ Booking snapshot, không thêm snapshot thứ hai có thể lệch.
 
-**`inspection_images`:** `id BIGINT AUTO_INCREMENT PK`, `inspection_id BIGINT NOT NULL FK booking_inspections RESTRICT`, `storage_key VARCHAR(80) NOT NULL UNIQUE` (UUID + .jpg/.png, khóa nội bộ), `media_type VARCHAR(30) NOT NULL`, `size_bytes INT UNSIGNED NOT NULL` (1–5.242.880), `created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`; index `(inspection_id, id)`, CHECK size. Không lưu URL public hoặc tên/path client. Giới hạn 10 ảnh/biên bản do Service kiểm tra dưới khóa.
+**`inspection_images`:** `id BIGINT AUTO_INCREMENT PK`, `inspection_id BIGINT NOT NULL FK booking_inspections RESTRICT`, `storage_key VARCHAR(80) ASCII NOT NULL UNIQUE` (UUID chữ thường + .jpg/.png, khóa nội bộ), `media_type VARCHAR(30) NOT NULL`, `size_bytes INT UNSIGNED NOT NULL` (1–5.242.880), `created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`; index `(inspection_id, id)`, CHECK size và storage key/MIME tương ứng JPEG/PNG. Không lưu URL public hoặc tên/path client. Giới hạn 10 ảnh/biên bản do Service kiểm tra dưới khóa ở P6.3.
 
 **`inspection_events`:** `id BIGINT AUTO_INCREMENT PK`, `inspection_id BIGINT NOT NULL FK booking_inspections RESTRICT`, `actor_id BIGINT NOT NULL FK users RESTRICT`, `action VARCHAR(40) NOT NULL`, `note VARCHAR(2000) NULL`, `created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`; index `(inspection_id, created_at, id)`. Action whitelist: `SUBMITTED`, `PICKUP_CONFIRMED`, `RETURN_CONFIRMED`, `DISPUTED`, `RETURN_NOT_RECEIVED`, `RESOLVED`, `ADDENDUM`. DISPUTED/RESOLVED/ADDENDUM/RETURN_NOT_RECEIVED bắt buộc note trim 1–2000. Nhận lại xe có bất đồng ghi RETURN_CONFIRMED + DISPUTED cùng transaction. Không endpoint update/delete event; sau gửi không endpoint sửa/xóa ảnh gốc. Tác giả/action/time lấy từ server.
+
+Ba entity mới map UTC `DATETIME(6)`/`Instant`. `InspectionEvent` dùng Hibernate `@Immutable`, không setter; repository chỉ expose save/read, không delete/update. Đây là bảo vệ qua ORM, không phải trigger cấm SQL quản trị. P6.1 chưa tạo service/controller/upload hoặc thay đổi quyền xem; các yêu cầu chức năng dưới đây thuộc P6.3–P6.13.
 
 **Notification:** thêm `INSPECTION_SUBMITTED`, `VEHICLE_RECEIVED`, `VEHICLE_RETURNED`, `INSPECTION_DISPUTED`, `INSPECTION_RESOLVED` vào whitelist của NotificationService; type hiện là VARCHAR, không đổi enum DB. `related_entity_type='BOOKING'`, id = booking.id; link vào chi tiết đơn và mục biên bản. Không nhét cả nội dung bất đồng vào notification (message ≤1000). Owner chọn chưa nhận lại xe: thêm RETURN_NOT_RECEIVED event và notify Customer bằng INSPECTION_SUBMITTED với nội dung yêu cầu kiểm tra việc trả xe; không đổi status hay ghi timestamp trả.
 
@@ -875,7 +887,7 @@ UNIQUE `uk_inspection_booking_phase(booking_id, phase)`; index `idx_inspection_s
 
 Upload ảnh nháp theo đợt **1–4 ảnh/request**, mỗi đợt ≤20MiB file payload, tổng mỗi report ≤10 ảnh; giữ multipart 5MB/file, 30MB/request hiện tại. Vì vậy 10 ảnh không phải gửi chung một request. Server validate tổng số ảnh dưới khóa; client chỉ hỗ trợ preview/camera/gallery, không quyết định validity. File mới dọn khi rollback/lỗi ghi, ảnh nháp bị xóa chỉ dọn afterCommit; ảnh đã gửi giữ nguyên.
 
-**Cutover:** dừng app ghi dữ liệu, backup schema/data và ảnh, kiểm tra schema nguồn, chạy ALTER + CREATE có kiểm soát rồi verify trước boot code Phase 6; MySQL DDL có implicit commit, không coi transaction rollback là cách phục hồi migration. Script nhận biết lần chạy lại và kiểm tra contract, không backfill cờ true cho đơn cũ, không tự reset hoặc sửa schema sai. Bootstrap cập nhật cho máy mới phải có cùng contract; row seed giữ false. Hibernate vẫn `ddl-auto=none`, chỉ override validate để kiểm tra. Rà soát các đơn legacy đang sử dụng thực tế với Owner trước bật bàn giao mới; không suy diễn xe đã trả khi thiếu timestamp. Xem P6.1/P6.13/P6.14 cho bằng chứng bảo toàn dữ liệu và chính sách cũ.
+**Cutover:** dừng app ghi dữ liệu, backup schema/data và ảnh, kiểm tra schema nguồn, chạy ALTER + CREATE có kiểm soát rồi verify trước boot code Phase 6; MySQL DDL có implicit commit, không coi transaction rollback là cách phục hồi migration. Script từ chối lần chạy lại/partial và source contract sai; không backfill cờ true cho đơn cũ, không tự reset hoặc sửa schema sai. Bootstrap cho máy mới có cùng contract; row seed giữ LEGACY/false/timestamp mới NULL. Hibernate vẫn `ddl-auto=none`, chỉ override validate để kiểm tra. Code mapping mới cần schema mới dù chưa bật workflow; bản JAR đang chạy trên DB 7 bảng không được thay bằng bản mới trước migration được cho phép riêng. Rà soát đơn legacy đang sử dụng thực tế với Owner trước bật bàn giao mới. Xem P6.1/P6.13 và [vận hành migration](migrations/README.md).
 
 ---
 
@@ -1406,7 +1418,7 @@ Hợp đồng nghiệp vụ, money model, default kỹ thuật, interface, schem
 - **Phase 5:** doanh thu Admin từ gói hợp lệ, không SUM tiền thuê. Kết quả fixture/live được ghi riêng, không tick từ kế hoạch.
 - Cộng dồn/hoàn lệch tiền trả trước 30% tạm hoãn tại §1.4. Một Owner thật + Admin trước; live capability của nhà cung cấp cần kiểm chứng.
 
-**Tiến độ lịch sử:** 41 task hoàn thành (Phase 0–3/P4.1). Roadmap hiện hành: 45 task mới, đã hoàn thành 14 (P7.1–P7.4 + P4.2 offline + P4.3–P4.11), còn 31. Tổng **55/86**; P4.2-A chờ tài khoản/provider/live. Không migration DB ứng dụng hoặc live pass.
+**Tiến độ hiện tại:** 41 task lịch sử + 15 task mới (P7.1–P7.4, P4.2 offline/P4.3–P4.11, P6.1) = **56/86**, còn 30. P4.2-A tạm hoãn; tiếp theo P6.2. Không migration DB ứng dụng hoặc live pass.
 
 #### Phase 4 — 7 đợt, cập nhật được duyệt ngày 2026-10-30
 
@@ -1666,6 +1678,14 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - FR12/BR09/schema/sequence, D-27 và migration docs đồng bộ; [handoff](plans/phase-4-handoff.md) chốt service signatures/handler registration/khóa/money states/cutover. [Checkpoint đợt7](plans/phase-4-payment.md#checkpoint-đợt-7--hoàn-thiện-p410-và-chốt-p411-2026-10-30) có bảng từng điều kiện và giới hạn.
 - **55/86**, còn31; P4.2-A vẫn pending lookup/provider/live, handler thật thuộc Phase6/8. Không bật VIETQR_V1/scheduler ứng dụng, migration ứng dụng, tiền thật, human review hoặc commit/push.
 
+### 14.26. P6.1 — migration giữ legacy và mapping, 2026-10-30
+
+- Migration one-shot thêm 16 cột Booking/EXPIRED và 3 bảng inspection; source preflight đầy đủ, backup marker, không backfill. Bootstrap parity và JPA validate đạt; event immutable qua ORM, ảnh chỉ storage key riêng tư. Timestamp mới dùng Instant/UTC DATETIME(6), giữ kiểu timestamp legacy.
+- Hash cột gốc của cả 7 bảng legacy và dữ liệu 7 bảng core populate giữ nguyên. Query search/conflict hiện đã explicit PENDING/CONFIRMED; hồi quy EXPIRED/CANCELLED/REJECTED/COMPLETED và interval chạm biên đạt, không sửa query không cần thiết.
+- Full isolated clean verify **407 test, 0 failure/error/skip**, JAR đóng gói; 38 lifecycle + 2 model mới. Có timezone/microsecond/immutable event round-trip và fixture payment mapping theo schema mới. Log tại `.scratch/phase6/p61/`, [checkpoint chi tiết](plans/phase-6-inspection.md#checkpoint-p61--2026-10-30).
+- DB ứng dụng vẫn 7 bảng và fingerprint schema/toàn bộ dữ liệu trước–sau giống nhau; phase-0 của chủ dự án, fixture legacy và sáu ảnh/seed giữ nguyên, schema tạm đã dọn. Chưa migration ứng dụng, browser/UI mới, provider live, human review hoặc commit/push. Mapping mới cần schema mới trước thay JAR trên DB hiện hữu.
+- **56/86**, còn 30; P6.1 hoàn thành phạm vi schema/model, tiếp theo P6.2. P4.2-A tạm hoãn; P6.2–P6.13/Phase 8/5 còn pending, createBooking vẫn LEGACY/false, scheduler ứng dụng vẫn tắt. Nhánh local `feat/phase6-rental-schema`.
+
 ## 15. Kết luận
 
-CarRent là monolith Spring Boot/Thymeleaf/MySQL. P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản. Giữ thứ tự 4 → 6 → 8 → 5; [handoff P4.11](plans/phase-4-handoff.md) và [roadmap](plans/README.md) ghi boundary kỹ thuật/live.
+CarRent là monolith Spring Boot/Thymeleaf/MySQL. P6.1 hoàn thành phạm vi schema/model: migration giữ legacy, bootstrap parity, Booking/inspection mapping và EXPIRED. Full clean verify **407 JUnit test đạt, 0 failure/error/skip**, gồm 40 test P6.1 mới; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/dữ liệu trước–sau giống nhau; chưa migration hoặc bật workflow/scheduler mới. **56/86 task**, còn 30; tiếp theo **P6.2 — policy 30/70 và phí hủy**. P4.2-A tiếp tục tạm hoãn theo yêu cầu chủ dự án; chưa có live pass/human review mới. Giữ thứ tự 4 → 6 → 8 → 5; [roadmap](plans/README.md) và [checkpoint P6.1](plans/phase-6-inspection.md#checkpoint-p61--2026-10-30) ghi bằng chứng/phạm vi; UI/service rental mới chưa được kích hoạt.
