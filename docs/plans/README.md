@@ -1,6 +1,6 @@
 # CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
 
-**Ngày chốt:** 2026-10-27; cập nhật 2026-10-30. **Trạng thái:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản.
+**Ngày chốt:** 2026-10-27; cập nhật 2026-10-30. **Trạng thái:** P6.1 hoàn thành phạm vi schema/model: migration giữ legacy, bootstrap parity, Booking/inspection mapping và EXPIRED. Full clean verify **407 JUnit test đạt, 0 failure/error/skip**, gồm 40 test P6.1 mới; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/dữ liệu trước–sau giống nhau; chưa migration hoặc bật workflow/scheduler mới. **56/86 task**, còn 30; tiếp theo **P6.2 — policy 30/70 và phí hủy**. P4.2-A tiếp tục tạm hoãn theo yêu cầu chủ dự án; chưa có live pass/human review mới.
 
 **Spec:** các quyết định brainstorming được tổng hợp tại file này; [SDD](../SDD.md) §1.4–1.6 lưu backlog và phạm vi tiền thật. Những phần mock payment/inspection cũ trong SDD và D-04/D-06/D-07/D-12/D-25 là thiết kế hoặc checkpoint trước lần cập nhật này. Khi thực hiện các phase bên dưới, dùng hợp đồng mới tại đây cho workflow mới; giữ bằng chứng lịch sử và hành vi legacy. Đồng bộ các chương chi tiết của SDD trước khi kích hoạt workflow mới.
 
@@ -18,7 +18,7 @@ Giữ số phase đã tồn tại để không đổi định danh task lịch s
 
 Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P4.2 trở đi, Phase 5 và Phase 6 được lập lại theo yêu cầu mới. Không chạy lại P4.1 và không đánh dấu bất kỳ task mới nào hoàn thành chỉ vì có plan.
 
-**Tiến độ hiện tại:** **55/86 task hoàn thành, còn 31**. P4.10 đã sửa đủ và P4.11 nghiệm thu nền/offline; Phase 4 còn P4.2-A. Tiếp theo phân tích P6.1 theo thứ tự 4 → 6 → 8 → 5; P4.2-A làm khi đủ tài khoản. [Handoff kỹ thuật](phase-4-handoff.md). Chưa live pass/human review mới.
+**Tiến độ hiện tại:** **56/86 task hoàn thành, còn 30**. P6.1 đã đóng theo [checkpoint](phase-6-inspection.md#checkpoint-p61--2026-10-30); tiếp theo P6.2. P4.2-A tạm hoãn; workflow/live và human review chưa được suy ra từ test. [Handoff tài chính](phase-4-handoff.md).
 
 ### Phân công ba thành viên
 
@@ -192,6 +192,8 @@ Giữ bảng `payments`/seed hiện có làm dữ liệu legacy; không đổi c
 | `booking_inspections`, `inspection_images`, `inspection_events` | report BEFORE/AFTER UNIQUE theo booking/phase; tác giả, ảnh private, event append-only; tạo tại Phase 6 |
 
 Booking mới có `workflow_version=VIETQR_V1`; bản ghi cũ mặc định LEGACY. Phase 6 thêm Owner accepted, BEFORE accepted, handover/contract actor + timestamp, return timestamp, hold expiry và snapshot advance/balance. Giữ các status cũ, thêm EXPIRED; “Đang thuê”, “Đã trả — chờ 70%” là tiến độ hiển thị từ timestamp + nghĩa vụ. Owner accept chưa phải đã thanh toán: PENDING → CONFIRMED sau khoản trả trước hợp lệ. COMPLETED tự động khi đã trả và nghĩa vụ còn lại được thanh toán đủ.
+
+P6.1 chỉ thêm nền schema/model; createBooking hiện vẫn LEGACY/false. Server cấp VIETQR_V1 khi đủ gate provider/domain ở các task rental sau, không phải side effect của migration.
 
 Migration chỉ chạy có kiểm soát, backup và kiểm tra schema nguồn; không DDL lúc boot, không reset seed. Mỗi phase cập nhật migration và `scriptDB.sql` đồng nhất. Không áp dụng policy mới cho booking legacy.
 

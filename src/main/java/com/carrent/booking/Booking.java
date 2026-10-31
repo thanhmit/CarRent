@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "bookings")
@@ -68,6 +71,67 @@ public class Booking {
 
     @Column(name = "owner_note", length = 500)
     private String ownerNote;
+
+    @Builder.Default
+    @Column(name = "workflow_version", nullable = false, length = 20)
+    private String workflowVersion = "LEGACY";
+
+    @Builder.Default
+    @Column(name = "inspection_required", nullable = false)
+    private boolean inspectionRequired = false;
+
+    @Column(name = "vehicle_received_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant vehicleReceivedAt;
+
+    @Column(name = "vehicle_returned_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant vehicleReturnedAt;
+
+    @Column(name = "owner_accepted_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant ownerAcceptedAt;
+
+    @Column(name = "before_accepted_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant beforeAcceptedAt;
+
+    @Column(name = "hold_expires_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant holdExpiresAt;
+
+    @Column(name = "advance_amount")
+    private Long advanceAmount;
+
+    @Column(name = "balance_amount")
+    private Long balanceAmount;
+
+    @Column(name = "advance_paid_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant advancePaidAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contract_confirmed_by")
+    private User contractConfirmedBy;
+
+    @Column(name = "contract_confirmed_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant contractConfirmedAt;
+
+    @Column(name = "cancelled_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant cancelledAt;
+
+    @Column(name = "cancellation_fee")
+    private Long cancellationFee;
+
+    @Column(name = "after_reminder_sent_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant afterReminderSentAt;
+
+    @Column(name = "balance_overdue_notified_at")
+    @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
+    private Instant balanceOverdueNotifiedAt;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

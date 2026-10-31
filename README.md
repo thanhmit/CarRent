@@ -1,6 +1,6 @@
 # CarRent
 
-Ứng dụng thuê xe dùng Java 21, Spring Boot, Thymeleaf và MySQL 8. Phase 1 (đăng nhập, đăng ký, phân quyền) đã hoàn tất. Phase 2 đã triển khai P2.1–P2.14: Owner tạo/sửa xe, quản lý ảnh và ẩn/đăng lại; Admin lọc danh sách, duyệt/từ chối và ẩn/đăng lại; public tìm xe có lọc/sắp xếp/phân trang và xem chi tiết. Phase 3 đã hoàn tất P3.1–P3.13: notification, booking toàn vòng đời (đặt/xác nhận/từ chối/hủy/hoàn tất), hoàn tiền giả lập và xóa xe an toàn theo lịch sử thuê; P4.1 Payment mapping/repository đã có. Phase 7/P7.1–P7.4 đã hoàn tất queue theo carId và gate transaction/DB; tiếp theo P4.2 theo roadmap thanh toán thật.
+Ứng dụng thuê xe dùng Java 21, Spring Boot, Thymeleaf và MySQL 8. Phase 1 (đăng nhập, đăng ký, phân quyền) đã hoàn tất. Phase 2 đã triển khai P2.1–P2.14: Owner tạo/sửa xe, quản lý ảnh và ẩn/đăng lại; Admin lọc danh sách, duyệt/từ chối và ẩn/đăng lại; public tìm xe có lọc/sắp xếp/phân trang và xem chi tiết. Phase 3 đã hoàn tất P3.1–P3.13: notification, booking toàn vòng đời (đặt/xác nhận/từ chối/hủy/hoàn tất), hoàn tiền giả lập và xóa xe an toàn theo lịch sử thuê; P4.1 Payment mapping/repository đã có. Phase 7/P7.1–P7.4 đã hoàn tất queue/transaction. Nền tài chính offline P4.2–P4.11 và schema/model P6.1 đã hoàn thành; P4.2-A/provider live tạm hoãn, tiếp theo P6.2. Chưa bật workflow thuê 30/70 trên DB ứng dụng.
 
 ## Chạy local
 
@@ -21,6 +21,8 @@ Chạy các lệnh từ thư mục gốc dự án:
    ```
 
    Nếu `mysql` chưa có trong PATH, dùng đường dẫn đầy đủ tới `mysql.exe`. Hibernate dùng `ddl-auto=none`; schema do `scriptDB.sql` quản lý. Giữ sáu ảnh `uploads/seed-car-1.png` đến `seed-car-6.png` cùng dữ liệu mẫu.
+
+   Với DB đã có dữ liệu: bootstrap không ALTER bảng cũ. Bản code từ P6.1 cần các cột/bảng rental mới trước khi khởi động; thực hiện backup, diễn tập và migration theo [hướng dẫn vận hành](docs/migrations/README.md), không chạy bootstrap để sửa DB hiện hữu. Phiên implement chỉ kiểm chứng trên DB tạm.
 
 3. Khởi động:
 
@@ -71,7 +73,7 @@ Chạy toàn bộ bằng `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation
 ## Tài liệu và file local
 
 - [SDD](docs/SDD.md), [quyết định](docs/decisions.md), [plans](docs/plans/) và [prototype Stitch](docs/design/stitch/README.md).
-- **Phase 6 đã duyệt thiết kế, chưa triển khai:** [biên bản bàn giao và trả xe](docs/plans/phase-6-inspection.md), 14 task chia 4 đợt. Owner lập BEFORE/Customer nhận xe; Customer lập AFTER/Owner nhận lại, ảnh riêng tư và Admin xử lý bất đồng. Cho nhận chưa PAID; trả xe xong chờ PAID mới complete. DB hiện vẫn 7 bảng; migration bổ sung sẽ thực hiện ở P6.1.
+- **Phase 6:** [kế hoạch hiện hành gồm 13 task](docs/plans/phase-6-inspection.md). P6.1 đã hoàn thành migration/bootstrap và mapping Booking/inspection (407/407 test toàn bộ đạt); service/UI rental từ P6.2 trở đi chưa triển khai. Workflow đích: BEFORE → trả trước 30% → Owner xác nhận hợp đồng/giao xe → AFTER/Owner nhận lại → 70% → tự hoàn tất. DB ứng dụng vẫn 7 bảng, chưa migration/kích hoạt workflow mới.
 - `CarRent.md` là bản thảo cũ giữ để tham khảo; SDD hiện tại mô tả yêu cầu đang áp dụng.
 - `.scratch/` và `.superpowers/` giữ script, ảnh và biên bản kiểm tra ở local, bị Git bỏ qua. Bản clone mới không chứa các bằng chứng local được tham chiếu trong plan.
 - `target/`, cache, log, cấu hình IDE và ảnh upload runtime bị Git bỏ qua; sáu ảnh seed vẫn đưa vào repo.

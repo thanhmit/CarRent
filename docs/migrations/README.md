@@ -1,4 +1,4 @@
-# Payment-core v1 — vận hành P4.3
+# CarRent — vận hành migration DB-first
 
 ## Phạm vi
 
@@ -70,3 +70,26 @@ if ($LASTEXITCODE -ne 0) { throw 'Refund-account migration stopped; inspect sche
 Đổi database sang bản restore riêng khi diễn tập. Không `--force`. Preflight yêu cầu MySQL 8.0.16+, strict mode, đủ users + 7 core InnoDB và target chưa có. Migration one-shot; sau lỗi procedure `carrent_refund_accounts_v1` có thể còn tồn tại: kiểm tra đúng nguồn/procedure trước xử lý, không tự drop hoặc chạy lại khi chưa đánh giá trạng thái. DDL implicit commit, không dựa vào ROLLBACK để xóa bảng.
 
 Đối chiếu fingerprint legacy/core, bảng mới rỗng, PK/FK RESTRICT/CHECK và bootstrap parity. Dữ liệu mới là opt-in theo user, bank/account ASCII giữ số 0 đầu và verified_at UTC; default chỉ prefill, không sửa snapshot refund/attempt. Test migration đã chạy trên DB fixture và dọn, chưa phải lần vận hành DB ứng dụng được cho phép.
+
+## Rental workflow v1 — P6.1
+
+`2026-10-27-02-rental-workflow.sql` thêm 16 cột trên `bookings`, trạng thái `EXPIRED` và ba bảng `booking_inspections`, `inspection_images`, `inspection_events`. Không backfill nghiệp vụ: các row hiện hữu giữ `LEGACY`, `inspection_required=false`, các cột nghiệp vụ mới khác NULL; giữ toàn bộ giá trị cũ và các bảng tài chính. Bootstrap mới có 18 bảng tính cả saved refund accounts; không seed báo cáo quá khứ hoặc bật VIETQR_V1.
+
+Thứ tự theo phụ thuộc, không chỉ theo tên/ngày file: **payment-core → refund accounts → rental workflow**. Rental preflight bắt buộc payment-core; refund accounts là migration độc lập và không bị rental thay đổi. Trước khởi động code P6.1 trên DB có sẵn phải có schema rental, dù service mới chưa được bật. Phiên implement không cấp phép chạy migration lên DB ứng dụng.
+
+Áp dụng quy trình backup, restore thử, dừng ghi và connection mới ở trên; cần thêm quyền `ALTER`. Chỉ sau khi người vận hành xác nhận bản backup đã phục hồi/đối chiếu được:
+
+```powershell
+& 'C:/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe' --host=localhost --port=3306 --user=root --password --database=carrent --execute="SET @carrent_rental_workflow_backup_confirmed=1; SOURCE docs/migrations/2026-10-27-02-rental-workflow.sql;"
+if ($LASTEXITCODE -ne 0) { throw 'Rental migration stopped; inspect schema before retrying' }
+```
+
+Đổi database sang schema restore riêng khi diễn tập. Không dùng `--force`. Preflight kiểm tra MySQL 8.0.16+, strict mode, InnoDB, 70 cột legacy, PK/unique/FK/CHECK và index conflict; từ chối schema partial/đã áp dụng. Nếu lỗi, procedure `carrent_rental_workflow_v1` có thể còn tồn tại: xem nguồn/procedure và trạng thái schema trước khi xử lý, không tự drop bảng hoặc chạy lại. DDL implicit commit, không có rollback tự động.
+
+Kiểm chứng sau migration: so hash các **cột legacy gốc** của bảy bảng và dữ liệu/core hiện có (không hash `SELECT *` bookings trước/sau vì migration thêm cột); ba bảng mới rỗng; FK RESTRICT; unique report/phase và storage key; numeric/submission/action/note CHECK; trả không sớm hơn giao; actor/time hợp đồng đi cùng thời gian giao. New timestamps là UTC `DATETIME(6)` ↔ `Instant`; timestamp legacy không đổi. Quyền tác giả, report bất biến sau submit, số ảnh và state transition được triển khai ở task service sau P6.1.
+
+```powershell
+.\mvnw.cmd -o '-Dmaven.compiler.useIncrementalCompilation=false' '-Dtest=RentalLifecycleTest,RentalModelTest' clean test
+```
+
+Các test dùng lại fixture schema tạm có tên được kiểm tra trước cleanup, không đọc/in secret và không gọi provider thật. `InspectionEvent` chỉ append/read qua ORM immutable/repository giới hạn; CHECK action/note không cấm quản trị viên dùng SQL trực tiếp để sửa/xóa.

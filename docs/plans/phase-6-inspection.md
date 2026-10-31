@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Dùng superpowers:executing-plans theo task; không tự stage/commit/push, không tick gate chưa chạy. Chỉ dùng subagent khi được yêu cầu.
 
-**Ngày cập nhật:** 2026-10-27. **Trạng thái:** P6.1–P6.13 là kế hoạch mới, chưa triển khai. Thay thiết kế ngày 2026-10-12 chưa có code/migration; không sửa checkpoint Phase 3 thành kết quả mới.
+**Ngày cập nhật:** 2026-10-30. **Trạng thái:** P6.1 hoàn thành schema/model trên DB kiểm chứng (407 test toàn bộ đạt); P6.2–P6.13 chưa triển khai. Thay thiết kế ngày 2026-10-12 chưa có code/migration; không sửa checkpoint Phase 3 thành kết quả mới.
 
 **Goal:** Thực hiện đầy đủ BEFORE → trả trước 30% → Owner xác nhận hợp đồng/giao xe → AFTER/trả xe → 70%, cùng hủy/hoàn và cảnh báo đã chốt.
 
@@ -40,9 +40,9 @@
 
 ## Hợp đồng dữ liệu
 
-- Booking: workflow_version default LEGACY; owner_accepted_at, before_accepted_at, hold_expires_at, advance_amount, balance_amount, advance_paid_at, contract_confirmed_by/at, handed_over_at, returned_at, cancelled_at, cancellation_fee, after_reminder_sent_at, balance_overdue_notified_at.
+- Booking: workflow_version default LEGACY; inspection_required default false; owner_accepted_at, before_accepted_at, hold_expires_at, advance_amount, balance_amount, advance_paid_at, contract_confirmed_by/at, vehicle_received_at, vehicle_returned_at, cancelled_at, cancellation_fee, after_reminder_sent_at, balance_overdue_notified_at.
 - Giữ PENDING/CONFIRMED/REJECTED/CANCELLED/COMPLETED; thêm EXPIRED. VIETQR_V1: PENDING trước đủ advance; CONFIRMED sau đủ advance; tiến độ thuê từ timestamps. Legacy không có timestamps giả.
-- Report unique (booking_id, phase BEFORE/AFTER), phase, author, status DRAFT/SUBMITTED/ACCEPTED/DISPUTED, conditionNote/visibleDamage/odometerKm/energyPercent/accessoriesNote, submittedAt. BEFORE accepted chỉ là đồng ý báo cáo, không ghi handed_over_at.
+- Report unique (booking_id, phase BEFORE/AFTER), phase, author, status DRAFT/SUBMITTED/ACCEPTED/DISPUTED/RESOLVED, conditionNote/visibleDamage/odometerKm/energyPercent/accessoriesNote, submittedAt. BEFORE accepted chỉ là đồng ý báo cáo, không ghi vehicle_received_at.
 - Ảnh private FK report; event append-only có actor/action/note/time. Không endpoint sửa/xóa event hoặc ảnh gốc đã submit. AFTER bất đồng có lý do, vẫn cho complete sau khi đã trả/đủ tiền.
 - HandoverForm chỉ có boolean contractSigned. ReturnReceiptForm có decision RECEIVED_ACCEPTED/RECEIVED_DISPUTED/NOT_RECEIVED và note; không bind timestamp/amount/identity.
 
@@ -50,10 +50,12 @@
 
 **Phụ trách:** `@huy69332` · **Review:** `@thanhmit`.
 
-- [ ] Viết preflight/migration thêm trường Booking và 3 bảng inspection theo contract; CHECK returned_at chỉ có khi handed_over_at có và không sớm hơn. Contract actor/time phải đi cùng handover.
-- [ ] Thêm EXPIRED vào schema/BookingStatus; sửa conflict query để chỉ trạng thái thực sự giữ lịch hiện hành, không để EXPIRED/CANCELLED/COMPLETED chặn lịch. Giữ khoảng nửa mở và current read.
-- [ ] Không backfill đơn cũ thành VIETQR_V1 hoặc dựng biên bản quá khứ. Đồng bộ bootstrap, validate mapping trên DB kiểm chứng.
-- [ ] Viết RentalLifecycleTest cho migration/data cũ, source contract sai phải fail; run test trước/sau mapping để có RED/GREEN, giữ baseline seed.
+- [x] Viết preflight/migration thêm trường Booking và 3 bảng inspection theo contract; CHECK vehicle_returned_at chỉ có khi vehicle_received_at có và không sớm hơn. Contract actor/time phải đi cùng vehicle_received_at; timestamp mới dùng Instant/UTC DATETIME(6), timestamp legacy giữ nguyên.
+- [x] Thêm EXPIRED vào schema/BookingStatus; kiểm chứng conflict query hiện có đã explicit PENDING/CONFIRMED, chỉ các trạng thái giữ lịch hiện hành, không để EXPIRED/CANCELLED/COMPLETED chặn lịch. Giữ khoảng nửa mở và current read.
+- [x] Không backfill đơn cũ thành VIETQR_V1 hoặc dựng biên bản quá khứ. Đồng bộ bootstrap, validate mapping trên DB kiểm chứng.
+- [x] Viết RentalLifecycleTest cho migration/data cũ, source contract sai phải fail; run test trước/sau mapping để có RED/GREEN, giữ baseline seed.
+
+**Bằng chứng:** [checkpoint P6.1](#checkpoint-p61--2026-10-30), `RentalLifecycleTest` 38 ca và `RentalModelTest` 2 ca; cả hai nằm trong package test `com.carrent.payment` để tái dùng fixture MySQL disposable. Không áp dụng migration lên DB ứng dụng hoặc ghi nhận human review.
 
 ### Task P6.2 — Policy giá, phần 30/70 và phí hủy
 
@@ -141,9 +143,9 @@ int percent = days > 3 ? 10 : 50;
 **Interface:** BookingService.confirmHandover(Long bookingId, boolean contractSigned, CustomUserPrincipal actor).
 
 - [ ] Viết guard test false checkbox/sai Owner/chưa đủ 30%/BEFORE chưa accepted/ngoài khoảng ngày/xe còn ở booking khác đều bị chặn.
-- [ ] Khi hợp lệ, ghi contract_confirmed_by/at và handed_over_at bằng server, atomic dưới khóa Car/Booking. Handover chỉ một lần; bấm lại không tạo event/notify mới.
+- [ ] Khi hợp lệ, ghi contract_confirmed_by/at và vehicle_received_at bằng server, atomic dưới khóa Car/Booking. Handover chỉ một lần; bấm lại không tạo event/notify mới.
 - [ ] UI checkbox và nút “Xác nhận đã giao xe”; Owner chịu trách nhiệm xác nhận giao thực tế. Ngay sau commit hiển thị Đang thuê và ẩn nút hủy hai bên.
-- [ ] Cancel endpoint cũng chặn backend sau handover; test race cancel-vs-handover cả hai thứ tự. Không CANCELLED+handed_over_at.
+- [ ] Cancel endpoint cũng chặn backend sau handover; test race cancel-vs-handover cả hai thứ tự. Không CANCELLED+vehicle_received_at.
 - [ ] Custody check: booking trước nhận rồi/chưa trả chặn handover mới, kể cả lịch cũ đã hết; không suy ra xe đã trả từ listing status hoặc thiếu PAID.
 
 ### Task P6.8 — Customer gửi AFTER và nhắc Owner
@@ -152,8 +154,8 @@ int percent = days > 3 ? 10 : 50;
 
 **Interfaces:** InspectionService.submitAfter(Long bookingId, actor); RentalDeadlineJob.
 
-- [ ] Chỉ Customer đúng booking đã handover mới tạo/gửi AFTER; giữ ảnh/text immutable sau submit, notify Owner. Không tự ghi returned_at.
-- [ ] Đủ 1 giờ từ submittedAt mà chưa returned_at: atomic ghi after_reminder_sent_at + nhắc Owner/thông báo Admin một lần. Restart quét bù, reload không reset mốc.
+- [ ] Chỉ Customer đúng booking đã handover mới tạo/gửi AFTER; giữ ảnh/text immutable sau submit, notify Owner. Không tự ghi vehicle_returned_at.
+- [ ] Đủ 1 giờ từ submittedAt mà chưa vehicle_returned_at: atomic ghi after_reminder_sent_at + nhắc Owner/thông báo Admin một lần. Restart quét bù, reload không reset mốc.
 - [ ] UI so sánh BEFORE/AFTER và trạng thái chờ nhận lại; chặn phí phát sinh từ note hoặc km/energy khác.
 - [ ] Test gửi sớm/đúng ngày/trễ đều được sau handover; chưa nhận thực tế không được gửi AFTER. Lỗi notify rollback event/report state.
 
@@ -163,8 +165,8 @@ int percent = days > 3 ? 10 : 50;
 
 **Interface:** BookingService.confirmReturn(Long bookingId, ReturnReceiptForm form, actor).
 
-- [ ] RECEIVED_ACCEPTED → returned_at + AFTER ACCEPTED. RECEIVED_DISPUTED → returned_at + AFTER DISPUTED và note bắt buộc. NOT_RECEIVED không ghi returned_at.
-- [ ] Với quyết định nhận thật, khóa Car/Booking rồi tạo hoặc khóa obligation BALANCE trước khi khóa AFTER report; revalidate report dưới khóa, ghi returned_at và dueAt=returned_at+1 giờ, notify Customer cùng commit. Không cần Customer mở trang mới bắt đầu deadline. Report sai thì rollback cả nghĩa vụ; NOT_RECEIVED không tạo BALANCE.
+- [ ] RECEIVED_ACCEPTED → vehicle_returned_at + AFTER ACCEPTED. RECEIVED_DISPUTED → vehicle_returned_at + AFTER DISPUTED và note bắt buộc. NOT_RECEIVED không ghi vehicle_returned_at.
+- [ ] Với quyết định nhận thật, khóa Car/Booking rồi tạo hoặc khóa obligation BALANCE trước khi khóa AFTER report; revalidate report dưới khóa, ghi vehicle_returned_at và dueAt=vehicle_returned_at+1 giờ, notify Customer cùng commit. Không cần Customer mở trang mới bắt đầu deadline. Report sai thì rollback cả nghĩa vụ; NOT_RECEIVED không tạo BALANCE.
 - [ ] Có AFTER đã gửi và đúng Owner mới được thao tác; không cho Admin thay Owner xác nhận vật lý. Bấm lại không tạo nghĩa vụ/nhắc nợ mới.
 - [ ] Không đổi start/end/total khi trả sớm/trễ hoặc có bất đồng. Xe trả rồi không còn outstanding custody; conflict theo ngày vẫn theo policy tìm xe hiện hành.
 - [ ] Test return-vs-receipt/repeated return, rollback nghĩa vụ/notify/timestamp đồng thời.
@@ -178,7 +180,7 @@ int percent = days > 3 ? 10 : 50;
 - [ ] QR BALANCE hết 15 phút hoặc Customer bấm hủy: chỉ kết thúc attempt, không hủy booking/không xóa nợ/không reset dueAt. Cho POST tạo attempt mới.
 - [ ] Receipt qua QR cũ vẫn trả đúng obligation nếu còn nợ; số vượt phần còn phải trả tạo refund EXCESS_BALANCE từ Owner; receipt sau khi đủ tiền hoàn như trả trùng.
 - [ ] Receipt thấp hơn số cần trả: lưu review, không báo hoàn thành; tự động cộng dồn khoản thiếu chưa thuộc phạm vi phase này.
-- [ ] Đã returned_at và balance được thanh toán đủ → COMPLETED trong transaction apply. AFTER DISPUTED không chặn, ảnh/note giữ nguyên; ẩn nút Owner complete cho VIETQR_V1.
+- [ ] Đã vehicle_returned_at và balance được thanh toán đủ → COMPLETED trong transaction apply. AFTER DISPUTED không chặn, ảnh/note giữ nguyên; ẩn nút Owner complete cho VIETQR_V1.
 - [ ] Sau 1 giờ còn nợ: ghi balance_overdue_notified_at và thông báo Customer/Owner/Admin một lần. Không khóa tài khoản/chặn đặt mới/phạt hoặc refund advance.
 - [ ] Test đủ tiền đúng/sau hạn, QR cũ, khoản trùng, dư, tab đóng, restart, dispute + paid vẫn complete; booking legacy không bị auto-complete mới.
 
@@ -215,3 +217,31 @@ int percent = days > 3 ? 10 : 50;
 - [ ] Chưa bật workflow mới cho mọi user hoặc chạy demo đầy đủ trước Phase 8 và gate kênh thật. Chỉ fixture test mang VIETQR_V1 trong quá trình phát triển.
 
 **Hoàn thành khi:** các mốc giao/nhận/tiền độc lập, 30/70 và mọi deadline có kiểm chứng, không mất tiền khi cancel/expiry/webhook chậm, không khóa quyền đặt/nhận đơn vì quá hạn, legacy giữ được lịch sử.
+
+
+## Checkpoint P6.1 — 2026-10-30
+
+**Phạm vi đã đóng:** migration/schema/model, không gộp P6.2/P6.3 hoặc bật luồng thuê mới. Phụ trách `huy69332`, reviewer được giao `thanhmit`; chưa ghi nhận human review.
+
+| Yêu cầu | Bằng chứng |
+|---|---|
+| Migration có kiểm soát | `docs/migrations/2026-10-27-02-rental-workflow.sql`: backup marker, MySQL 8.0.16+/strict/InnoDB, contract 70 cột legacy/PK/unique/FK/CHECK/index, payment-core prerequisite, từ chối partial/reapply trước ALTER/CREATE dữ liệu |
+| Giữ nguyên dữ liệu | Hash các cột gốc của 7 bảng legacy **và** dữ liệu 7 bảng core đã populate trước/sau migration bằng nhau; không backfill VIETQR_V1 hoặc dựng report quá khứ; 3 bảng mới rỗng |
+| Schema/mapping | 16 cột Booking, EXPIRED, 3 entity/3 enum/3 repository inspection; FK RESTRICT, unique report/phase và storage key, CHECK custody/actor/money/numeric/submission/image/action/note; bootstrap cùng DDL |
+| UTC và event | Instant/TIMESTAMP_UTC mới round-trip microsecond khi JVM America/Los_Angeles, JDBC Asia/Ho_Chi_Minh; timestamp legacy giữ nguyên; event ORM immutable, repo không expose delete/update |
+| Availability | PENDING/CONFIRMED giữ lịch; EXPIRED/CANCELLED/REJECTED/COMPLETED giải phóng lịch; cả search Specification và locking repository được kiểm chứng, giữ khoảng nửa mở. Query production đã đúng nên không sửa thừa |
+| Hồi quy | PaymentModel fixture áp dụng rental migration trước JPA validate; full clean verify 407/407, 0 failure/error/skip, JAR đóng gói; 38 lifecycle + 2 model mới và 367 hồi quy |
+| Baseline ứng dụng | DB nguồn vẫn 7 bảng, fingerprint schema/toàn bộ rows giống nhau; file phase-0 của chủ dự án, fixture legacy cố định, sáu ảnh và toàn bộ seed statements giữ nguyên; DB tạm được dọn |
+
+**Lệnh và log:** dùng POM kiểm chứng tại `.scratch/phase6/p61/verification-pom.xml` với source/resources gốc và output riêng để tránh IDE ghi `target`; không sửa POM dự án. Harness `FullSuite.java` cấp datasource bằng biến môi trường sang schema tạm và dọn sau cùng:
+
+```powershell
+java '@.scratch/phase6/p61/full-suite.args'
+# Harness chạy: .\mvnw.cmd -f .scratch/phase6/p61/verification-pom.xml -o '-Dmaven.compiler.useIncrementalCompilation=false' clean verify
+```
+
+`full-clean-verify.log`: BUILD SUCCESS, 407 tests, 09:09 phút; `full-suite-runner.log`: exit=0 và disposable schema removed. RED ban đầu trong tool log xác nhận thiếu migration; `contract-red.log` bắt thiếu source/actor/image checks (có một lỗi setup nullable được sửa), `index-red.log` ghi lỗi setup drop index đang phục vụ FK, `index-red-fixed.log` xác nhận drift index chưa bị chặn. GREEN: `contract-green.log` 37 ca trước bổ sung index; bản cuối full suite có 38 ca lifecycle. `model-red.log` bắt thiếu interface Instant; `model-green.log` và full suite xác nhận mapping UTC/ORM immutable. Các cảnh báo deprecation và lỗi notification/transaction được inject trong test hồi quy không phải lỗi build.
+
+**Handoff:** dùng canonical `vehicle_received_at`/`vehicle_returned_at` cho tất cả task sau; không tạo alias `handed_over_at`/`returned_at`. Actor/time hợp đồng được ghi atomic cùng thời gian giao. Báo cáo/ảnh chưa có service/controller; số ảnh, quyền truy cập, bất biến sau submit và domain locks ở P6.3 trở đi. App createBooking vẫn LEGACY/false. Đọc [migration runbook](../migrations/README.md) trước thay JAR trên DB hiện hữu; mapping mới cần schema mới dù workflow chưa bật. Không browser/UI mới, provider/network tiền thật, human review, stage/commit/push hoặc migration ứng dụng trong phiên này.
+
+**Tiến độ:** 56/86, còn 30. Tiếp theo **P6.2 — Policy giá, phần 30/70 và phí hủy**; P4.2-A vẫn tạm hoãn. Nhánh local `feat/phase6-rental-schema`, thay đổi chưa commit.
