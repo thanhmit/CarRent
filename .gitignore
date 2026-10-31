@@ -47,3 +47,4 @@ __pycache__/
 ### Runtime uploads; keep the six database seed images ###
 /uploads/*
 !/uploads/seed-car-[1-6].png
+/private-uploads/

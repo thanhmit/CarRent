@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Dùng superpowers:executing-plans theo task; không tự stage/commit/push, không tick gate chưa chạy. Chỉ dùng subagent khi được yêu cầu.
 
-**Ngày cập nhật:** 2026-10-31. **Trạng thái:** P6.1 schema/model và P6.2 policy/guard đã hoàn thành; full 456 test đạt. P6.3–P6.13 chưa triển khai; workflow mới chưa bật trên DB ứng dụng.
+**Ngày cập nhật:** 2026-11-01. **Trạng thái:** P6.1–P6.3 hoàn thành; full 518 test và 24 kiểm tra trình duyệt đạt. P6.4–P6.13 chưa triển khai; workflow mới chưa bật trên DB ứng dụng.
 
 **Goal:** Thực hiện đầy đủ BEFORE → trả trước 30% → Owner xác nhận hợp đồng/giao xe → AFTER/trả xe → 70%, cùng hủy/hoàn và cảnh báo đã chốt.
 
@@ -93,11 +93,13 @@ int percent = days > 3 ? 10 : 50;
 
 **Interfaces:** InspectionService.saveDraft(bookingId, phase, InspectionForm, actor), addImages(...), deleteDraftImage(...), getView(...); storage chỉ trả Resource qua controller có auth.
 
-- [ ] Tạo nháp bằng POST; GET không insert. BEFORE chỉ Owner của xe, AFTER chỉ Customer sau handover; legacy không bị ép có report.
-- [ ] Tái sử dụng yêu cầu ảnh đã duyệt: JPEG/PNG decode thật, ≤5 MiB/ảnh, ≤20 triệu pixel, report 4–10 ảnh khi submit; upload từng đợt 1–4 ảnh. Draft cho thiếu trường/ảnh.
-- [ ] Form giữ 5 trường: ghi chú tình trạng, hư hỏng thấy được, km, mức nhiên liệu/năng lượng 0–100, phụ kiện. Validate numeric/length ở draft; submit bắt buộc đầy đủ.
-- [ ] File UUID trong private storage, auth/membership mỗi lần stream; không phục vụ tĩnh qua /uploads, chặn path traversal và image ID thuộc report khác.
-- [ ] DB rollback không để file mồ côi do upload lỗi; xóa file sau commit khi hợp lệ. Test InspectionPrivacyTest cho tác giả, thành viên sau submit, user ngoài, nội dung giả ảnh, oversize và rollback.
+- [x] Tạo nháp bằng POST; GET không insert. BEFORE chỉ Owner của xe, AFTER chỉ Customer sau handover; legacy không bị ép có report.
+- [x] Tái sử dụng yêu cầu ảnh đã duyệt: JPEG/PNG decode thật, ≤5 MiB/ảnh, ≤20 triệu pixel, report 4–10 ảnh khi submit; upload từng đợt 1–4 ảnh. Draft cho thiếu trường/ảnh.
+- [x] Form giữ 5 trường: ghi chú tình trạng, hư hỏng thấy được, km, mức nhiên liệu/năng lượng 0–100, phụ kiện. Validate numeric/length ở draft; submit bắt buộc đầy đủ.
+- [x] File UUID trong private storage, auth/membership mỗi lần stream; không phục vụ tĩnh qua /uploads, chặn path traversal và image ID thuộc report khác.
+- [x] DB rollback không để file mồ côi do upload lỗi; xóa file sau commit khi hợp lệ. Test InspectionPrivacyTest cho tác giả, thành viên sau submit, user ngoài, nội dung giả ảnh, oversize và rollback.
+
+**Bằng chứng:** [checkpoint P6.3](#checkpoint-p63--2026-11-01). Cả 5 mục đạt trong phạm vi nháp/ảnh; validation nhóm Submitted đã kiểm chứng, endpoint submit/gate tối thiểu4 ảnh thuộc P6.4/P6.8.
 
 ### Task P6.4 — Owner chấp nhận và gửi BEFORE
 
@@ -278,3 +280,35 @@ Log `full-clean-verify.log` có BUILD SUCCESS và 456 test; `full-suite-runner.l
 **Giới hạn phiên:** không màn hình/template mới, browser hoặc tiền thật; HTTP được kiểm chứng bằng MockMvc với Spring Security/CSRF và MySQL thật trên schema tạm. Không migration DB ứng dụng, khởi động lại app8080, bật workflow/scheduler/provider, human review hoặc commit/push. Code từ P6.1 vẫn cần schema đã migrate trước khi thay JAR trên DB hiện hữu.
 
 **Tiến độ:** **57/86**, còn 29; tiếp theo **P6.3 — nháp và ảnh private**. P4.2-A tạm hoãn; nhánh local `feat/phase6-rental-policy`, thay đổi chưa commit.
+
+## Checkpoint P6.3 — 2026-11-01
+
+**Phạm vi hoàn thành:** 5/5 mục P6.3, phụ trách `huy69332`, reviewer được giao `thanhmit`; chưa ghi nhận human review. Chỉ nháp/ảnh và form/detail tối thiểu qua route trực tiếp.
+
+| Điều kiện | Triển khai và bằng chứng |
+|---|---|
+| Draft đúng tác giả và thời điểm | GET không insert; POST lặp giữ một report/phase. BEFORE đúng Owner trước handover, AFTER đúng Customer sau handover/trước returned; PENDING/CONFIRMED, VIETQR_V1 + inspection_required. Legacy404, account không ACTIVE và principal cũ bị chặn |
+| Ảnh thật và giới hạn | ImageIO JPEG/PNG, actual bytes≤5MiB (đúng giới hạn được nhận), dimensions≤20 triệu trước decode. Batch1–4/report≤10; hai connection upload từ9 ảnh chỉ một thành công, giữ10rows/10files. Draft thiếu ảnh được lưu; 4ảnh tối thiểu khi submit thuộc P6.4/P6.8 |
+| Năm trường và validation | Text2000/1000/500; km0–9.999.999, energy0–100. Draft cho null, Submitted bắt đủ trường và kế thừa giới hạn. HTTP từ chối mass assignment, giữ raw numeric input khi lỗi, escape script |
+| Private storage và quyền | UUID, key nội bộ không có trong DTO/HTML; không static mapping, resolve key strict và read không theo symlink. Draft chỉ author (counterpart/Admin404), sau submit đúng thành viên/Admin ACTIVE được đọc; mọi imageID kiểm tra report membership; no-store/nosniff, CSRF cho3mutation |
+| Atomicity và immutability | Queue trước transaction; current locks Car→Booking→Inspection→Image, stale managed DRAFT không ghi đè SUBMITTED tại REPEATABLE_READ. Upload/batch lỗi rollback dọn file; delete rollback giữfile, afterCommit mới dọn. SUBMITTED/ACCEPTED/DISPUTED/RESOLVED không sửa nội dung/ảnh |
+
+**Kiểm chứng:** full isolated clean verify **518/518, 0 failure/error/skip**, JAR đóng gói; 456 hồi quy + InspectionPrivacyTest52 (service/HTTP/MySQL thật) + InspectionStorageTest10. Browser Chromium **24/24**: lưu trước/sau thuê, ảnh private/upload/delete, quyền Owner/Customer/Admin/outsider/anonymous, XSS, validation, no-JS và Tomcat thật trả413 cho5MiB+1. Không tràn ngang width320/390/1440; đã xem ảnh chụp Owner mobile/desktop và Customer AFTER. Harness dùng chính nội dung CDN/font đã tải cache, không giả endpoint ứng dụng. Đây là fixture local, không phải kiểm chứng workflow rental đầy đủ hoặc provider live.
+
+**RED/GREEN:** `.scratch/phase6/p63/`: storage-red/storage-green bắt đầu từ thiếu class; storage-validation-red bắt null/size và pixel-limit, storage-validation-green10pass. draft-red/draft-green bắt đầu từ thiếu form/service; draft-current-red tái hiện stale managed draft, draft-current-green20pass. images-red/images-green và images-privacy-green kiểm chứng rollback/privacy. http-red/http-green từ route404; http-privacy-green có3 lỗi giữ raw numeric (type=number) và1 assertion login URL sai; đổi field sang text+inputmode/pattern và sửa assertion, http-privacy-final62pass. Kịch bản browser ban đầu timeout do selector tên nút login có icon; sửa selector harness, không đổi auth. Browser cuối `browser-check-final.log/.exit`, `browser-evidence.json`24pass; screenshots `owner-{320,390,1440}.png`, `customer-after-390.png`, `nojs-390.png`. Private fixture files/schema18063 đã dọn, evidence PNG/log được giữ local.
+
+**Lệnh hồi quy:** dùng source/resources gốc, POM/output kiểm chứng riêng để tránh IDE ghi target; root POM không sửa:
+
+```powershell
+javac '@.scratch/phase6/p63/harness-compile.args'
+java '@.scratch/phase6/p63/full-suite.args'
+# Harness: .\mvnw.cmd -f .scratch/phase6/p63/verification-pom.xml -o '-Dmaven.compiler.useIncrementalCompilation=false' clean verify
+```
+
+`full-clean-verify.log`: BUILD SUCCESS,518 tests; `full-suite-runner.log/.exit`: exit0, disposable schema removed. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows trước/sau giống nhau (`source-before.txt/source-after.txt`).10file bảo vệ gồm phase-0 riêng của chủ dự án/rootPOM/scriptDB/legacy fixture/6seedPNG có hash giữ nguyên; không sửa migration hoặc seed. Warnings deprecation/lỗi notification được inject trong hồi quy không phải test failure.
+
+**Handoff:** service `getView/saveDraft/addImages/deleteDraftImage/readImage`; controller base `/bookings/{bookingId}/inspections/{BEFORE|AFTER}`, GET base hoặc `/draft`, POST `/draft`, `/images`, `/images/{imageId}/delete`, GET `/images/{imageId}`. Một `inspection/detail.html` cho editable draft/read-only submitted. Config server `carrent.inspection.storage-root` mặc định `private-uploads/inspections`, ngoài public uploads và được Git ignore; cần backup/permissions phù hợp khi cutover. Gọi mutation qua CarCommandExecutor trước khi mở service transaction; giữ current-read/lock order khi thêm submit.
+
+**Giới hạn đã phân task:** submit BEFORE/notify/append note/Customer đồng ý-bất đồng ở P6.4/P6.5; AFTER submit ở P6.8; CTA/timeline booking ở P6.12. Chưa bật tạo booking VIETQR_V1, migrate DB ứng dụng, restart app8080, scheduler/provider/tiền thật hoặc commit/push. JAR mới vẫn cần schema P6.1 trước thay bản đang chạy; P4.2-A hoãn.
+
+**Tiến độ:** **58/86**, còn28; tiếp theo **P6.4 — Owner chấp nhận và gửi BEFORE**. Nhánh local `feat/phase6-inspection-drafts`, thay đổi chưa commit.
