@@ -1,6 +1,6 @@
 # CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
 
-**Ngày chốt:** 2026-10-27; cập nhật 2026-10-30. **Trạng thái:** P6.1 hoàn thành phạm vi schema/model: migration giữ legacy, bootstrap parity, Booking/inspection mapping và EXPIRED. Full clean verify **407 JUnit test đạt, 0 failure/error/skip**, gồm 40 test P6.1 mới; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/dữ liệu trước–sau giống nhau; chưa migration hoặc bật workflow/scheduler mới. **56/86 task**, còn 30; tiếp theo **P6.2 — policy 30/70 và phí hủy**. P4.2-A tiếp tục tạm hoãn theo yêu cầu chủ dự án; chưa có live pass/human review mới.
+**Ngày chốt:** 2026-10-27; cập nhật 2026-10-31. **Trạng thái:** P6.2 hoàn thành policy VIETQR_V1 30/70 và phí hủy, cùng guard backend chặn hủy sau giao xe. Full isolated clean verify **456 JUnit test đạt, 0 failure/error/skip**, gồm **42 policy + 7 guard/HTTP/DB test mới**; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/toàn bộ rows giữ nguyên; không migration hoặc bật workflow/provider/scheduler mới. **57/86 task**, còn 29; tiếp theo **P6.3 — nháp và ảnh private**. P4.2-A tiếp tục tạm hoãn; chưa ghi nhận provider live hoặc human review mới.
 
 **Spec:** các quyết định brainstorming được tổng hợp tại file này; [SDD](../SDD.md) §1.4–1.6 lưu backlog và phạm vi tiền thật. Những phần mock payment/inspection cũ trong SDD và D-04/D-06/D-07/D-12/D-25 là thiết kế hoặc checkpoint trước lần cập nhật này. Khi thực hiện các phase bên dưới, dùng hợp đồng mới tại đây cho workflow mới; giữ bằng chứng lịch sử và hành vi legacy. Đồng bộ các chương chi tiết của SDD trước khi kích hoạt workflow mới.
 
@@ -18,7 +18,7 @@ Giữ số phase đã tồn tại để không đổi định danh task lịch s
 
 Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P4.2 trở đi, Phase 5 và Phase 6 được lập lại theo yêu cầu mới. Không chạy lại P4.1 và không đánh dấu bất kỳ task mới nào hoàn thành chỉ vì có plan.
 
-**Tiến độ hiện tại:** **56/86 task hoàn thành, còn 30**. P6.1 đã đóng theo [checkpoint](phase-6-inspection.md#checkpoint-p61--2026-10-30); tiếp theo P6.2. P4.2-A tạm hoãn; workflow/live và human review chưa được suy ra từ test. [Handoff tài chính](phase-4-handoff.md).
+**Tiến độ hiện tại:** **57/86 task hoàn thành, còn 29**. P6.1–P6.2 đã đóng theo [checkpoint P6.2](phase-6-inspection.md#checkpoint-p62--2026-10-31); tiếp theo P6.3. P4.2-A tạm hoãn; không suy live/human review từ test. [Handoff tài chính](phase-4-handoff.md).
 
 ### Phân công ba thành viên
 

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Dùng superpowers:executing-plans theo task; không tự stage/commit/push, không tick gate chưa chạy. Chỉ dùng subagent khi được yêu cầu.
 
-**Ngày cập nhật:** 2026-10-30. **Trạng thái:** P6.1 hoàn thành schema/model trên DB kiểm chứng (407 test toàn bộ đạt); P6.2–P6.13 chưa triển khai. Thay thiết kế ngày 2026-10-12 chưa có code/migration; không sửa checkpoint Phase 3 thành kết quả mới.
+**Ngày cập nhật:** 2026-10-31. **Trạng thái:** P6.1 schema/model và P6.2 policy/guard đã hoàn thành; full 456 test đạt. P6.3–P6.13 chưa triển khai; workflow mới chưa bật trên DB ứng dụng.
 
 **Goal:** Thực hiện đầy đủ BEFORE → trả trước 30% → Owner xác nhận hợp đồng/giao xe → AFTER/trả xe → 70%, cùng hủy/hoàn và cảnh báo đã chốt.
 
@@ -69,8 +69,8 @@ record CancellationQuote(long fee, long refund) {}
 // cancellation(totalAdvance, paidAt, cancelledAt, startDate, ownerCancels).
 ```
 
-- [ ] Viết test pure policy với Clock/Instant: 30/70 cộng đúng tổng, không overflow; theo ngày lịch Asia/Ho_Chi_Minh; 1 giờ đúng biên miễn phí; 3 ngày đúng biên 50%; 4 ngày 10%; sau ngày nhận chưa giao 50%; Owner 0%.
-- [ ] Implement lõi lịch và grace theo thứ tự:
+- [x] Viết test pure policy với Clock/Instant: 30/70 cộng đúng tổng, không overflow; theo ngày lịch Asia/Ho_Chi_Minh; 1 giờ đúng biên miễn phí; 3 ngày đúng biên 50%; 4 ngày 10%; sau ngày nhận chưa giao 50%; Owner 0%.
+- [x] Implement lõi lịch và grace theo thứ tự:
 
 ```java
 if (ownerCancels || !cancelledAt.isAfter(paidAt.plus(Duration.ofHours(1)))) {
@@ -82,8 +82,10 @@ int percent = days > 3 ? 10 : 50;
 // Tính fee bằng BigDecimal/BigInteger chính xác, làm tròn xuống; refund = advance - fee.
 ```
 
-- [ ] Guard không được hủy sau handover nằm ở service khóa current state, không chỉ policy/UI.
-- [ ] Run `.\mvnw.cmd '-Dtest=RentalPolicyTest' test`; ví dụ tổng 2.000.000, advance 600.000: hoàn 600.000/540.000/300.000 tương ứng.
+- [x] Guard không được hủy sau handover nằm ở service khóa current state, không chỉ policy/UI.
+- [x] Run `.\mvnw.cmd '-Dtest=RentalPolicyTest' test`; ví dụ tổng 2.000.000, advance 600.000: hoàn 600.000/540.000/300.000 tương ứng.
+
+**Bằng chứng:** [checkpoint P6.2](#checkpoint-p62--2026-10-31). `RentalPolicyTest` 42 ca; `RentalCancellationGuardTest` 7 ca dùng fixture MySQL disposable trong package payment. Policy được kiểm chứng độc lập; integration tiền thật thuộc task rental sau, không áp phí vào legacy.
 
 ### Task P6.3 — Nháp và ảnh private
 
@@ -245,3 +247,34 @@ java '@.scratch/phase6/p61/full-suite.args'
 **Handoff:** dùng canonical `vehicle_received_at`/`vehicle_returned_at` cho tất cả task sau; không tạo alias `handed_over_at`/`returned_at`. Actor/time hợp đồng được ghi atomic cùng thời gian giao. Báo cáo/ảnh chưa có service/controller; số ảnh, quyền truy cập, bất biến sau submit và domain locks ở P6.3 trở đi. App createBooking vẫn LEGACY/false. Đọc [migration runbook](../migrations/README.md) trước thay JAR trên DB hiện hữu; mapping mới cần schema mới dù workflow chưa bật. Không browser/UI mới, provider/network tiền thật, human review, stage/commit/push hoặc migration ứng dụng trong phiên này.
 
 **Tiến độ:** 56/86, còn 30. Tiếp theo **P6.2 — Policy giá, phần 30/70 và phí hủy**; P4.2-A vẫn tạm hoãn. Nhánh local `feat/phase6-rental-schema`, thay đổi chưa commit.
+
+
+## Checkpoint P6.2 — 2026-10-31
+
+**Phạm vi hoàn thành:** cả 4 mục checklist P6.2: policy, validation/rounding/time, guard dưới khóa và kiểm chứng; không gộp P6.3/P6.11. Phụ trách `huy69332`, reviewer được giao `thanhmit`; chưa ghi nhận human review.
+
+| Điều kiện | Triển khai và bằng chứng |
+|---|---|
+| Chia tiền chính xác | `RentalPolicy.advance(total)` làm tròn xuống 30% VND; `balance(total)=total-advance`. BigInteger nội bộ, long đầu vào/đầu ra; từ chối total <4 vì không đủ hai phần dương. Test tổng lẻ, mức nhỏ nhất và Long.MAX_VALUE; không đổi công thức tổng giá/ngày hiện có |
+| Phí hủy | `CancellationQuote(fee, refund)`; Owner hoặc trong/đúng 1 giờ: phí 0. Sau đó >3 ngày lịch Việt Nam: 10%, còn lại 50%; fee làm tròn xuống, refund=advance-fee. Mốc paidAt do nghiệp vụ lấy creditedAt đã xác minh, không lấy giờ trình duyệt. Từ chối advance<=0, null và cancelledAt<paidAt trước nhánh miễn phí |
+| Thời gian và giới hạn | 42 test pure policy: Clock/Instant, trước/đúng/sau 1 giờ đến nanosecond, 3/4 ngày, quá ngày nhận, nửa đêm Asia/Ho_Chi_Minh và JVM UTC/Los_Angeles/Tokyo, tiền lẻ và Long.MAX_VALUE |
+| Guard dưới khóa | `BookingService.cancelBooking` đọc current Car→Booking, kiểm tra đúng Customer/status rồi chặn mọi vehicleReceivedAt!=null trước payment/refund/notification. 7 test MySQL/service/HTTP: PENDING/CONFIRMED đã giao, đã trả xe vẫn chặn, HTTP redirect có error và không success, legacy hai trạng thái giữ mock refund, stale managed entity trong REPEATABLE_READ với connection ID khác đã commit handover |
+| Không side effect khi bị chặn | Fingerprint toàn bộ 7 bảng legacy trước/sau service/HTTP bằng nhau trong fixture; payment vẫn PAID, trạng thái vẫn CONFIRMED ở test stale. DB ứng dụng vẫn 7 bảng và fingerprint schema/toàn bộ dữ liệu trước/sau full suite giống nhau |
+| Hồi quy | 456/456 full isolated clean verify, zero failure/error/skip; 407 hồi quy + 49 mới; JAR đóng gói. Không sửa root POM, SQL/migration/seed/fixture/ảnh; giữ file phase-0 riêng của chủ dự án; schema kiểm chứng được dọn |
+
+**RED/GREEN:** `.scratch/phase6/p62/split-red.log` bắt thiếu policy; `split-validation-red.log` bắt total không hợp lệ; `grace-red.log` bắt thiếu quote/cancellation; `tier-red.log` bắt 4 nhánh Customer chưa tính phí; `cancellation-validation-red.log` bắt 10 trường hợp dữ liệu hủy sai; các log GREEN tương ứng đạt. `guard-red.log` tái hiện đơn đã giao vẫn hủy được; `guard-green.log` xác nhận guard chặn. `guard-final-green.log` có 3 assertion fail vì booking seed1 không có payment; đã sửa fixture tạo payment9001 riêng trong DB tạm, không sửa seed dự án. `guard-fixture-green.log` đạt cả 7 ca. `policy-final-green.log` đạt 42; full suite xác nhận cả 42+7 trên source cuối.
+
+**Lệnh:** policy TDD dùng `.scratch/phase6/p62/policy-pom.xml` chỉ compile policy/BusinessException và test tương ứng; guard dùng `verification-pom.xml`, source/resources gốc và output riêng tránh IDE ghi target. POM dự án giữ nguyên. Lượt cuối biên dịch sạch đầy đủ, không skip main/test:
+
+```powershell
+java '@.scratch/phase6/p62/full-suite.args'
+# Harness: .\mvnw.cmd -f .scratch/phase6/p62/verification-pom.xml -o '-Dmaven.compiler.useIncrementalCompilation=false' clean verify
+```
+
+Log `full-clean-verify.log` có BUILD SUCCESS và 456 test; `full-suite-runner.log` có exit=0, disposable schema removed. Warnings deprecation và lỗi notification/provider configuration do test chủ động inject không phải failure của build.
+
+**Handoff:** policy là hàm thuần, không bean/DB/provider; caller lấy Clock/creditedAt từ server và dùng snapshot booking, không bind giá/thời điểm/actor từ client. Rule cố định theo VIETQR_V1; đổi chính sách phải có version mới để không đổi lịch sử. Chưa gắn policy vào createBooking/cancellation tiền thật: snapshot 30/70 và payment apply thuộc P6.5/P6.6/P6.9/P6.10, Customer/Owner hủy và tạo RefundService obligation thuộc P6.11. Endpoint Owner hủy chưa tồn tại; P6.7/P6.11 phải giữ guard hai bên và race handover-vs-cancel. Luồng legacy không bị áp phí mới; createBooking vẫn LEGACY/false. Minimum provider thực tế do gate tạo intent kiểm tra, không đoán hạn mức ở policy.
+
+**Giới hạn phiên:** không màn hình/template mới, browser hoặc tiền thật; HTTP được kiểm chứng bằng MockMvc với Spring Security/CSRF và MySQL thật trên schema tạm. Không migration DB ứng dụng, khởi động lại app8080, bật workflow/scheduler/provider, human review hoặc commit/push. Code từ P6.1 vẫn cần schema đã migrate trước khi thay JAR trên DB hiện hữu.
+
+**Tiến độ:** **57/86**, còn 29; tiếp theo **P6.3 — nháp và ảnh private**. P4.2-A tạm hoãn; nhánh local `feat/phase6-rental-policy`, thay đổi chưa commit.

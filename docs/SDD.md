@@ -1,8 +1,8 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.31
-**Trạng thái:** P6.1 hoàn thành phạm vi schema/model: migration giữ legacy, bootstrap parity, Booking/inspection mapping và EXPIRED. Full clean verify **407 JUnit test đạt, 0 failure/error/skip**, gồm 40 test P6.1 mới; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/dữ liệu trước–sau giống nhau; chưa migration hoặc bật workflow/scheduler mới. **56/86 task**, còn 30; tiếp theo **P6.2 — policy 30/70 và phí hủy**. P4.2-A tiếp tục tạm hoãn theo yêu cầu chủ dự án; chưa có live pass/human review mới.
-**Ngày:** 2026-10-30
+**Phiên bản:** 2.32
+**Trạng thái:** P6.2 hoàn thành policy VIETQR_V1 30/70 và phí hủy, cùng guard backend chặn hủy sau giao xe. Full isolated clean verify **456 JUnit test đạt, 0 failure/error/skip**, gồm **42 policy + 7 guard/HTTP/DB test mới**; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/toàn bộ rows giữ nguyên; không migration hoặc bật workflow/provider/scheduler mới. **57/86 task**, còn 29; tiếp theo **P6.3 — nháp và ảnh private**. P4.2-A tiếp tục tạm hoãn; chưa ghi nhận provider live hoặc human review mới.
+**Ngày:** 2026-10-31
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
 **Ngôn ngữ tài liệu:** Tiếng Việt
@@ -47,6 +47,8 @@
 ---
 
 > **Bổ sung v2.31 — P6.1, 2026-10-30:** P6.1 hoàn thành phạm vi schema/model: migration giữ legacy, bootstrap parity, Booking/inspection mapping và EXPIRED. Full clean verify **407 JUnit test đạt, 0 failure/error/skip**, gồm 40 test P6.1 mới; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/dữ liệu trước–sau giống nhau; chưa migration hoặc bật workflow/scheduler mới. **56/86 task**, còn 30; tiếp theo **P6.2 — policy 30/70 và phí hủy**. P4.2-A tiếp tục tạm hoãn theo yêu cầu chủ dự án; chưa có live pass/human review mới. Contract schema tại §7.9; bằng chứng tại §14.26 và [plan Phase 6](plans/phase-6-inspection.md#checkpoint-p61--2026-10-30).
+
+> **Bổ sung v2.32 — P6.2, 2026-10-31:** P6.2 hoàn thành policy VIETQR_V1 30/70 và phí hủy, cùng guard backend chặn hủy sau giao xe. Full isolated clean verify **456 JUnit test đạt, 0 failure/error/skip**, gồm **42 policy + 7 guard/HTTP/DB test mới**; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/toàn bộ rows giữ nguyên; không migration hoặc bật workflow/provider/scheduler mới. **57/86 task**, còn 29; tiếp theo **P6.3 — nháp và ảnh private**. P4.2-A tiếp tục tạm hoãn; chưa ghi nhận provider live hoặc human review mới. Contract và bằng chứng tại §14.27, [checkpoint P6.2](plans/phase-6-inspection.md#checkpoint-p62--2026-10-31).
 
 ## 1. Tổng quan dự án
 
@@ -1418,7 +1420,7 @@ Hợp đồng nghiệp vụ, money model, default kỹ thuật, interface, schem
 - **Phase 5:** doanh thu Admin từ gói hợp lệ, không SUM tiền thuê. Kết quả fixture/live được ghi riêng, không tick từ kế hoạch.
 - Cộng dồn/hoàn lệch tiền trả trước 30% tạm hoãn tại §1.4. Một Owner thật + Admin trước; live capability của nhà cung cấp cần kiểm chứng.
 
-**Tiến độ hiện tại:** 41 task lịch sử + 15 task mới (P7.1–P7.4, P4.2 offline/P4.3–P4.11, P6.1) = **56/86**, còn 30. P4.2-A tạm hoãn; tiếp theo P6.2. Không migration DB ứng dụng hoặc live pass.
+**Tiến độ hiện tại:** 41 task lịch sử + 16 task mới (P7.1–P7.4, P4.2 offline/P4.3–P4.11, P6.1–P6.2) = **57/86**, còn 29. P4.2-A tạm hoãn; tiếp theo P6.3. Không migration DB ứng dụng hoặc live pass.
 
 #### Phase 4 — 7 đợt, cập nhật được duyệt ngày 2026-10-30
 
@@ -1686,6 +1688,15 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - DB ứng dụng vẫn 7 bảng và fingerprint schema/toàn bộ dữ liệu trước–sau giống nhau; phase-0 của chủ dự án, fixture legacy và sáu ảnh/seed giữ nguyên, schema tạm đã dọn. Chưa migration ứng dụng, browser/UI mới, provider live, human review hoặc commit/push. Mapping mới cần schema mới trước thay JAR trên DB hiện hữu.
 - **56/86**, còn 30; P6.1 hoàn thành phạm vi schema/model, tiếp theo P6.2. P4.2-A tạm hoãn; P6.2–P6.13/Phase 8/5 còn pending, createBooking vẫn LEGACY/false, scheduler ứng dụng vẫn tắt. Nhánh local `feat/phase6-rental-schema`.
 
+### 14.27. P6.2 — policy 30/70, phí hủy và guard backend, 2026-10-31
+
+- `RentalPolicy.advance(total)/balance(total)` và `cancellation(advance, paidAt, cancelledAt, startDate, ownerCancels)` là hàm thuần; `CancellationQuote(fee, refund)`. BigInteger tránh overflow, chia làm tròn xuống VND, phần còn lại bằng tổng trừ advance; total<4 không tạo được hai phần dương nên bị chặn.
+- Rule cố định VIETQR_V1: Owner hoặc Customer hủy trong/đúng 1 giờ hoàn đủ. Sau đó tính ngày lịch Asia/Ho_Chi_Minh: hơn 3 ngày phí 10% advance, còn lại kể cả sau ngày nhận phí 50%; fee làm tròn xuống, refund=advance-fee. Từ chối null, advance<=0 và cancelledAt<paidAt. Caller phải dùng creditedAt đã xác minh và snapshot server; provider minimum không được suy từ policy.
+- `cancelBooking` kiểm tra vehicleReceivedAt sau current Car→Booking/permission/status, trước payment/refund/notification. Không bỏ guard khi xe đã trả; legacy chưa handover giữ mock refund. Owner cancellation endpoint/race bàn giao và tích hợp quote→nghĩa vụ hoàn thuộc P6.7/P6.11.
+- Full isolated clean verify **456 test, 0 failure/error/skip**, JAR đóng gói: 42 policy và 7 guard/HTTP/MySQL mới + 407 hồi quy. Test Clock/nanosecond/Vietnam midnight/JVM zone/Long.MAX_VALUE và stale managed entity ở REPEATABLE_READ trên hai connection ID khác nhau. [Checkpoint đủ 4 điều kiện](plans/phase-6-inspection.md#checkpoint-p62--2026-10-31), log `.scratch/phase6/p62/`.
+- DB ứng dụng vẫn 7 bảng và fingerprint schema/toàn bộ rows giống nhau; POM/SQL/migration/seed/fixture/ảnh và file phase-0 của chủ dự án giữ nguyên, DB tạm được dọn. Không browser/màn mới, provider live, human review, migration ứng dụng hoặc commit/push. Chưa bật workflow 30/70; schema mới từ P6.1 vẫn là prerequisite trước thay JAR.
+- **57/86**, còn 29; tiếp theo **P6.3 — nháp và ảnh private**. P4.2-A tạm hoãn; nhánh `feat/phase6-rental-policy`.
+
 ## 15. Kết luận
 
-CarRent là monolith Spring Boot/Thymeleaf/MySQL. P6.1 hoàn thành phạm vi schema/model: migration giữ legacy, bootstrap parity, Booking/inspection mapping và EXPIRED. Full clean verify **407 JUnit test đạt, 0 failure/error/skip**, gồm 40 test P6.1 mới; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/dữ liệu trước–sau giống nhau; chưa migration hoặc bật workflow/scheduler mới. **56/86 task**, còn 30; tiếp theo **P6.2 — policy 30/70 và phí hủy**. P4.2-A tiếp tục tạm hoãn theo yêu cầu chủ dự án; chưa có live pass/human review mới. Giữ thứ tự 4 → 6 → 8 → 5; [roadmap](plans/README.md) và [checkpoint P6.1](plans/phase-6-inspection.md#checkpoint-p61--2026-10-30) ghi bằng chứng/phạm vi; UI/service rental mới chưa được kích hoạt.
+CarRent là monolith Spring Boot/Thymeleaf/MySQL. P6.2 hoàn thành policy VIETQR_V1 30/70 và phí hủy, cùng guard backend chặn hủy sau giao xe. Full isolated clean verify **456 JUnit test đạt, 0 failure/error/skip**, gồm **42 policy + 7 guard/HTTP/DB test mới**; JAR đóng gói thành công. DB ứng dụng vẫn 7 bảng, fingerprint schema/toàn bộ rows giữ nguyên; không migration hoặc bật workflow/provider/scheduler mới. **57/86 task**, còn 29; tiếp theo **P6.3 — nháp và ảnh private**. P4.2-A tiếp tục tạm hoãn; chưa ghi nhận provider live hoặc human review mới. [Roadmap](plans/README.md) và [checkpoint P6.2](plans/phase-6-inspection.md#checkpoint-p62--2026-10-31) ghi phạm vi/bằng chứng; tiếp tục thứ tự 6 → 8 → 5, P4.2-A đạt trước bật live.
