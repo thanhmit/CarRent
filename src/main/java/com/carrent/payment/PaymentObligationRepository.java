@@ -11,6 +11,10 @@ public interface PaymentObligationRepository extends JpaRepository<PaymentObliga
     Optional<PaymentObligation> findByBusinessKey(String businessKey);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from PaymentObligation e where e.businessKey = :key")
+    Optional<PaymentObligation> findByBusinessKeyForUpdate(@Param("key") String key);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from PaymentObligation e where e.id = :id")
     Optional<PaymentObligation> findByIdForUpdate(@Param("id") Long id);
 }

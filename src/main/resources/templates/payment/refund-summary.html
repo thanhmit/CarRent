@@ -9,6 +9,7 @@
     <h1 class="font-headline-md text-headline-md" th:text="${'Khoản hoàn #' + refund.id}"></h1>
     <p class="font-bold" th:text="${#numbers.formatInteger(refund.amount, 0, 'POINT') + ' VNĐ'}"></p>
     <p role="status" th:text="${refund.status.message()}"></p>
+    <p th:if="${refund.reason.name() == 'SYSTEM_CONFIRMATION_DELAY'}">Tiền vào đúng hạn nhưng hệ thống xác nhận chậm; đơn đã hết giữ chỗ. Khoản tiền này được hoàn đầy đủ.</p>
     <p th:if="${refund.overdue}" class="text-error">Quá thời hạn xử lý; hệ thống tiếp tục xử lý và đối soát.</p>
     <p th:if="${refund.account != null}" class="break-all" th:text="${'Tài khoản nhận: ' + refund.account}"></p>
     <p th:if="${refund.dueAt != null}">Hạn xử lý:

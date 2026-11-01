@@ -14,6 +14,9 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import com.carrent.booking.Booking;
+import jakarta.persistence.LockModeType;
 
 @Service
 public class PaymentIntentTransactions {
@@ -39,6 +42,24 @@ public class PaymentIntentTransactions {
     public PaymentIntentView open(PaymentRoutes.Route route, CustomUserPrincipal actor) {
         var handler = routes.handler(route.subject());
         handler.lockSubject(route.subjectId());
+        return openLocked(route, actor);
+    }
+
+    /** Booking acceptance owns the aggregate locks and must commit the report and intent together. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public PaymentIntentView openForLockedBooking(PaymentRoutes.Route route, CustomUserPrincipal actor) {
+        routes.handler(route.subject());
+        var booking = em.find(Booking.class, route.subjectId());
+        if (route.subject() != PaymentSubject.BOOKING_ADVANCE || booking == null
+                || !booking.getCar().getId().equals(route.carId())
+                || em.getLockMode(booking) != LockModeType.PESSIMISTIC_WRITE
+                || em.getLockMode(booking.getCar()) != LockModeType.PESSIMISTIC_WRITE) {
+            throw new IllegalStateException("Lock Car and Booking before opening an advance");
+        }
+        return openLocked(route, actor);
+    }
+
+    private PaymentIntentView openLocked(PaymentRoutes.Route route, CustomUserPrincipal actor) {
         var obligation = lockedObligation(route);
         requirePayer(obligation, actor);
         if (!routes.matchesParties(obligation)) throw new BusinessException("Chủ thể thanh toán không khớp đơn thuê.");
@@ -85,10 +106,12 @@ public class PaymentIntentTransactions {
         handler.lockSubject(route.subjectId());
         var obligation = lockedObligation(route);
         requirePayer(obligation, actor);
+        if (!routes.matchesParties(obligation)) throw new BusinessException("Chủ thể thanh toán không khớp đơn thuê.");
         var intent = locks.current(PaymentIntent.class, intentId);
         if (!intent.getObligation().getId().equals(obligation.getId())) throw new NotFoundException("Không tìm thấy giao dịch.");
         if (intent.getStatus() != PaymentIntentStatus.ACTIVE) return;
-        if (!clock.instant().isBefore(intent.getExpiresAt())) {
+        // Explicit advance cancellation ends the unpaid booking even after the QR deadline.
+        if (!clock.instant().isBefore(intent.getExpiresAt()) && route.subject() != PaymentSubject.BOOKING_ADVANCE) {
             intent.setStatus(PaymentIntentStatus.EXPIRED);
             handler.expire(intentId);
         } else {
@@ -145,9 +168,10 @@ public class PaymentIntentTransactions {
             status = "UNAVAILABLE";
         }
         var received = receipts.findByIntentId(intent.getId());
-        boolean hasRefund = false, refundPending = false;
+        boolean hasRefund = false, refundPending = false, confirmationDelayed = false;
         for (var receipt : received) {
             var requested = refunds.findByReceiptId(receipt.getId());
+            confirmationDelayed |= requested.stream().anyMatch(r -> r.getReason() == RefundReason.SYSTEM_CONFIRMATION_DELAY);
             boolean unallocated = receipt.getStatus() == PaymentReceiptStatus.REFUND_REQUIRED;
             if (!unallocated && requested.isEmpty()) continue;
             hasRefund = true;
@@ -162,9 +186,20 @@ public class PaymentIntentTransactions {
                 .anyMatch(r -> r.getStatus() == PaymentReceiptStatus.REVIEW_REQUIRED)) {
             status = "REVIEW_REQUIRED";
         }
+        PaymentIntentView.Rental rental = null;
+        if (intent.getObligation().getPurpose() == PaymentPurpose.ADVANCE) {
+            var booking = em.find(Booking.class, intent.getObligation().getSubjectId());
+            if (booking != null && "VIETQR_V1".equals(booking.getWorkflowVersion())) {
+                boolean cancelled = booking.getStatus() == com.carrent.booking.BookingStatus.CANCELLED;
+                boolean pending = booking.getStatus() == com.carrent.booking.BookingStatus.PENDING;
+                rental = new PaymentIntentView.Rental(booking.getId(), booking.getAdvanceAmount(), booking.getBalanceAmount(),
+                        cancelled, pending && booking.getAdvancePaidAt() == null && booking.getVehicleReceivedAt() == null, confirmationDelayed);
+                if ("ACTIVE".equals(status) && !pending) status = cancelled ? "CANCELLED" : "UNAVAILABLE";
+            }
+        }
         String qr = "ACTIVE".equals(status) ? "https://img.vietqr.io/image/" + intent.getChannel().getBankBin()
                 + "-" + intent.getChannel().getAccountNumber() + "-compact2.png?amount=" + intent.getAmount()
                 + "&addInfo=" + intent.getCode() : null;
-        return new PaymentIntentView(intent.getId(), intent.getCode(), intent.getAmount(), intent.getExpiresAt(), status, qr);
+        return new PaymentIntentView(intent.getId(), intent.getCode(), intent.getAmount(), intent.getExpiresAt(), status, qr, rental);
     }
 }

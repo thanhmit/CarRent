@@ -11,7 +11,7 @@
   const hideExpiredQr = () => {
     if (checkout && Date.now() >= Date.parse(checkout.dataset.expiresAt)) {
       qr.hidden = true;
-      cancel.hidden = true;
+      if (checkout.dataset.bookingAdvance !== 'true') cancel.hidden = true;
     }
   };
   let expiryTimer = checkout ? window.setInterval(hideExpiredQr, 1000) : null;

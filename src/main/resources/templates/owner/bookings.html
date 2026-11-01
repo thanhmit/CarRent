@@ -34,7 +34,7 @@
           <td class="p-space-md"><span th:text="${booking.customer.fullName}">Khách hàng</span><p class="text-caption text-on-surface-variant" th:text="${booking.customer.phone ?: 'Chưa có số điện thoại'}">Điện thoại</p></td>
           <td class="p-space-md whitespace-nowrap"><time th:text="${#temporals.format(booking.startDate,'dd/MM/yyyy')}">Ngày nhận</time><span> → </span><time th:text="${#temporals.format(booking.endDate,'dd/MM/yyyy')}">Ngày trả</time></td>
           <td class="p-space-md whitespace-nowrap" th:text="${#numbers.formatInteger(booking.totalAmount,0,'POINT') + ' VNĐ'}">Tổng tiền</td>
-          <td class="p-space-md"><span th:replace="~{booking/fragments :: statusBadge(${booking.status})}"></span></td>
+          <td class="p-space-md"><span th:replace="~{booking/fragments :: progressBadge(${booking})}"></span></td>
           <td class="p-space-md"><a class="inline-block py-space-sm px-space-md bg-primary text-on-primary rounded-lg whitespace-nowrap" th:href="@{/owner/bookings/{id}(id=${booking.id})}">Xem chi tiết</a></td>
         </tr></tbody></table>
       </div>

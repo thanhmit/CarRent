@@ -43,7 +43,7 @@ Số commit bao gồm merge, không phải tỷ lệ công sức. Git xác nhậ
 
 ## 3. Phần sắp làm — giao 45 task mới sau tách P4.2-A
 
-**Cập nhật phạm vi hiện hành — 2026-11-01:** P6.3 hoàn thành nháp biên bản và ảnh private, đủ 5/5 mục checklist. Full isolated clean verify **518 JUnit test đạt, 0 failure/error/skip** (456 hồi quy + 52 service/HTTP/MySQL + 10 storage mới), JAR đóng gói thành công; **24 kiểm tra trình duyệt đạt**, desktop/mobile/no-JS. DB ứng dụng vẫn 7 bảng, fingerprint schema/toàn bộ rows giữ nguyên; không migration hoặc bật workflow/provider/scheduler mới. **58/86 task**, còn 28; tiếp theo **P6.4 — Owner chấp nhận và gửi BEFORE**. P4.2-A tiếp tục tạm hoãn; chưa ghi nhận provider live hoặc human review mới. Trong 45 task mới: xong 17, còn 28; thanhmit còn P4.2-A, huy69332 còn 12 (P6.4–P6.13/P5.5–P5.6), ducbinhnguyen07ars còn 15.
+**Cập nhật phạm vi hiện hành — 2026-11-01:** P6.7 hoàn thành đủ **5/5 checklist**: Owner xác nhận hợp đồng và giao xe atomic, kiểm tra BEFORE/đủ30%/ngày Việt Nam/custody; UI Đang thuê và chặn hủy sau giao xe. Full isolated clean verify **683/683 JUnit test, 0 failure/error/skip** (638 hồi quy + RentalHandoverTest45), JAR đóng gói; **32/32 kiểm tra Chromium** desktop/mobile/no-JS đạt. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows và file phase-0 riêng giữ nguyên. Không migration DB ứng dụng, bật workflow/provider/scheduler, restart8080, commit/push, tiền thật hoặc human review mới. **62/86 task**, còn24; tiếp theo **P6.8 — Customer gửi AFTER và nhắc Owner**. P4.2-A tiếp tục hoãn; gate rental mặc định tắt. Trong45task mới: xong21, còn24; thanhmit cònP4.2-A, huy69332 còn8 (P6.8–P6.13/P5.5–P5.6), ducbinhnguyen07ars còn15.
 
 **Checkpoint 2026-10-27:** Phase 7/P7.1–P7.4 đã triển khai và kiểm chứng (19 lõi queue + 34 hồi quy + 41 HTTP queue + 9 transaction = 103 test đạt); `thanhmit` tiếp theo làm P4.2, còn P4.2–P4.11. Phân công reviewer `huy69332` giữ nguyên; chưa ghi nhận review của contributor khác. Tổng task mới còn lại: 40. Chi tiết tại [plan Phase 7](phase-7-car-queue.md). Nhánh triển khai P7.3: `feat/car-queue-http`; P7.4: `feat/car-queue-transaction`.
 
@@ -59,6 +59,8 @@ Mỗi người làm đầy đủ backend, UI liên quan, kiểm chứng và tài
 | **Tổng** | | | **45** |
 
 Task không có độ khó bằng nhau: mảng thanh toán phải kiểm chứng provider, idempotency, payout và phục hồi sau crash. Số lượng gần nhau là cách theo dõi phạm vi, không phải cam kết công sức chính xác.
+
+**Lịch thực thi được chủ dự án duyệt 2026-11-01:** giữ nguyên phân công45task và checklist; các chat tiếp theo theo [lịch đợt hiện hành](README.md#cac-dot-con-lai-da-duyet). Phase6 còn4đợt: (P6.8+P6.9) → P6.10 → P6.11 → (P6.12→P6.13). Phase8 có6đợt: P8.1 → (P8.2+P8.3) → (P8.4+P8.5) → P8.6 → P8.7 → P8.8. Phase5 có6đợt: (P5.1+P5.2) → P5.3 → P5.4 → (P5.5+P5.6) → P5.7 → (P5.8→P5.9). Đợt gộp vẫn nghiệm thu/checkpoint riêng từng task; gate cuối chạy tuần tự sau phần tích hợp/audit. P4.2-A riêng, chưa suy live/human review từ lịch được duyệt. **Tiếp theo P6.8+P6.9**, xem [handoff](phase-6-batch-1-handoff.md); tiến độ giữ62/86.
 
 ### 3.1. thanhmit — Queue và thanh toán thật
 
@@ -88,6 +90,10 @@ Task không có độ khó bằng nhau: mảng thanh toán phải kiểm chứng
 - **Reviewer chính:** thanhmit; thay đổi quota/availability trong CarService/BookingService cần huy69332 review thêm phần tích hợp.
 
 ## 4. Thứ tự gate và việc có thể chuẩn bị song song
+
+**Phân biệt lịch:** bảng dưới là các giai đoạn phối hợp ba thành viên, không phải đơn vị triển khai của mỗi chat. Lịch đợt chi tiết hiện hành là quyết định2026-11-01 ở mục3 và từng phase; không tự gộp thêm task từ gợi ý chuẩn bị song song.
+
+**Quy tắc subagent được chủ dự án duyệt 2026-11-01:** Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối. Phân công agent không thay người phụ trách/reviewer GitHub; ghi rõ agent review và human contributor review theo bằng chứng thực tế. Quy tắc này thay giới hạn cũ chỉ dùng subagent khi được yêu cầu.
 
 Giữ thứ tự tích hợp/đạt gate **7 → 4 → 6 → 8 → 5** tại [roadmap](README.md). Việc chuẩn bị nhánh/test/UI hoặc task độc lập không được coi là đã hoàn thành một phase còn thiếu phụ thuộc.
 

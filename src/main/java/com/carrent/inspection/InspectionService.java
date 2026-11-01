@@ -5,6 +5,8 @@ import com.carrent.car.CarRepository;
 import com.carrent.common.exception.*;
 import com.carrent.security.CustomUserPrincipal;
 import com.carrent.user.*;
+import com.carrent.notification.NotificationService;
+import java.time.Clock;
 import jakarta.persistence.EntityManager;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,113 @@ public class InspectionService {
     private final EntityManager em;
     private final Validator validator;
     private final InspectionStorageService storage;
+    private final InspectionEventRepository events;
+    private final NotificationService notifications;
+    private final Clock clock;
+
+    /** Caller already holds Car, Booking and financial locks, in that order. */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void acceptBeforeLocked(Booking booking, User customer) {
+        if (em.getLockMode(booking) != jakarta.persistence.LockModeType.PESSIMISTIC_WRITE
+                || !booking.getCustomer().getId().equals(customer.getId())) throw missing();
+        var report = lockedReport(booking.getId(), InspectionPhase.BEFORE);
+        if (report == null || report.getSubmittedAt() == null
+                || !report.getAuthor().getId().equals(booking.getCar().getOwner().getId())
+                || (report.getStatus() != InspectionStatus.SUBMITTED && report.getStatus() != InspectionStatus.DISPUTED)) {
+            throw new BusinessException("Chỉ được đồng ý biên bản BEFORE hợp lệ đã gửi.");
+        }
+        var form = new InspectionForm();
+        form.setConditionNote(report.getConditionNote()); form.setVisibleDamage(report.getVisibleDamage());
+        form.setOdometerKm(report.getOdometerKm()); form.setEnergyPercent(report.getEnergyPercent());
+        form.setAccessoriesNote(report.getAccessoriesNote());
+        var violations = validator.validate(form, InspectionForm.Submitted.class);
+        int count = lockedImages(report.getId()).size();
+        if (!violations.isEmpty() || count < 4 || count > 10) throw new BusinessException("Biên bản cần đủ năm trường và 4–10 ảnh.");
+        report.setStatus(InspectionStatus.ACCEPTED);
+        events.save(InspectionEvent.builder().inspection(report).actor(customer)
+                .action(InspectionEventAction.BEFORE_ACCEPTED).createdAt(clock.instant()).build());
+    }
+
+    @Transactional
+    public void submitBefore(Long bookingId, CustomUserPrincipal principal) {
+        User actor = actor(principal);
+        Booking booking = lockedBooking(bookingId, InspectionPhase.BEFORE);
+        requireAuthor(booking, InspectionPhase.BEFORE, actor);
+        requireBeforeOpen(booking);
+        var report = lockedReport(bookingId, InspectionPhase.BEFORE);
+        if (report == null || !report.getAuthor().getId().equals(actor.getId())) throw missing();
+        if (report.getStatus() == InspectionStatus.SUBMITTED || report.getStatus() == InspectionStatus.DISPUTED) return;
+        if (report.getStatus() != InspectionStatus.DRAFT) throw new BusinessException("Biên bản đã được đồng ý.");
+        var violations = validator.validate(InspectionForm.from(view(booking, InspectionPhase.BEFORE, report, false, false, false, false)), InspectionForm.Submitted.class);
+        if (!violations.isEmpty()) throw new BusinessException(violations.iterator().next().getMessage());
+        int count = lockedImages(report.getId()).size();
+        if (count < 4 || count > 10) throw new BusinessException("Cần từ 4 đến 10 ảnh trước khi gửi biên bản.");
+        report.setStatus(InspectionStatus.SUBMITTED);
+        report.setSubmittedAt(clock.instant());
+        events.save(InspectionEvent.builder().inspection(report).actor(actor).action(InspectionEventAction.SUBMITTED)
+                .createdAt(clock.instant()).build());
+        notifications.notify(booking.getCustomer().getId(), "INSPECTION_SUBMITTED", "Biên bản trước thuê đã được gửi",
+                "Chủ xe đã gửi biên bản trước thuê cho đơn #CR-" + bookingId + ". Vui lòng xem bằng chứng.", "BOOKING", bookingId);
+    }
+
+    /** Caller holds current Car and Booking locks, then any financial locks. */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void confirmPickupLocked(Booking booking, User owner, java.time.Instant at) {
+        if (em.getLockMode(booking) != jakarta.persistence.LockModeType.PESSIMISTIC_WRITE
+                || em.getLockMode(booking.getCar()) != jakarta.persistence.LockModeType.PESSIMISTIC_WRITE
+                || !booking.getCar().getOwner().getId().equals(owner.getId())) throw missing();
+        var report = lockedReport(booking.getId(), InspectionPhase.BEFORE);
+        if (report == null || report.getStatus() != InspectionStatus.ACCEPTED || report.getSubmittedAt() == null
+                || !report.getAuthor().getId().equals(owner.getId())) {
+            throw new BusinessException("BEFORE phải được khách hàng đồng ý trước khi giao xe.");
+        }
+        events.save(InspectionEvent.builder().inspection(report).actor(owner)
+                .action(InspectionEventAction.PICKUP_CONFIRMED).createdAt(at).build());
+    }
+
+    private void requireBeforeOpen(Booking b) {
+        if (!beforeOpen(b)) {
+            throw new BusinessException("Đơn thuê chưa được chủ xe chấp nhận hoặc không còn cho phép gửi/phản hồi biên bản trước thuê.");
+        }
+    }
+
+    private boolean beforeOpen(Booking b) {
+        return b.getStatus() == BookingStatus.PENDING && b.getOwnerAcceptedAt() != null
+                && b.getBeforeAcceptedAt() == null && b.getVehicleReceivedAt() == null;
+    }
+
+    @Transactional
+    public void appendBeforeAddendum(Long bookingId, String note, CustomUserPrincipal principal) {
+        appendBeforeEvent(bookingId, note, principal, InspectionEventAction.ADDENDUM);
+    }
+
+    @Transactional
+    public void disputeBefore(Long bookingId, String note, CustomUserPrincipal principal) {
+        appendBeforeEvent(bookingId, note, principal, InspectionEventAction.DISPUTED);
+    }
+
+    private void appendBeforeEvent(Long bookingId, String note, CustomUserPrincipal principal, InspectionEventAction action) {
+        User actor = actor(principal);
+        Booking booking = lockedBooking(bookingId, InspectionPhase.BEFORE);
+        requireAuthor(booking, action == InspectionEventAction.ADDENDUM ? InspectionPhase.BEFORE : InspectionPhase.AFTER, actor);
+        requireBeforeOpen(booking);
+        var report = lockedReport(bookingId, InspectionPhase.BEFORE);
+        if (report == null) throw missing();
+        if (report.getStatus() != InspectionStatus.SUBMITTED && report.getStatus() != InspectionStatus.DISPUTED) {
+            throw new BusinessException("Chỉ được phản hồi biên bản đã gửi và chưa được đồng ý.");
+        }
+        String text = trim(note);
+        if (text == null || text.isBlank() || text.length() > 2000) {
+            throw new BusinessException("Vui lòng nhập ghi chú từ 1 đến 2000 ký tự.");
+        }
+        events.save(InspectionEvent.builder().inspection(report).actor(actor).action(action).note(text).createdAt(clock.instant()).build());
+        boolean dispute = action == InspectionEventAction.DISPUTED;
+        if (dispute) report.setStatus(InspectionStatus.DISPUTED);
+        notifications.notify(dispute ? booking.getCar().getOwner().getId() : booking.getCustomer().getId(),
+                dispute ? "INSPECTION_DISPUTED" : "INSPECTION_ADDENDUM",
+                dispute ? "Biên bản trước thuê có bất đồng" : "Biên bản trước thuê có ghi chú bổ sung",
+                "Có phản hồi mới cho biên bản trước thuê của đơn #CR-" + bookingId + ". Vui lòng xem lịch sử biên bản.", "BOOKING", bookingId);
+    }
 
     @Transactional(readOnly=true)
     public InspectionView getView(Long bookingId, InspectionPhase phase, CustomUserPrincipal principal) {
@@ -40,8 +149,13 @@ public class InspectionService {
             requireAuthor(booking, phase, actor);
             if (report != null && !report.getAuthor().getId().equals(actor.getId())) throw missing();
         } else if (!member(booking, actor) && actor.getRole() != Role.ADMIN) throw missing();
-        return view(booking, phase, report, author(booking, phase, actor) && writable(booking, phase)
-                && (report == null || report.getStatus() == InspectionStatus.DRAFT));
+        boolean editable = author(booking, phase, actor) && writable(booking, phase)
+                && (report == null || report.getStatus() == InspectionStatus.DRAFT);
+        boolean open = phase == InspectionPhase.BEFORE && beforeOpen(booking);
+        boolean submitted = report != null && (report.getStatus() == InspectionStatus.SUBMITTED || report.getStatus() == InspectionStatus.DISPUTED);
+        return view(booking, phase, report, editable, open && editable && report != null,
+                open && submitted && author(booking, InspectionPhase.BEFORE, actor),
+                open && submitted && author(booking, InspectionPhase.AFTER, actor));
     }
 
     @Transactional
@@ -178,14 +292,18 @@ public class InspectionService {
         return phase == InspectionPhase.BEFORE ? b.getVehicleReceivedAt() == null
                 : b.getVehicleReceivedAt() != null && b.getVehicleReturnedAt() == null;
     }
-    private InspectionView view(Booking b, InspectionPhase phase, BookingInspection r, boolean editable) {
+    private InspectionView view(Booking b, InspectionPhase phase, BookingInspection r, boolean editable,
+                                boolean canSubmit, boolean canAddendum, boolean canDispute) {
         List<InspectionView.Image> photos = r == null ? List.of() : images.findByInspectionIdOrderByIdAsc(r.getId())
                 .stream().map(i -> new InspectionView.Image(i.getId())).toList();
         return new InspectionView(b.getId(), b.getCar().getId(), b.getCar().getBrand()+" "+b.getCar().getModel(),
                 b.getPickupAddress(), phase, r == null ? null : r.getId(), r == null ? InspectionStatus.DRAFT : r.getStatus(),
                 r == null ? null : r.getConditionNote(), r == null ? null : r.getVisibleDamage(),
                 r == null ? null : r.getOdometerKm(), r == null ? null : r.getEnergyPercent(),
-                r == null ? null : r.getAccessoriesNote(), photos, editable);
+                r == null ? null : r.getAccessoriesNote(), photos, editable, r == null ? null : r.getSubmittedAt(),
+                r == null ? List.of() : events.findByInspectionIdOrderByCreatedAtAscIdAsc(r.getId()).stream()
+                        .map(e -> new InspectionView.Event(e.getId(), e.getActor().getId(), e.getActor().getFullName(),
+                                e.getAction(), e.getNote(), e.getCreatedAt())).toList(), canSubmit, canAddendum, canDispute);
     }
     private String trim(String value) { return value == null ? null : value.trim(); }
     private NotFoundException missing() { return new NotFoundException("Biên bản không tồn tại."); }
