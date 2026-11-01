@@ -90,6 +90,52 @@ public class InspectionController {
                 .contentType(MediaType.parseMediaType(image.mediaType())).contentLength(image.sizeBytes()).body(image.resource());
     }
 
+    @PostMapping("/submit")
+    public String submit(@PathVariable Long bookingId, @PathVariable String phase,
+                         @AuthenticationPrincipal CustomUserPrincipal actor, RedirectAttributes redirect) {
+        requireBefore(phase);
+        var view = inspections.getView(bookingId, InspectionPhase.BEFORE, actor);
+        try {
+            commands.execute(view.carId(), () -> { inspections.submitBefore(bookingId, actor); return null; });
+            redirect.addFlashAttribute("successMessage", "Đã gửi biên bản trước thuê.");
+        } catch (BusinessException error) { redirect.addFlashAttribute("errorMessage", error.getMessage()); }
+        return "redirect:" + base(bookingId, InspectionPhase.BEFORE);
+    }
+
+    @PostMapping("/addendum")
+    public String addendum(@PathVariable Long bookingId, @PathVariable String phase, @RequestParam(required=false) String note,
+                           @AuthenticationPrincipal CustomUserPrincipal actor, RedirectAttributes redirect) {
+        requireBefore(phase);
+        var view = inspections.getView(bookingId, InspectionPhase.BEFORE, actor);
+        try {
+            commands.execute(view.carId(), () -> { inspections.appendBeforeAddendum(bookingId, note, actor); return null; });
+            redirect.addFlashAttribute("successMessage", "Đã thêm ghi chú bổ sung; bằng chứng gốc được giữ nguyên.");
+        } catch (BusinessException error) {
+            redirect.addFlashAttribute("errorMessage", error.getMessage());
+            redirect.addFlashAttribute("feedbackNote", note);
+        }
+        return "redirect:" + base(bookingId, InspectionPhase.BEFORE);
+    }
+
+    @PostMapping("/dispute")
+    public String dispute(@PathVariable Long bookingId, @PathVariable String phase, @RequestParam(required=false) String note,
+                          @AuthenticationPrincipal CustomUserPrincipal actor, RedirectAttributes redirect) {
+        requireBefore(phase);
+        var view = inspections.getView(bookingId, InspectionPhase.BEFORE, actor);
+        try {
+            commands.execute(view.carId(), () -> { inspections.disputeBefore(bookingId, note, actor); return null; });
+            redirect.addFlashAttribute("successMessage", "Đã ghi nhận bất đồng về biên bản trước thuê.");
+        } catch (BusinessException error) {
+            redirect.addFlashAttribute("errorMessage", error.getMessage());
+            redirect.addFlashAttribute("feedbackNote", note);
+        }
+        return "redirect:" + base(bookingId, InspectionPhase.BEFORE);
+    }
+
+    private void requireBefore(String value) {
+        if (phase(value) != InspectionPhase.BEFORE) throw new NotFoundException("Biên bản không tồn tại.");
+    }
+
     private String render(InspectionView view, Model model) {
         model.addAttribute("inspection", view);
         model.addAttribute("baseUrl", base(view.bookingId(), view.phase()));

@@ -19,7 +19,7 @@
       <article th:each="booking : ${bookings}" class="bg-surface-container-lowest rounded-xl p-space-md md:p-space-lg shadow-sm hover:shadow-md transition-shadow" th:data-booking-id="${booking.id}">
         <div class="flex flex-wrap items-center justify-between gap-space-sm pb-space-md">
           <div class="flex flex-wrap items-center gap-space-sm"><h2 class="font-headline-sm text-headline-sm text-primary font-bold" th:text="${'#CR-' + booking.id}">Mã đơn</h2><time class="text-caption font-caption text-on-surface-variant" th:datetime="${booking.createdAt}" th:text="${'Tạo lúc ' + #temporals.format(booking.createdAt, 'dd/MM/yyyy HH:mm')}">Ngày tạo</time></div>
-          <span th:replace="~{booking/fragments :: statusBadge(${booking.status})}"></span>
+          <span th:replace="~{booking/fragments :: progressBadge(${booking})}"></span>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center py-space-sm">
           <div class="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start gap-space-md min-w-0">

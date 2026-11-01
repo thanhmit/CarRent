@@ -27,13 +27,15 @@ public class OwnerBookingController {
     private final CarImageRepository images;
     private final PaymentRepository payments;
     private final CarCommandExecutor commands;
+    private final java.time.Clock clock;
 
     public OwnerBookingController(BookingService bookings, CarImageRepository images, PaymentRepository payments,
-                                  CarCommandExecutor commands) {
+                                  CarCommandExecutor commands, java.time.Clock clock) {
         this.bookings = bookings;
         this.images = images;
         this.payments = payments;
         this.commands = commands;
+        this.clock = clock;
     }
 
     @GetMapping("/owner/bookings")
@@ -62,8 +64,10 @@ public class OwnerBookingController {
         model.addAttribute("car", booking.getCar());
         model.addAttribute("days", ChronoUnit.DAYS.between(booking.getStartDate(), booking.getEndDate()));
         model.addAttribute("hasPaid", payments.existsByBookingIdAndStatus(id, PaymentStatus.PAID));
-        model.addAttribute("canComplete", booking.getStatus() == BookingStatus.CONFIRMED
+        model.addAttribute("canComplete", !"VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.getStatus() == BookingStatus.CONFIRMED
                 && booking.getEndDate().isBefore(LocalDate.now()));
+        var today = clock.instant().atZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toLocalDate();
+        model.addAttribute("handoverDateAllowed", !today.isBefore(booking.getStartDate()) && today.isBefore(booking.getEndDate()));
         var found = images.findByCarIdOrderByIdAsc(booking.getCar().getId());
         model.addAttribute("thumbnail", found.isEmpty() ? null : found.getFirst().getImageUrl());
         model.addAttribute("ownerName", principal.getFullName());
@@ -74,12 +78,14 @@ public class OwnerBookingController {
     public String confirm(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal,
                           RedirectAttributes redirect) {
         try {
-            Long carId = bookings.getBookingForView(id, principal).getCar().getId();
+            var booking = bookings.getBookingForView(id, principal);
+            Long carId = booking.getCar().getId();
             commands.execute(carId, () -> {
                 bookings.confirmBooking(id, principal);
                 return null;
             });
-            redirect.addFlashAttribute("successMessage", "Đã xác nhận đơn thuê.");
+            redirect.addFlashAttribute("successMessage", "VIETQR_V1".equals(booking.getWorkflowVersion())
+                    ? "Đã chấp nhận yêu cầu. Vui lòng chuẩn bị biên bản trước thuê." : "Đã xác nhận đơn thuê.");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
         }
@@ -96,6 +102,22 @@ public class OwnerBookingController {
                 return null;
             });
             redirect.addFlashAttribute("successMessage", "Đã hoàn tất đơn thuê.");
+        } catch (BusinessException ex) {
+            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/owner/bookings/" + id;
+    }
+
+    @PostMapping("/owner/bookings/{id}/handover")
+    public String handover(@PathVariable Long id, @RequestParam(defaultValue = "false") boolean contractSigned,
+                           @AuthenticationPrincipal CustomUserPrincipal principal, RedirectAttributes redirect) {
+        try {
+            Long carId = bookings.getBookingForView(id, principal).getCar().getId();
+            commands.execute(carId, () -> {
+                bookings.confirmHandover(id, contractSigned, principal);
+                return null;
+            });
+            redirect.addFlashAttribute("successMessage", "Đã xác nhận hợp đồng và giao xe. Chuyến thuê đang diễn ra.");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
         }

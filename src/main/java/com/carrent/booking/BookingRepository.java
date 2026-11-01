@@ -27,6 +27,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("select b from Booking b where b.car.id = :carId order by b.id")
     List<Booking> findHistoryForUpdate(@Param("carId") Long carId);
 
+    @Query(value = "SELECT id FROM bookings WHERE car_id=:carId AND id<>:bookingId "
+            + "AND inspection_required=1 AND vehicle_received_at IS NOT NULL AND vehicle_returned_at IS NULL "
+            + "ORDER BY id FOR UPDATE", nativeQuery = true)
+    List<Long> findOutstandingCustodyForUpdate(@Param("carId") Long carId, @Param("bookingId") Long bookingId);
+
     Page<Booking> findByCustomerId(Long customerId, Pageable pageable);
 
     Page<Booking> findByCarOwnerId(Long ownerId, Pageable pageable);

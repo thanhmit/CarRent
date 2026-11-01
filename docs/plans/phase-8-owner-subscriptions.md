@@ -1,8 +1,8 @@
 # CarRent — Phase 8: Gói đăng xe Owner — Implementation Plan
 
-> **For agentic workers:** Dùng superpowers:executing-plans theo task; không tự stage/commit/push. Chỉ dùng subagent khi được yêu cầu.
+> **For agentic workers:** Dùng superpowers:executing-plans theo đợt đã duyệt bên dưới, kiểm chứng/checkpoint riêng từng task; không tự stage/commit/push. Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối.
 
-**Ngày:** 2026-10-27. **Trạng thái:** kế hoạch mới, chưa triển khai.
+**Ngày:** 2026-10-27; lịch đợt được duyệt 2026-11-01. **Trạng thái:** kế hoạch mới, chưa triển khai.
 
 **Goal:** Owner mua gói 30 ngày qua SePay vào Admin, quản lý hạn mức xe và tự động hoàn các khoản mua gói trả trùng/đến muộn từ Admin.
 
@@ -24,6 +24,20 @@
 - QR 15 phút; gói đã kích hoạt không hoàn theo ngày/suất chưa dùng. Hai lần chuyển thật cùng yêu cầu chỉ cấp gói một lần, hoàn khoản trùng.
 - Khóa quota theo Owner. Car queue theo từng xe không đủ bảo vệ suất cuối của hai xe khác nhau.
 - Các quy tắc giữ dữ liệu, credential, webhook, refund và gate live trong README áp dụng đầy đủ.
+
+<a id="cac-dot-da-duyet"></a>
+## Các đợt — được duyệt 2026-11-01
+
+| Đợt | Task | Phạm vi và điều kiện kết thúc |
+|---|---|---|
+| 1 | **P8.1** | Catalog/schema/mapping và kiểm chứng giữ seed/dữ liệu trước khi thêm hành vi. Không migrate DB ứng dụng hoặc tự cấp gói cho Owner. |
+| 2 | **P8.2 + P8.3** | Cùng vòng đời order/QR → receipt → entitlement. Chốt test/checkpoint tạo order trước, rồi kiểm chứng apply đúng một lần, retry/late/refund và khóa Owner. |
+| 3 | **P8.4 + P8.5** | Quota và public visibility/POST booking dùng policy nhất quán; test hai carId tranh suất cuối, expiry giữa GET/POST và direct URL/search/home. |
+| 4 | **P8.6** | Riêng cho gia hạn/hạ gói tác động nhiều xe; đúng thứ tự khóa trước phần tiền, giữ booking/dữ liệu và Owner tự bật xe. |
+| 5 | **P8.7** | Hoàn thiện UI/quyền và nguồn hoàn Admin trên hợp đồng gói đã ổn định; chờ recipient/funds không được báo thành công. |
+| 6 | **P8.8** | Gate E2E/build/baseline/SDD và điều kiện demo một Owner. Chỉ kích hoạt khi migration/provider/live/review đã đạt và được cho phép; fixture không hoàn thành gate live. |
+
+Áp dụng [quy tắc nghiệm thu chung](README.md#cac-dot-con-lai-da-duyet): một chat triển khai đợt được giao, từng task giữ checklist/bằng chứng riêng, kiểm chứng source cuối trước chốt đợt. UI tối thiểu cần cho order/quota vẫn đi cùng task; P8.7 hoàn thiện tích hợp. P8.8 giữ pending nếu thiếu gate thật, không gọi cả Phase8 hoàn tất từ kết quả local. Không thay thứ tự6→8→5 hoặc tự bật entitlement/workflow/provider.
 
 ## Map file
 

@@ -8,6 +8,7 @@
     <div><a th:href="@{/bookings/{id}(id=${inspection.bookingId})}" class="text-secondary underline">Quay lại đơn thuê</a>
       <h1 class="font-headline-lg text-headline-lg text-primary mt-space-md" th:text="${phaseTitle}">Biên bản</h1>
       <p class="mt-space-xs" th:text="${statusTitle}">Trạng thái</p>
+      <p th:if="${inspection.submittedAt != null}" class="mt-space-xs" th:text="${'Gửi lúc ' + #temporals.format(inspection.submittedAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss')}"></p>
     </div>
     <div th:replace="~{fragments/messages :: messages}"></div>
     <section class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm min-w-0">
@@ -65,6 +66,38 @@
           </form>
         </figure>
       </div>
+    </section>
+    <section th:if="${inspection.canSubmit}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
+      <h2 class="font-headline-sm text-headline-sm">Gửi biên bản trước thuê</h2>
+      <p class="my-space-md">Kiểm tra đủ năm trường và 4–10 ảnh đã lưu. Sau khi gửi, nội dung và ảnh gốc không thể sửa hoặc xóa. Gửi biên bản chưa xác nhận thanh toán hay giao xe.</p>
+      <form th:action="${baseUrl + '/submit'}" method="post"><button type="submit" class="px-space-lg py-space-sm bg-secondary text-on-secondary rounded-lg">Gửi BEFORE</button></form>
+    </section>
+    <section th:if="${not #lists.isEmpty(inspection.events)}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
+      <h2 class="font-headline-sm text-headline-sm">Lịch sử bằng chứng</h2>
+      <p class="my-space-sm">Nội dung và ảnh gốc được giữ nguyên. Ghi chú bổ sung và bất đồng được lưu cùng người thực hiện và thời điểm.</p>
+      <ol class="flex flex-col gap-space-md mt-space-md">
+        <li th:each="event : ${inspection.events}" class="border border-outline-variant rounded-lg p-space-md min-w-0 break-words [overflow-wrap:anywhere]">
+          <h3 class="font-title-md" th:text="${event.action.name() == 'PICKUP_CONFIRMED' ? 'Xác nhận hợp đồng và giao xe' : event.action.name() == 'BEFORE_ACCEPTED' ? 'Đồng ý BEFORE' : event.action.name() == 'SUBMITTED' ? 'Gửi biên bản' : (event.action.name() == 'ADDENDUM' ? 'Ghi chú bổ sung' : (event.action.name() == 'DISPUTED' ? 'Bất đồng' : event.action.name()))}"></h3>
+          <p th:text="${event.actorName + ' · ' + #temporals.format(event.createdAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss')}"></p>
+          <p th:if="${event.note != null}" th:text="${event.note}" class="whitespace-pre-wrap mt-space-sm"></p>
+        </li>
+      </ol>
+    </section>
+    <section th:if="${inspection.canDispute}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
+      <h2 class="font-headline-sm text-headline-sm">Đồng ý biên bản trước thuê</h2>
+      <p class="my-space-md">Xem nội dung, ảnh gốc và toàn bộ lịch sử trao đổi trước khi đồng ý. Thao tác này mở yêu cầu trả trước 30% với hạn 15 phút, chưa xác nhận nhận xe.</p>
+      <form th:action="@{/bookings/{id}/accept-before(id=${inspection.bookingId})}" method="post">
+        <button type="submit" class="px-space-lg py-space-sm bg-secondary text-on-secondary rounded-lg">Đồng ý BEFORE và mở trả trước</button>
+      </form>
+    </section>
+    <section th:if="${inspection.canAddendum or inspection.canDispute}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
+      <h2 class="font-headline-sm text-headline-sm" th:text="${inspection.canAddendum ? 'Ghi chú bổ sung trước khi khách hàng đồng ý' : 'Ghi nhận bất đồng về biên bản'}"></h2>
+      <p class="my-space-sm">Hai bên có thể trao đổi và lưu phản hồi. Ghi chú không thay đổi giá thuê hoặc tự mở thanh toán.</p>
+      <form th:action="${baseUrl + (inspection.canAddendum ? '/addendum' : '/dispute')}" method="post" class="flex flex-col items-start gap-space-sm">
+        <label for="feedback-note">Nội dung (1–2000 ký tự)</label>
+        <textarea id="feedback-note" name="note" required maxlength="2000" rows="4" th:text="${feedbackNote}" class="w-full min-w-0 border border-outline rounded-lg p-space-sm"></textarea>
+        <button type="submit" class="px-space-lg py-space-sm bg-secondary text-on-secondary rounded-lg" th:text="${inspection.canAddendum ? 'Thêm ghi chú bổ sung' : 'Gửi bất đồng'}"></button>
+      </form>
     </section>
   </div>
 </main>

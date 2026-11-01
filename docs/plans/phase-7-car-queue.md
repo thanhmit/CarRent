@@ -1,6 +1,6 @@
 # CarRent — Phase 7: Queue theo carId — Implementation Plan
 
-> **For agentic workers:** Dùng `superpowers:executing-plans` theo từng task; checkbox ghi tiến độ thật. Chỉ dùng subagent khi được yêu cầu. Không stage/commit/push tự động.
+> **For agentic workers:** Dùng `superpowers:executing-plans` theo từng task; checkbox ghi tiến độ thật. Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối. Không stage/commit/push tự động.
 
 **Goal:** Tuần tự các mutation cùng xe trong một tiến trình, request đợi kết quả và vẫn giữ khóa DB.
 

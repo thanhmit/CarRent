@@ -2,6 +2,7 @@ package com.carrent.inspection;
 
 public enum InspectionEventAction {
     SUBMITTED,
+    BEFORE_ACCEPTED,
     PICKUP_CONFIRMED,
     RETURN_CONFIRMED,
     DISPUTED,

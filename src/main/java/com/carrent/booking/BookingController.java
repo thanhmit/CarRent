@@ -7,7 +7,11 @@ import com.carrent.car.ApprovalStatus;
 import com.carrent.car.ListingStatus;
 import com.carrent.payment.PaymentRepository;
 import com.carrent.payment.PaymentStatus;
+import com.carrent.payment.PaymentIntentRepository;
 import com.carrent.common.exception.BusinessException;
+import com.carrent.inspection.BookingInspectionRepository;
+import com.carrent.inspection.InspectionPhase;
+import com.carrent.inspection.InspectionStatus;
 import com.carrent.security.CustomUserPrincipal;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -35,14 +39,18 @@ public class BookingController {
     private final CarImageRepository images;
     private final PaymentRepository payments;
     private final CarCommandExecutor commands;
+    private final BookingInspectionRepository inspections;
+    private final PaymentIntentRepository intents;
 
     public BookingController(BookingService bookings, CarService cars, CarImageRepository images,
-                             PaymentRepository payments, CarCommandExecutor commands) {
+                             PaymentRepository payments, CarCommandExecutor commands, BookingInspectionRepository inspections, PaymentIntentRepository intents) {
         this.bookings = bookings;
         this.cars = cars;
         this.images = images;
         this.payments = payments;
         this.commands = commands;
+        this.inspections = inspections;
+        this.intents = intents;
     }
 
     @GetMapping("/bookings/new")
@@ -120,6 +128,12 @@ public class BookingController {
                 && car.getListingStatus() == ListingStatus.ACTIVE);
         model.addAttribute("days", ChronoUnit.DAYS.between(booking.getStartDate(), booking.getEndDate()));
         model.addAttribute("hasPaid", payments.existsByBookingIdAndStatus(id, PaymentStatus.PAID));
+        model.addAttribute("advanceIntentId", "VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.getBeforeAcceptedAt() != null
+                ? intents.findFirstByObligationBusinessKeyOrderByCreatedAtDescIdDesc("BOOKING:" + id + ":ADVANCE")
+                    .map(com.carrent.payment.PaymentIntent::getId).orElse(null) : null);
+        model.addAttribute("hasBeforeReport", "VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.isInspectionRequired()
+                && inspections.findByBookingIdAndPhase(id, InspectionPhase.BEFORE)
+                .filter(r -> r.getStatus() != InspectionStatus.DRAFT).isPresent());
         var found = images.findByCarIdOrderByIdAsc(car.getId());
         model.addAttribute("thumbnail", found.isEmpty() ? null : found.getFirst().getImageUrl());
         return "booking/detail";
@@ -129,15 +143,31 @@ public class BookingController {
     public String cancel(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal,
                          RedirectAttributes redirect) {
         try {
-            Long carId = bookings.getBookingForView(id, principal).getCar().getId();
+            var booking = bookings.getBookingForView(id, principal);
+            Long carId = booking.getCar().getId();
             commands.execute(carId, () -> {
                 bookings.cancelBooking(id, principal);
                 return null;
             });
-            redirect.addFlashAttribute("successMessage", "Đã hủy đơn thuê. Khoản đã thanh toán được hoàn tiền (giả lập).");
+            redirect.addFlashAttribute("successMessage", "VIETQR_V1".equals(booking.getWorkflowVersion())
+                    ? "Đã hủy đặt xe và yêu cầu trả trước; lịch đã được giải phóng."
+                    : "Đã hủy đơn thuê. Khoản đã thanh toán được hoàn tiền (giả lập).");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
         }
         return "redirect:/bookings/" + id;
+    }
+
+    @PostMapping("/bookings/{id}/accept-before")
+    public String acceptBefore(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal,
+                               RedirectAttributes redirect) {
+        var booking = bookings.getBookingForView(id, principal);
+        try {
+            var intent = commands.execute(booking.getCar().getId(), () -> bookings.acceptBefore(id, principal));
+            return "redirect:/payment/intents/" + intent.id();
+        } catch (BusinessException ex) {
+            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/bookings/" + id + "/inspections/BEFORE";
+        }
     }
 }

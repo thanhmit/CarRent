@@ -245,10 +245,10 @@ BEGIN
         CONSTRAINT fk_inspection_events_inspection FOREIGN KEY (inspection_id) REFERENCES booking_inspections (id) ON DELETE RESTRICT,
         CONSTRAINT fk_inspection_events_actor FOREIGN KEY (actor_id) REFERENCES users (id) ON DELETE RESTRICT,
         CONSTRAINT chk_inspection_event_action CHECK (action IN (
-            'SUBMITTED', 'PICKUP_CONFIRMED', 'RETURN_CONFIRMED', 'DISPUTED',
+            'SUBMITTED', 'BEFORE_ACCEPTED', 'PICKUP_CONFIRMED', 'RETURN_CONFIRMED', 'DISPUTED',
             'RETURN_NOT_RECEIVED', 'RESOLVED', 'ADDENDUM')),
         CONSTRAINT chk_inspection_event_note CHECK (
-            action IN ('SUBMITTED', 'PICKUP_CONFIRMED', 'RETURN_CONFIRMED')
+            action IN ('SUBMITTED', 'BEFORE_ACCEPTED', 'PICKUP_CONFIRMED', 'RETURN_CONFIRMED')
             OR (note IS NOT NULL AND CHAR_LENGTH(TRIM(note)) BETWEEN 1 AND 2000)
         )
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

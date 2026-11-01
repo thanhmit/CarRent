@@ -1,8 +1,8 @@
 # CarRent — Phase 5: Admin và hoàn thiện — Implementation Plan
 
-> **For agentic workers:** Dùng superpowers:executing-plans theo task; không tự stage/commit/push. Chỉ dùng subagent khi được yêu cầu.
+> **For agentic workers:** Dùng superpowers:executing-plans theo đợt đã duyệt bên dưới, kiểm chứng/checkpoint riêng từng task; không tự stage/commit/push. Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối.
 
-**Ngày cập nhật:** 2026-10-27. **Trạng thái:** kế hoạch chưa triển khai; thực hiện cuối thứ tự 7 → 4 → 6 → 8 → 5.
+**Ngày cập nhật:** 2026-11-01 (lịch đợt). **Trạng thái:** kế hoạch chưa triển khai; thực hiện cuối thứ tự 7 → 4 → 6 → 8 → 5.
 
 **Goal:** Hoàn thiện dashboard/profile/quản lý tài khoản và màn hình theo dõi thanh toán/hoàn tiền đúng mô hình trung gian.
 
@@ -23,6 +23,20 @@
 - UI tiếng Việt theo design system/prototype hiện có; không đưa provider secret hoặc implementation detail vào checkout.
 - Không tự đăng nhập bằng mật khẩu hardcode trong plan; sử dụng tài khoản kiểm chứng do người vận hành cung cấp, không in secret.
 - Áp dụng quyền, legacy và verification trong README; không đánh dấu cả hệ thống hoàn tất từ kiểm tra code tĩnh.
+
+<a id="cac-dot-da-duyet"></a>
+## Các đợt — được duyệt 2026-11-01
+
+| Đợt | Task | Phạm vi và điều kiện kết thúc |
+|---|---|---|
+| 1 | **P5.1 + P5.2** | Read model và dashboard/tài chính Admin; đối chiếu query/DTO/UI ngay, không cộng tiền thuê vào doanh thu gói. |
+| 2 | **P5.3** | Riêng cho quản lý user; kiểm chứng role/status hiện tại, stale principal/session, self-change và CSRF. |
+| 3 | **P5.4** | Riêng cho Admin booking/evidence/nợ; scope/private files và bất đồng không cản complete. |
+| 4 | **P5.5 + P5.6** | Profile và đổi mật khẩu trong cùng khu vực tài khoản; từng task có test bảo mật riêng, không sửa seed/password kiểm chứng dùng chung. |
+| 5 | **P5.7** | Riêng cho dashboard Owner/home; scope doanh thu/hoàn/nợ khác Admin và public policy Phase8. |
+| 6 | **P5.8 → P5.9** | Audit route/quyền/thời gian/hồi quy trước, rồi E2E/build/browser và tài liệu trên source cuối. Gate tiền thật có bằng chứng riêng, chưa đạt thì chưa đóng P5.9/toàn hệ thống. |
+
+Áp dụng [quy tắc nghiệm thu chung](README.md#cac-dot-con-lai-da-duyet): checklist/test/checkpoint riêng mỗi task, full regression/browser phù hợp cuối đợt. Giữ phân công hiện có; lịch này không hoàn thành thêm task. P4.2-A vẫn là gate provider/live riêng, không thay bằng fixture hoặc tự chuyển tiền để thử. Không tự stage/commit/push, migrate DB ứng dụng hoặc bật workflow/provider/scheduler.
 
 ## Map file
 

@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, Long> {
     Optional<PaymentIntent> findByCode(String code);
+    Optional<PaymentIntent> findFirstByObligationBusinessKeyOrderByCreatedAtDescIdDesc(String businessKey);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<PaymentIntent> findByObligationIdAndStatus(Long obligationId, PaymentIntentStatus status);
 

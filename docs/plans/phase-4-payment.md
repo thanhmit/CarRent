@@ -1,6 +1,6 @@
 # CarRent — Phase 4: Thanh toán thật và hoàn tiền — Implementation Plan
 
-> **For agentic workers:** Dùng superpowers:executing-plans theo task, checkbox phản ánh kết quả thật. Không tự stage/commit/push. Chỉ dùng subagent khi được yêu cầu.
+> **For agentic workers:** Dùng superpowers:executing-plans theo task, checkbox phản ánh kết quả thật. Không tự stage/commit/push. Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối.
 
 **Ngày cập nhật:** 2026-10-30. **Trạng thái:** P4.10 đã sửa đủ receipt cần kiểm tra và trạng thái tổng hợp; P4.11 đã nghiệm thu nền/offline. Full clean verify **367 JUnit test đạt**, polling **6/6**, browser desktop/mobile/no-JS đạt. DB ứng dụng giữ nguyên 7 bảng và dữ liệu, scheduler mặc định tắt. **55/86 task**, còn 31; P4.2-A vẫn pending tài khoản/provider/lookup/live, handler thật còn Phase 6/8. Tiếp theo phân tích P6.1; P4.2-A thực hiện khi đủ tài khoản.
 
