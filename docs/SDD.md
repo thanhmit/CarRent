@@ -1,9 +1,10 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.38
+**Phiên bản:** 2.39
+**Tích hợp Git 2026-11-01:** P6.4–P6.7 đã commit `4a6af85` và merge main `66c2d8b`, author `huy69332`; clean verify mới683/683, post-merge handover45/45. Agent review không thấy blocker; chưa có human contributor review/provider-live mới. Xem §14.33; tiếp theo P6.8+P6.9 từ main.
 **Lịch hiện hành được duyệt 2026-11-01:** chat tiếp theo triển khai **P6.8 + P6.9** cùng đợt; các đợt Phase6/8/5 tại §14.1. Đây là cập nhật plan, không có code/test hoặc task hoàn thành mới; xem [handoff](plans/phase-6-batch-1-handoff.md).
 **Quy tắc subagent được duyệt 2026-11-01:** Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối. Thay giới hạn cũ chỉ dùng khi được yêu cầu cho các đợt tiếp theo; giữ nguyên ghi nhận self-review/không dùng subagent của checkpoint lịch sử, không coi agent review là human contributor review.
-**Trạng thái:** P6.7 hoàn thành đủ **5/5 checklist**: Owner xác nhận hợp đồng và giao xe atomic, kiểm tra BEFORE/đủ30%/ngày Việt Nam/custody; UI Đang thuê và chặn hủy sau giao xe. Full isolated clean verify **683/683 JUnit test, 0 failure/error/skip** (638 hồi quy + RentalHandoverTest45), JAR đóng gói; **32/32 kiểm tra Chromium** desktop/mobile/no-JS đạt. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows và file phase-0 riêng giữ nguyên. Không migration DB ứng dụng, bật workflow/provider/scheduler, restart8080, commit/push, tiền thật hoặc human review mới. **62/86 task**, còn24; tiếp theo **P6.8 — Customer gửi AFTER và nhắc Owner**. P4.2-A tiếp tục hoãn; gate rental mặc định tắt.
+**Checkpoint P6.7 trước tích hợp Git:** P6.7 hoàn thành đủ **5/5 checklist**: Owner xác nhận hợp đồng và giao xe atomic, kiểm tra BEFORE/đủ30%/ngày Việt Nam/custody; UI Đang thuê và chặn hủy sau giao xe. Full isolated clean verify **683/683 JUnit test, 0 failure/error/skip** (638 hồi quy + RentalHandoverTest45), JAR đóng gói; **32/32 kiểm tra Chromium** desktop/mobile/no-JS đạt. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows và file phase-0 riêng giữ nguyên. Không migration DB ứng dụng, bật workflow/provider/scheduler, restart8080, commit/push, tiền thật hoặc human review mới. **62/86 task**, còn24; tiếp theo **P6.8 — Customer gửi AFTER và nhắc Owner**. P4.2-A tiếp tục hoãn; gate rental mặc định tắt.
 **Ngày:** 2026-11-01
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
@@ -1454,7 +1455,7 @@ Chủ dự án duyệt chia theo nhóm nghiệp vụ nhỏ, giữ nguyên ID/che
 
 **+** là cùng đợt, triển khai theo phụ thuộc; **→ trong ngoặc** yêu cầu tích hợp/audit xong trước gate cuối. Chạy test tập trung trong quá trình làm, full regression và browser phù hợp trên source cuối; ghi checkpoint và giới hạn riêng từng task. Không dồn UI/job cần thiết của task sang đợt cuối, không tick gate từ fixture hoặc kết quả build đơn thuần. P4.2-A riêng; P8.8/P5.9 còn gate live thì giữ pending. Không tự migrate DB ứng dụng, bật workflow/provider/scheduler, stage/commit/push hoặc chạy tiền thật.
 
-Chi tiết: [roadmap](plans/README.md#cac-dot-con-lai-da-duyet), [Phase6](plans/phase-6-inspection.md#cac-dot-da-duyet), [Phase8](plans/phase-8-owner-subscriptions.md#cac-dot-da-duyet), [Phase5](plans/phase-5-admin-polish.md#cac-dot-da-duyet). **Chat tiếp theo P6.8 + P6.9** dùng [handoff](plans/phase-6-batch-1-handoff.md); tiếp tục từ working tree P6.4–P6.7 chưa commit trên HEAD f8f12d8, không reset về HEAD.
+Chi tiết: [roadmap](plans/README.md#cac-dot-con-lai-da-duyet), [Phase6](plans/phase-6-inspection.md#cac-dot-da-duyet), [Phase8](plans/phase-8-owner-subscriptions.md#cac-dot-da-duyet), [Phase5](plans/phase-5-admin-polish.md#cac-dot-da-duyet). **Chat tiếp theo P6.8 + P6.9** dùng [handoff](plans/phase-6-batch-1-handoff.md), bắt đầu từ main đã chứa commit triển khai `4a6af85`/merge `66c2d8b` của P6.4–P6.7. Hướng dẫn working tree chưa commit trên f8f12d8 đã được thay sau tích hợp; giữ mọi dirty changes hiện có.
 
 #### Phase 4 — 7 đợt, cập nhật được duyệt ngày 2026-10-30
 
@@ -1780,6 +1781,17 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - Fingerprint schema/toàn bộ rows ứng dụng giống trước, vẫn7bảng; phase-0/rootPOM/scriptDB/migration và các dirty files ngoài phạm vi giữ nguyên. Browser random-port/schema/private files được dọn. Review tự thực hiện theo chỉ dẫn không dùng subagent khi chưa yêu cầu; chưa có human review mới. Không restart8080, migration ứng dụng, bật workflow/provider/scheduler hoặc commit/push.
 - **62/86**, còn24; tiếp theo **P6.8** gửi AFTER/nhắc Owner1giờ. Giao xe không đồng nghĩa trả xe, hoàn tất hoặc đã thanh toán70%; giữ P4.2-A và default-off gate.
 
+### 14.33. Tích hợp P6.4–P6.7 và cập nhật handoff — 2026-11-01
+
+- Chủ dự án yêu cầu commit/push/merge phần hoàn thành chưa commit. P6.4–P6.7 thuộc `huy69332`; commit triển khai `4a6af85`, merge main `66c2d8b`, dùng author `huy69332 <174874768+huy69332@users.noreply.github.com>`. Thao tác do Codex thực hiện theo phân công, không suy ra thành viên tự viết hoặc human review toàn bộ thay đổi. Nhánh `feat/phase6-before-submission` giữ lại.
+- Commit39file gồm source/tests/schema tài liệu và lịch đợt/subagent đã duyệt; thay đổi riêng `docs/plans/phase-0-init.md` giữ ngoài index/commit và nguyên diff. Không commit `.scratch`, local config hoặc secret.
+- Kiểm chứng mới trước merge: full isolated **clean verify683/683 JUnit**,0failure/error/skip, JAR và BUILD SUCCESS,16:16. Sau merge chạy lại **RentalHandoverTest45/45**, BUILD SUCCESS; source/schema tree của main khớp commit đã kiểm chứng. Harness dùng source/resources thật, POM/output và schema tạm riêng; evidence `.scratch/phase6/integration-p64-p67/premerge-clean-verify.log`, `premerge-reports/`, `postmerge-test.log`.
+- Browser không chạy lại trong lần tích hợp; source trước commit khớp toàn bộ manifest đã kiểm chứng Chromium32/32 của P6.7. Agent phụ rà code/callers/locks/quyền/evidence và handoff, không tìm thấy blocker; chưa ghi nhận human contributor review mới. Không coi agent review hoặc fixture pass là provider/live readiness.
+- Fingerprint schema/toàn bộ rows DB ứng dụng trước/sau cả hai lượt test giữ nguyên7bảng; fixture tự dọn. Không migrate DB ứng dụng, bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật.
+- [Handoff](plans/phase-6-batch-1-handoff.md) đã đổi sang main chứa merge66c2d8b, bỏ hướng dẫn hiện hành tiếp tục working tree chưa commit trên f8f12d8. Các checkpoint trước tích hợp giữ nguyên lịch sử. Tiến độ vẫn **62/86**, còn24; đợt tiếp theo **P6.8 + P6.9**.
+
 ## 15. Kết luận
+
+**Cập nhật sau tích hợp:** P6.4–P6.7 đã commit/merge theo §14.33. Đoạn dưới là kết quả checkpoint P6.7 trước tích hợp Git; trạng thái hiện hành và handoff đã được cập nhật ở trên.
 
 CarRent là monolith Spring Boot/Thymeleaf/MySQL. P6.7 hoàn thành đủ **5/5 checklist**: Owner xác nhận hợp đồng và giao xe atomic, kiểm tra BEFORE/đủ30%/ngày Việt Nam/custody; UI Đang thuê và chặn hủy sau giao xe. Full isolated clean verify **683/683 JUnit test, 0 failure/error/skip** (638 hồi quy + RentalHandoverTest45), JAR đóng gói; **32/32 kiểm tra Chromium** desktop/mobile/no-JS đạt. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows và file phase-0 riêng giữ nguyên. Không migration DB ứng dụng, bật workflow/provider/scheduler, restart8080, commit/push, tiền thật hoặc human review mới. **62/86 task**, còn24; tiếp theo **P6.8 — Customer gửi AFTER và nhắc Owner**. P4.2-A tiếp tục hoãn; gate rental mặc định tắt. [Roadmap](plans/README.md) và [checkpoint P6.7](plans/phase-6-inspection.md#checkpoint-p67--2026-11-01); tiếp tục thứ tự6→8→5.

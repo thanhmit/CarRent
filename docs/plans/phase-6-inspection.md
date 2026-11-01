@@ -4,6 +4,8 @@
 
 **Ngày cập nhật:** 2026-11-01. **Trạng thái:** P6.1–P6.7 hoàn thành; full683 test và browser32 P6.7 đạt. P6.8–P6.13 chưa hoàn thành; workflow/provider mới chưa bật trên DB ứng dụng.
 
+**Tích hợp Git 2026-11-01:** P6.4–P6.7 thuộc `huy69332`, commit `4a6af85`, merge main `66c2d8b`; nhánh tính năng được giữ. Kiểm chứng mới clean verify683/683/JAR và post-merge handover45/45; có agent review, chưa có human review mới. Thay đổi riêng phase0 nằm ngoài commit, DB ứng dụng giữ nguyên. Chat sau triển khai P6.8+P6.9 từ [handoff main đã tích hợp](phase-6-batch-1-handoff.md); các checkpoint không commit/push bên dưới là lịch sử trước tích hợp.
+
 **Goal:** Thực hiện đầy đủ BEFORE → trả trước 30% → Owner xác nhận hợp đồng/giao xe → AFTER/trả xe → 70%, cùng hủy/hoàn và cảnh báo đã chốt.
 
 **Architecture:** BookingService giữ chuyển trạng thái và timestamps; InspectionService giữ nháp/ảnh/báo cáo bất biến; RentalPaymentHandler nối receipt của Phase 4 vào booking. Tiến độ giao xe suy ra từ dữ liệu vật lý, không cần Customer xác nhận nhận xe lần hai. Các mutation cùng carId qua Queue trước khi mở transaction.

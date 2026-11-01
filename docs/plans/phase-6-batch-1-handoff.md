@@ -7,8 +7,8 @@
 ## 1. Đọc trước và xác nhận workspace
 
 1. Đọc [roadmap/lịch đã duyệt](README.md#cac-dot-con-lai-da-duyet), [Phase6](phase-6-inspection.md), [SDD](../SDD.md) §14.1/§14.29–14.32 và [handoff tài chính](phase-4-handoff.md). Checklist P6.8/P6.9 trong plan là điều kiện nghiệm thu, không thay bằng tóm tắt này.
-2. CWD `C:\Users\Admin\Documents\hoc\Car`, PowerShell. Tại lúc bàn giao: branch `feat/phase6-before-submission`; HEAD `f8f12d81c30bafb66fa09ed7cebdd256d646151c`.
-3. Chạy `git status --short`, `git branch --show-current`, `git rev-parse HEAD`; đọc diff hiện tại trước khi sửa. **P6.4–P6.7 đã triển khai nhưng chưa commit**, gồm nhiều file tracked sửa và `RentalPaymentHandler.java`/test untracked. Tiếp tục trên working tree này; không checkout/reset/clean hoặc dựng lại chỉ từ HEAD/main.
+2. CWD `C:\Users\Admin\Documents\hoc\Car`, PowerShell. **Cập nhật tích hợp 2026-11-01:** P6.4–P6.7 thuộc `huy69332`, đã commit `4a6af85` và merge vào `main` bằng `66c2d8b`. Nhánh `feat/phase6-before-submission` được giữ lại; baseline f8f12d8 chỉ còn là lịch sử. HEAD main có thể mới hơn merge do cập nhật tài liệu.
+3. Chạy `git status --short`, `git branch --show-current`, `git rev-parse HEAD`; đọc diff trước khi sửa. Chat mới bắt đầu từ **main chứa merge66c2d8b**, kiểm tra `git merge-base --is-ancestor 66c2d8b HEAD` thành công. Code P6.4–P6.7 và test đã được theo dõi trong Git; không dựng lại từ f8f12d8 hoặc tiếp tục nhánh đã merge. Nếu tạo nhánh mới cho P6.8/P6.9, bảo toàn dirty changes trước; không reset/clean để làm sạch workspace.
 4. Bảo toàn toàn bộ thay đổi hiện có, đặc biệt thay đổi riêng của người dùng trong `docs/plans/phase-0-init.md`. Chụp hash/diff/HEAD/index và baseline DB/private files trước đợt mới; không dùng kết quả bảo toàn của P6.7 thay kiểm tra mới.
 
 ## 2. Tiến độ và nền đã có
@@ -82,7 +82,7 @@ Không migrate DB ứng dụng; `ddl-auto=none`, DB-first `scriptDB.sql`. Không
 ```text
 Implement CarRent Phase6 / đợt1 còn lại — P6.8 + P6.9 theo lịch tôi đã duyệt ngày2026-11-01.
 Repo C:\Users\Admin\Documents\hoc\Car. Đọc docs/plans/phase-6-batch-1-handoff.md, roadmap và checklist hai task trước.
-Tiếp tục working tree hiện tại trên feat/phase6-before-submission, HEAD f8f12d8; P6.4–P6.7 đã làm nhưng chưa commit, không reset về main/HEAD.
+Bắt đầu từ main đã chứa merge66c2d8b (commit triển khai P6.4–P6.7 là4a6af85, author huy69332); đọc git status/diff và bảo toàn dirty changes. Không quay về baseline f8f12d8 hoặc tiếp tục nhánh cũ đã merge.
 Mục tiêu hoàn thành100% cả hai checklist: AFTER/evidence immutable, reminder1giờ có restart recovery, Owner nhận/bất đồng/NOT_RECEIVED, BALANCE70% + dueAt + notify atomic/idempotent.
 Làm đủ UI, test hai connection MySQL, full clean verify, browser và cập nhật SDD/checkpoint riêng từng task; bảo toàn mọi thay đổi hiện có và docs/plans/phase-0-init.md.
 Chưa migrate DB ứng dụng, bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. Dừng trước P6.10.
