@@ -42,11 +42,12 @@ public class OwnerBookingController {
     private final BookingInspectionRepository inspections;
     private final PaymentObligationRepository obligations;
     private final InspectionService inspectionViews;
+    private final BookingTimeline timeline;
 
     public OwnerBookingController(BookingService bookings, CarImageRepository images, PaymentRepository payments,
                                   CarCommandExecutor commands, java.time.Clock clock,
                                   BookingInspectionRepository inspections, PaymentObligationRepository obligations,
-                                  InspectionService inspectionViews) {
+                                  InspectionService inspectionViews, BookingTimeline timeline) {
         this.bookings = bookings;
         this.images = images;
         this.payments = payments;
@@ -55,6 +56,7 @@ public class OwnerBookingController {
         this.inspections = inspections;
         this.obligations = obligations;
         this.inspectionViews = inspectionViews;
+        this.timeline = timeline;
     }
 
     @InitBinder("returnForm")
@@ -85,6 +87,7 @@ public class OwnerBookingController {
     public String detail(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal, Model model) {
         var booking = bookings.getBookingForView(id, principal);
         model.addAttribute("booking", booking);
+        model.addAttribute("timeline", timeline.view(id, principal));
         model.addAttribute("cancellationQuote", bookings.cancellationQuote(id, principal));
         if (!model.containsAttribute("returnForm")) model.addAttribute("returnForm", new ReturnReceiptForm());
         if ("VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.isInspectionRequired()) {

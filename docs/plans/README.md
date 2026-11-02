@@ -1,10 +1,12 @@
 # CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
 
+**Checkpoint P6.12 + P6.13 — 2026-11-02:** hoàn thành riêng **5/5 + 5/5 checklist**. Timeline Customer/Owner/Admin chỉ đọc, các mốc tiền/vật lý/hoàn độc lập; audit queue/deadline/current actor và gate rental liên tục. Full isolated **clean verify 856/856 JUnit, 0 failure/error/skip**, JAR; Chromium **109/109** trên source cuối, 320/390/1440 và no-JS. **68/86 task**, còn18 (45task mới xong27). Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-rental-gate` từ main `82a3852`, chưa stage/commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. Dừng trước Phase8; tiếp theo **P8.1 riêng**, phụ trách `ducbinhnguyen07ars`. P4.2-A live vẫn chờ.
+
 **Tích hợp P6.11 — 2026-11-02:** feature `6de7526`, merge main `7aeb8a8`, author `huy69332`; đã push và giữ nhánh `feat/phase6-paid-cancellation`. Source merge khớp source đã clean verify816/816/JAR và browser79/79; sau merge chạy lại32/32 cancellation/UI test trên schema riêng. Phase0 riêng nằm ngoài commit và giữ nguyên. Tiến độ66/86, còn20; tiếp theo P6.12→P6.13, phụ trách `huy69332`, reviewer `thanhmit`. Không migrate DB ứng dụng/bật workflow/provider/scheduler/restart8080 hoặc chuyển tiền thật.
 
 **Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. P6.11 đã hoàn thành trong working tree; tiếp theo P6.12→P6.13.
 
-**Ngày cập nhật:** 2026-11-02. **Checkpoint P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git phía trên. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
+**Ngày cập nhật:** 2026-11-02. **Checkpoint lịch sử P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git phía trên. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
 
 **Spec:** các quyết định brainstorming được tổng hợp tại file này; [SDD](../SDD.md) §1.4–1.6 lưu backlog và phạm vi tiền thật. Những phần mock payment/inspection cũ trong SDD và D-04/D-06/D-07/D-12/D-25 là thiết kế hoặc checkpoint trước lần cập nhật này. Khi thực hiện các phase bên dưới, dùng hợp đồng mới tại đây cho workflow mới; giữ bằng chứng lịch sử và hành vi legacy. Đồng bộ các chương chi tiết của SDD trước khi kích hoạt workflow mới.
 
@@ -22,18 +24,18 @@ Giữ số phase đã tồn tại để không đổi định danh task lịch s
 
 Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P4.2 trở đi, Phase 5 và Phase 6 được lập lại theo yêu cầu mới. Không chạy lại P4.1 và không đánh dấu bất kỳ task mới nào hoàn thành chỉ vì có plan.
 
-**Tiến độ hiện tại:** **66/86 task hoàn thành, còn20**. P6.1–P6.11 đã đóng; [checkpoint P6.11](phase-6-inspection.md#checkpoint-p611--2026-11-02). Tiếp theo **P6.12→P6.13**; P4.2-A live vẫn chờ.
+**Tiến độ hiện tại:** **68/86 task hoàn thành, còn18**. P6.1–P6.13 đã đóng; tiếp theo **P8.1 riêng**. P4.2-A live vẫn chờ.
 
 **Tích hợp Git 2026-11-01 theo yêu cầu chủ dự án:** P6.4–P6.7 được commit với author `huy69332` tại `4a6af85`, merge vào main bằng `66c2d8b`; nhánh tính năng được giữ. Không đưa thay đổi riêng `docs/plans/phase-0-init.md` vào commit. Đoạn này là snapshot tích hợp trước P6.8/P6.9; hiện chat tiếp theo dùng [handoff P6.11](phase-6-batch-3-handoff.md), dùng baseline main sau tích hợp. Việc tích hợp không tăng số task hoàn thành hoặc mở gate live.
 
 <a id="cac-dot-con-lai-da-duyet"></a>
 ### Các đợt còn lại — được chủ dự án duyệt 2026-11-01
 
-Đây là lịch triển khai hiện hành, giữ thứ tự **6 → 8 → 5** và checklist từng task. P6.11 đã đóng; **66/86**, còn20.
+Đây là lịch triển khai hiện hành, giữ thứ tự **6 → 8 → 5** và checklist từng task. P6.1–P6.13 đã đóng; **68/86**, còn18.
 
 | Phase | Thứ tự các đợt trong phase | Plan chi tiết |
 |---|---|---|
-| 6 — còn 1 đợt | **P6.12 → P6.13** | [Lịch Phase 6](phase-6-inspection.md#cac-dot-da-duyet) |
+| 6 — hoàn tất offline | **P6.1–P6.13 đã đóng** | [Lịch Phase 6](phase-6-inspection.md#cac-dot-da-duyet) |
 | 8 — 6 đợt | P8.1 → (P8.2 + P8.3) → (P8.4 + P8.5) → P8.6 → P8.7 → P8.8 | [Lịch Phase 8](phase-8-owner-subscriptions.md#cac-dot-da-duyet) |
 | 5 — 6 đợt | (P5.1 + P5.2) → P5.3 → P5.4 → (P5.5 + P5.6) → P5.7 → (P5.8 → P5.9) | [Lịch Phase 5](phase-5-admin-polish.md#cac-dot-da-duyet) |
 
@@ -46,7 +48,7 @@ Quy ước: **+** là cùng đợt, triển khai theo phụ thuộc; **→ trong
 - Tiếp tục giữ thay đổi riêng, không tự stage/commit/push, migrate DB ứng dụng, bật workflow/provider/scheduler hoặc chuyển tiền thật.
 - **Quy tắc subagent được chủ dự án duyệt 2026-11-01:** Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối. Quy tắc này thay giới hạn cũ “Chỉ dùng subagent khi được yêu cầu” cho các lần triển khai tiếp theo; không tự mở rộng đợt/task. Review bằng agent không được ghi thành human contributor review.
 
-**Chat tiếp theo:** triển khai **Phase6 / đợt4 — P6.12→P6.13**, theo [handoff](phase-6-batch-4-handoff.md); bắt đầu từ main đã tích hợp P6.11, giữ phase0 riêng.
+**Chat tiếp theo:** phân tích/triển khai **Phase8 / đợt1 — P8.1 riêng**, catalog/schema/mapping, phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`. Đọc [handoff nghiệm thu rental](phase-6-batch-4-handoff.md) và [P8.1](phase-8-owner-subscriptions.md#task-p81--catalog-migration-và-dữ-liệu-quyền-lợi); giữ phase0 riêng và không migrate DB ứng dụng/tự cấp gói.
 
 ### Phân công ba thành viên
 

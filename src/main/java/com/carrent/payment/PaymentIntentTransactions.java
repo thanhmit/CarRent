@@ -152,13 +152,13 @@ public class PaymentIntentTransactions {
             throw new ForbiddenException("Bạn không có quyền thao tác thanh toán này.");
         }
         var user = em.find(User.class, actor.getId());
-        boolean currentBalance = obligation.getPurpose() == PaymentPurpose.BALANCE
+        boolean currentRental = (obligation.getPurpose() == PaymentPurpose.ADVANCE || obligation.getPurpose() == PaymentPurpose.BALANCE)
                 && !org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly();
-        if (currentBalance) em.refresh(user, LockModeType.PESSIMISTIC_READ);
+        if (currentRental) em.refresh(user, LockModeType.PESSIMISTIC_READ);
         else em.refresh(user);
         Role payerRole = obligation.getPurpose() == PaymentPurpose.SUBSCRIPTION ? Role.OWNER : Role.CUSTOMER;
         Role collectorRole = obligation.getPurpose() == PaymentPurpose.SUBSCRIPTION ? Role.ADMIN : Role.OWNER;
-        if (currentBalance) em.refresh(obligation.getCollector(), LockModeType.PESSIMISTIC_READ);
+        if (currentRental) em.refresh(obligation.getCollector(), LockModeType.PESSIMISTIC_READ);
         else em.refresh(obligation.getCollector());
         if (user.getStatus() != UserStatus.ACTIVE || user.getRole() != payerRole || actor.getRole() != payerRole
                 || obligation.getCollector().getRole() != collectorRole) {

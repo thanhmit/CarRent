@@ -21,3 +21,12 @@
     background-color: #fee2e2;
     color: #991b1b;
 }
+
+/* Inspection evidence remains usable when the Tailwind CDN script cannot run. */
+.inspection-detail { overflow-wrap: anywhere; }
+.inspection-detail img { max-width: 100%; height: auto; }
+.inspection-detail input, .inspection-detail textarea, .inspection-detail select {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.inspection-detail .overflow-x-auto { overflow-x: auto; }

@@ -198,6 +198,7 @@ public class BookingService {
             throw new ForbiddenException("Tài khoản không được phép đồng ý biên bản.");
         }
         Booking booking = lockedBooking(id);
+        requireCurrentActor(customer, Role.CUSTOMER);
         if (!booking.getCustomer().getId().equals(customer.getId())) throw new NotFoundException("Đơn thuê không tồn tại.");
         if (!"VIETQR_V1".equals(booking.getWorkflowVersion()) || !booking.isInspectionRequired()
                 || booking.getStatus() != BookingStatus.PENDING || booking.getOwnerAcceptedAt() == null
@@ -311,7 +312,7 @@ public class BookingService {
             throw new NotFoundException("Đơn thuê không tồn tại.");
         }
         if ("VIETQR_V1".equals(booking.getWorkflowVersion())) {
-            currentCancellationActor(customer, Role.CUSTOMER);
+            requireCurrentActor(customer, Role.CUSTOMER);
             cancelRental(booking, reason, false);
             return;
         }
@@ -339,15 +340,15 @@ public class BookingService {
     public void cancelByOwner(Long id, String reason, CustomUserPrincipal principal) {
         User owner = requireOwner(principal);
         Booking booking = lockedBooking(id);
-        currentCancellationActor(owner, Role.OWNER);
+        requireCurrentActor(owner, Role.OWNER);
         if (!booking.getCar().getOwner().getId().equals(owner.getId())) throw new NotFoundException("Đơn thuê không tồn tại.");
         cancelRental(booking, reason, true);
     }
 
-    private void currentCancellationActor(User actor, Role role) {
+    private void requireCurrentActor(User actor, Role role) {
         entityManager.refresh(actor, jakarta.persistence.LockModeType.PESSIMISTIC_READ);
         if (actor.getStatus() != UserStatus.ACTIVE || actor.getRole() != role) {
-            throw new ForbiddenException("Tài khoản không được phép hủy đơn thuê.");
+            throw new ForbiddenException("Tài khoản không được phép xử lý đơn thuê.");
         }
     }
 
@@ -485,6 +486,7 @@ public class BookingService {
     public void confirmHandover(Long id, boolean contractSigned, CustomUserPrincipal principal) {
         User owner = requireOwner(principal);
         Booking booking = lockedBooking(id);
+        requireCurrentActor(owner, Role.OWNER);
         if (!booking.getCar().getOwner().getId().equals(owner.getId())) throw new NotFoundException("Đơn thuê không tồn tại.");
         if (!"VIETQR_V1".equals(booking.getWorkflowVersion()) || !booking.isInspectionRequired()) {
             throw new BusinessException("Đơn thuê không thuộc luồng giao xe này.");
@@ -633,6 +635,7 @@ public class BookingService {
     private Booking pendingBookingForOwner(Long id, CustomUserPrincipal principal) {
         User owner = requireOwner(principal);
         Booking booking = lockedBooking(id);
+        requireCurrentActor(owner, Role.OWNER);
         if (!booking.getCar().getOwner().getId().equals(owner.getId())) {
             throw new NotFoundException("Đơn thuê không tồn tại.");
         }
