@@ -300,13 +300,19 @@ public class BookingService {
 
     @Transactional
     public void cancelBooking(Long id, CustomUserPrincipal principal) {
+        cancelBooking(id, principal, "Khách hàng hủy đơn thuê.");
+    }
+
+    @Transactional
+    public void cancelBooking(Long id, CustomUserPrincipal principal, String reason) {
         User customer = requireCustomer(principal);
         Booking booking = lockedBooking(id);
         if (!booking.getCustomer().getId().equals(customer.getId())) {
             throw new NotFoundException("Đơn thuê không tồn tại.");
         }
         if ("VIETQR_V1".equals(booking.getWorkflowVersion())) {
-            endUnpaidAdvance(booking);
+            currentCancellationActor(customer, Role.CUSTOMER);
+            cancelRental(booking, reason, false);
             return;
         }
         if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
@@ -329,6 +335,84 @@ public class BookingService {
                 "Khách hàng đã hủy đơn thuê #CR-" + id + ".", "BOOKING", id);
     }
 
+    @Transactional
+    public void cancelByOwner(Long id, String reason, CustomUserPrincipal principal) {
+        User owner = requireOwner(principal);
+        Booking booking = lockedBooking(id);
+        currentCancellationActor(owner, Role.OWNER);
+        if (!booking.getCar().getOwner().getId().equals(owner.getId())) throw new NotFoundException("Đơn thuê không tồn tại.");
+        cancelRental(booking, reason, true);
+    }
+
+    private void currentCancellationActor(User actor, Role role) {
+        entityManager.refresh(actor, jakarta.persistence.LockModeType.PESSIMISTIC_READ);
+        if (actor.getStatus() != UserStatus.ACTIVE || actor.getRole() != role) {
+            throw new ForbiddenException("Tài khoản không được phép hủy đơn thuê.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public CancellationQuote cancellationQuote(Long id, CustomUserPrincipal principal) {
+        Booking booking = getBookingForView(id, principal);
+        if (principal.getRole() != Role.CUSTOMER && principal.getRole() != Role.OWNER
+                || !"VIETQR_V1".equals(booking.getWorkflowVersion()) || booking.getVehicleReceivedAt() != null
+                || booking.getVehicleReturnedAt() != null
+                || booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) return null;
+        if (booking.getAdvancePaidAt() == null) return booking.getStatus() == BookingStatus.PENDING ? new CancellationQuote(0, 0) : null;
+        return RentalPolicy.cancellation(booking.getAdvanceAmount(), booking.getAdvancePaidAt(), clock.instant(),
+                booking.getStartDate(), principal.getRole() == Role.OWNER);
+    }
+
+    private void cancelRental(Booking booking, String reason, boolean ownerCancels) {
+        if (!"VIETQR_V1".equals(booking.getWorkflowVersion())) throw new BusinessException("Không thuộc luồng hủy đơn thuê này.");
+        if (booking.getVehicleReceivedAt() != null || booking.getVehicleReturnedAt() != null) {
+            throw new BusinessException("Không thể hủy đơn thuê đã giao xe.");
+        }
+        // The first committed cancellation owns the snapshot and the single refund.
+        if (booking.getStatus() == BookingStatus.CANCELLED) return;
+        String trimmed = reason == null ? "" : reason.trim();
+        if (trimmed.isEmpty() || trimmed.length() > 500) throw new BusinessException("Vui lòng nhập lý do hủy từ 1 đến 500 ký tự.");
+        if (booking.getAdvancePaidAt() == null) {
+            endUnpaidAdvance(booking, ownerCancels);
+            booking.setCancellationReason(trimmed);
+            if (ownerCancels) notifications.notify(booking.getCustomer().getId(), "BOOKING_CANCELLED", "Chủ xe đã hủy đơn thuê",
+                    "Đơn thuê #CR-" + booking.getId() + " đã hủy. Chưa ghi nhận tiền trả trước.", "BOOKING", booking.getId());
+            return;
+        }
+        if (booking.getStatus() != BookingStatus.CONFIRMED) throw new BusinessException("Đơn thuê không còn cho phép hủy.");
+        var obligation = obligations.findByBusinessKeyForUpdate("BOOKING:" + booking.getId() + ":ADVANCE")
+                .orElseThrow(() -> new BusinessException("Thiếu khoản trả trước đã nhận."));
+        entityManager.detach(obligation);
+        obligation = obligations.findByIdForUpdate(obligation.getId()).orElseThrow();
+        intents.findByObligationIdAndStatus(obligation.getId(), PaymentIntentStatus.RECEIVED).forEach(entityManager::detach);
+        var received = intents.findByObligationIdAndStatus(obligation.getId(), PaymentIntentStatus.RECEIVED);
+        if (received.size() != 1) throw new BusinessException("Không xác định được lần trả trước đã nhận.");
+        requireLockedAdvance(received.getFirst());
+        var query = entityManager.createQuery("select r from PaymentReceipt r where r.intent.id=:intent and r.allocatedAmount>0", PaymentReceipt.class)
+                .setParameter("intent", received.getFirst().getId()).setLockMode(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        query.getResultList().forEach(entityManager::detach);
+        var receipts = query.getResultList();
+        if (receipts.size() != 1) throw new BusinessException("Không xác định được giao dịch trả trước đã phân bổ.");
+        var receipt = receipts.getFirst();
+        if (obligation.getStatus() != PaymentObligationStatus.SETTLED
+                || !obligation.getAmountSettled().equals(booking.getAdvanceAmount())
+                || receipt.getStatus() != PaymentReceiptStatus.APPLIED
+                || !receipt.getAllocatedAmount().equals(booking.getAdvanceAmount())
+                || !receipt.getAmount().equals(booking.getAdvanceAmount())
+                || !receipt.getCreditedAt().equals(booking.getAdvancePaidAt())) throw new BusinessException("Khoản trả trước không khớp đơn thuê.");
+        var at = clock.instant();
+        var quote = RentalPolicy.cancellation(booking.getAdvanceAmount(), booking.getAdvancePaidAt(), at, booking.getStartDate(), ownerCancels);
+        var refundReason = ownerCancels ? RefundReason.OWNER_CANCEL : RefundReason.CUSTOMER_CANCEL;
+        refunds.request(refundReason.name() + ":" + booking.getId() + ":" + receipt.getId(), receipt.getId(), quote.refund(), refundReason);
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(at); booking.setCancellationFee(quote.fee()); booking.setCancellationReason(trimmed);
+        for (Long recipient : java.util.List.of(booking.getCustomer().getId(), booking.getCar().getOwner().getId())) {
+            notifications.notify(recipient, "BOOKING_CANCELLED", "Đơn thuê đã hủy; khoản hoàn đang chờ xử lý",
+                    "Đơn thuê #CR-" + booking.getId() + ": phí hủy " + quote.fee() + " VNĐ; hoàn " + quote.refund()
+                            + " VNĐ đang chờ xử lý. Chưa xác nhận chuyển tiền hoàn thành.", "BOOKING", booking.getId());
+        }
+    }
+
     /** Payment-core has already locked Car, Booking, obligation and intent. */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public void cancelAdvanceLocked(Long intentId) {
@@ -345,6 +429,10 @@ public class BookingService {
     }
 
     private void endUnpaidAdvance(Booking booking) {
+        endUnpaidAdvance(booking, false);
+    }
+
+    private void endUnpaidAdvance(Booking booking, boolean ownerCancels) {
         if (!"VIETQR_V1".equals(booking.getWorkflowVersion())) throw new BusinessException("Không thuộc luồng trả trước mới.");
         if (booking.getVehicleReceivedAt() != null) throw new BusinessException("Không thể hủy đơn thuê đã giao xe.");
         if (booking.getStatus() == BookingStatus.CANCELLED) return;
@@ -372,8 +460,10 @@ public class BookingService {
             throw new BusinessException("Thiếu yêu cầu trả trước; cần kiểm tra dữ liệu trước khi hủy.");
         }
         booking.setStatus(BookingStatus.CANCELLED); booking.setCancelledAt(clock.instant()); booking.setCancellationFee(0L);
-        notifications.notify(booking.getCar().getOwner().getId(), "BOOKING_CANCELLED", "Khách hàng đã hủy đơn thuê",
-                "Khách hàng đã hủy đơn thuê #CR-" + booking.getId() + ". Chưa ghi nhận tiền trả trước.", "BOOKING", booking.getId());
+        booking.setCancellationReason("Hủy yêu cầu trả trước chưa nhận tiền.");
+        String actor = ownerCancels ? "Chủ xe" : "Khách hàng";
+        notifications.notify(booking.getCar().getOwner().getId(), "BOOKING_CANCELLED", actor + " đã hủy đơn thuê",
+                actor + " đã hủy đơn thuê #CR-" + booking.getId() + ". Chưa ghi nhận tiền trả trước.", "BOOKING", booking.getId());
     }
 
     @Transactional

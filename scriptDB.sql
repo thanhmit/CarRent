@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     contract_confirmed_at DATETIME(6) NULL,
     cancelled_at DATETIME(6) NULL,
     cancellation_fee BIGINT NULL,
+    cancellation_reason VARCHAR(500) NULL,
     after_reminder_sent_at DATETIME(6) NULL,
     balance_overdue_notified_at DATETIME(6) NULL,
     PRIMARY KEY (id),

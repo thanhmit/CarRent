@@ -1,10 +1,10 @@
 # CarRent — Phase 6: Thuê xe, hợp đồng và biên bản — Implementation Plan
 
-**Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. Tiếp theo P6.11 riêng.
+**Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. P6.11 đã hoàn thành trong working tree; tiếp theo P6.12→P6.13.
 
 > **For agentic workers:** Dùng superpowers:executing-plans theo đợt đã duyệt bên dưới, kiểm chứng/checkpoint riêng từng task; không tự stage/commit/push, không tick gate chưa chạy. Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối.
 
-**Ngày cập nhật:** 2026-11-02. **Trạng thái:** P6.1–P6.10 hoàn thành; P6.11–P6.13 chưa hoàn thành. **Checkpoint P6.10 — 2026-11-02:** đủ **6/6 checklist**: QR BALANCE15phút độc lập hạn nợ1giờ, receipt QR cũ/dư/trùng/thiếu, auto-COMPLETED atomic sau physical return, dispute giữ evidence và nhắc nợ một lần. Full isolated clean verify **783/783 JUnit, 0 failure/error/skip**, JAR; Chromium **63/63**, 19 ảnh, 12 SQL invariant. **65/86 task**, còn21 (45task mới xong24). Tiếp theo **P6.11 riêng**. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.8–P6.10 đã tích hợp Git; xem checkpoint phía trên; DB ứng dụng vẫn7bảng, phase0/seed/ảnh giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. P4.2-A live vẫn chờ.
+**Ngày cập nhật:** 2026-11-02. **Trạng thái:** P6.1–P6.11 hoàn thành; P6.12–P6.13 chưa hoàn thành. **Checkpoint P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-paid-cancellation` từ main `a9c2a28`, chưa commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
 
 **Tích hợp Git 2026-11-01:** P6.4–P6.7 thuộc `huy69332`, commit `4a6af85`, merge main `66c2d8b`; nhánh tính năng được giữ. Kiểm chứng mới clean verify683/683/JAR và post-merge handover45/45; có agent review, chưa có human review mới. Thay đổi riêng phase0 nằm ngoài commit, DB ứng dụng giữ nguyên. Đây là snapshot trước P6.8/P6.9; chat sau hiện dùng [handoff P6.11](phase-6-batch-3-handoff.md) từ main sau tích hợp; các checkpoint không commit/push bên dưới là lịch sử trước tích hợp.
 
@@ -33,18 +33,18 @@
 <a id="cac-dot-da-duyet"></a>
 ## Các đợt còn lại — được duyệt 2026-11-01
 
-P6.1–P6.10 giữ checkpoint đã hoàn thành. Còn **2 đợt**: P6.11 riêng → (P6.12→P6.13); không đổi ID hoặc điều kiện nghiệm thu.
+P6.1–P6.11 giữ checkpoint đã hoàn thành. Còn **1 đợt**: P6.12→P6.13; không đổi ID hoặc điều kiện nghiệm thu.
 
 | Đợt còn lại | Task | Phạm vi và điều kiện kết thúc |
 |---|---|---|
 | 1 — đã hoàn thành | **P6.8 + P6.9** | Customer gửi AFTER/evidence bất biến, nhắc Owner/Admin sau1giờ; Owner nhận lại xe, ghi bất đồng và tạo BALANCE/dueAt/notify atomic. Kiểm chứng submit → return và race reminder/return; gửi AFTER không tự trả xe. Chưa apply70% hoặc complete. |
 | 2 — đã hoàn thành | **P6.10** | Giữ đợt riêng cho QR70%, receipt cũ/trùng/dư/thiếu, quá hạn và auto-COMPLETED; kiểm chứng tiền/concurrency, AFTER dispute không chặn complete. |
-| 3 — tiếp theo | **P6.11** | Giữ đợt riêng cho hủy có phí/hoàn, backend quote snapshot và race cancel/handover; không chuyển payout trong transaction. |
-| 4 | **P6.12 → P6.13** | Hoàn thiện timeline/quyền/job/queue trước; sau đó gate E2E/concurrency/build/browser trên source cuối và đồng bộ SDD. Gate có kết quả độc lập, không tick từ việc UI đã xong. |
+| 3 — đã hoàn thành | **P6.11** | Giữ đợt riêng cho hủy có phí/hoàn, backend quote snapshot và race cancel/handover; không chuyển payout trong transaction. |
+| 4 — tiếp theo | **P6.12 → P6.13** | Hoàn thiện timeline/quyền/job/queue trước; sau đó gate E2E/concurrency/build/browser trên source cuối và đồng bộ SDD. Gate có kết quả độc lập, không tick từ việc UI đã xong. |
 
 Áp dụng [quy tắc nghiệm thu chung](README.md#cac-dot-con-lai-da-duyet): checklist/checkpoint riêng mỗi task, full regression và browser phù hợp cuối đợt. UI/reminder thuộc P6.8/P6.9 phải hoàn thành ngay đợt1; P6.12 tích hợp phần đã có. Không bật scheduler/workflow trên DB ứng dụng chỉ để kiểm chứng; fixture riêng phải chứng minh job/restart thật khi checklist yêu cầu. P4.2-A giữ riêng, không suy live pass từ fixture.
 
-**Handoff chat mới:** [Phase6 đợt3 — P6.11](phase-6-batch-3-handoff.md). Handoff đợt1/đợt2 giữ lịch sử, không dùng làm lệnh triển khai task đã đóng.
+**Handoff chat mới:** [Phase6 đợt4 — P6.12→P6.13](phase-6-batch-4-handoff.md). Handoff đợt1/đợt2 giữ lịch sử, không dùng làm lệnh triển khai task đã đóng.
 
 ## Map file
 
@@ -222,11 +222,11 @@ int percent = days > 3 ? 10 : 50;
 
 **Files:** BookingService.cancelBooking, thêm cancelByOwner(id, reason, actor); RentalPolicy/RefundService.
 
-- [ ] PENDING chưa nhận advance: cancel intent/booking, không tạo khoản hoàn giả. Receipt về sau tạo hoàn đủ.
-- [ ] CONFIRMED chưa giao: Customer hủy dùng quote snapshot ở P6.2; Owner hủy hoàn đủ. CanceledAt/fee/reason và nghĩa vụ hoàn được ghi cùng transaction, chuyển tiền thực hiện ngoài transaction bởi Phase 4.
-- [ ] Sau handover chặn cả hai bên; Owner phải dùng luồng return, không dùng cancel để xóa khoản nợ.
-- [ ] Nút hủy cần hiển thị số hoàn/phí dự kiến và backend tính lại khi submit; không tin quote client.
-- [ ] Test các biên 1 giờ/3 ngày/date đã qua, payout chờ recipient/funds; payment gốc vẫn là tiền đã nhận, không bulk update REFUNDED trước khi chuyển thành công.
+- [x] PENDING chưa nhận advance: cancel intent/booking, không tạo khoản hoàn giả. Receipt về sau tạo hoàn đủ.
+- [x] CONFIRMED chưa giao: Customer hủy dùng quote snapshot ở P6.2; Owner hủy hoàn đủ. CanceledAt/fee/reason và nghĩa vụ hoàn được ghi cùng transaction, chuyển tiền thực hiện ngoài transaction bởi Phase 4.
+- [x] Sau handover chặn cả hai bên; Owner phải dùng luồng return, không dùng cancel để xóa khoản nợ.
+- [x] Nút hủy cần hiển thị số hoàn/phí dự kiến và backend tính lại khi submit; không tin quote client.
+- [x] Test các biên 1 giờ/3 ngày/date đã qua, payout chờ recipient/funds; payment gốc vẫn là tiền đã nhận, không bulk update REFUNDED trước khi chuyển thành công.
 
 ### Task P6.12 — UI, quyền và job deadline tích hợp
 
@@ -519,3 +519,9 @@ POM/output/schema fixture riêng; source/resources thật. Evidence `.scratch/ph
 **Bảo toàn và giới hạn:** DB ứng dụng vẫn7bảng, fingerprint schema/rows và phase0/seed/ảnh không đổi; schema/private files/port fixture được dọn. Flags ADVANCE/BALANCE/deadlines chỉ bật fixture, cấu hình mặc định ứng dụng không đổi. Không migrate DB ứng dụng, restart8080, tiền thật hoặc stage/commit/push. Có phân công agent độc lập và review; chưa có human reviewer `thanhmit`. P4.2-A giữ pending.
 
 **Tiếp theo:** [P6.11 riêng](phase-6-batch-3-handoff.md). Không gộp P6.12/P6.13 hoặc bật live từ fixture.
+
+## Checkpoint P6.11 — 2026-11-02
+
+**Checkpoint P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-paid-cancellation` từ main `a9c2a28`, chưa commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
+
+Chi tiết SDD §14.37. Lệnh: `java @.scratch/phase6/p611/full-suite.args`; POM/output/schema riêng, tương đương Maven Wrapper `clean verify` trên source thật. Evidence mới `.scratch/phase6/p611/`. Migration cancellation-reason chỉ chạy fixture; migration rental cũ giữ nguyên. Bảo toàn phase0/appDB/config/uploads; provider live chưa kiểm chứng. [Handoff đợt4](phase-6-batch-4-handoff.md).

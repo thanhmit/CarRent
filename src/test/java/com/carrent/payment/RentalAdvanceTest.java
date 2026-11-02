@@ -304,20 +304,12 @@ class RentalAdvanceTest {
         var view = agree(); var inbox = f.receive(991001, view.code(), "600000"); var customer = f.actor(4);
         var claim = f.app.getBean(InboxWorkService.class).claim(inbox);
         Runnable apply = () -> f.app.getBean(ReceiptApplicationService.class).apply(inbox, claim.leaseOwner());
-        Runnable cancel = () -> {
-            if (applyFirst) assertThatThrownBy(() -> bookings().cancelBooking(1L, customer)).isInstanceOf(com.carrent.common.exception.BusinessException.class);
-            else bookings().cancelBooking(1L, customer);
-        };
-        // A rejected REQUIRED cancellation rolls back its outer transaction as expected.
-        if (applyFirst) {
-            race(view, apply, () -> {
-                assertThat(state("bookings")).isIn("PENDING", "CONFIRMED");
-                cancel.run();
-            }, true);
-        } else race(view, cancel, apply);
-        assertThat(state("bookings")).isEqualTo(applyFirst ? "CONFIRMED" : "CANCELLED");
-        assertThat(f.count("refunds")).isEqualTo(applyFirst ? 0 : 1);
-        assertCalendarAndRefundInvariant();
+        Runnable cancel = () -> bookings().cancelBooking(1L, customer);
+        race(view, applyFirst ? apply : cancel, applyFirst ? cancel : apply);
+        assertThat(state("bookings")).isEqualTo("CANCELLED");
+        assertThat(f.count("refunds")).isEqualTo(1);
+        assertThat(f.jdbc.queryForObject("SELECT reason FROM refunds", String.class)).isEqualTo(applyFirst ? "CUSTOMER_CANCEL" : "LATE_ADVANCE");
+        assertThat(f.jdbc.queryForObject("SELECT SUM(allocated_amount) FROM payment_receipts", Long.class)).isEqualTo(applyFirst ? 600000 : 0);
     }
 
     void race(PaymentIntentView view, Runnable first, Runnable second) throws Exception { race(view, first, second, false); }
