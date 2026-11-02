@@ -1,4 +1,6 @@
-# CarRent — Handoff chat mới: Phase 6 / đợt 1 còn lại — P6.8 + P6.9
+# CarRent — Handoff lịch sử: Phase 6 / đợt 1 — P6.8 + P6.9
+
+> Đợt này đã hoàn thành4/4+5/5 checklist; full746/browser58. Hướng dẫn triển khai dưới đây là lịch sử. **Hiện hành: [P6.10](phase-6-batch-2-handoff.md)**; giữ working tree chưa commit `feat/phase6-after-return`.
 
 **Ngày bàn giao:** 2026-11-01. **Trạng thái:** lịch đợt đã được chủ dự án duyệt; P6.8/P6.9 chưa triển khai, chưa có kết quả test mới của hai task.
 

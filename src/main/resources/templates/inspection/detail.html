@@ -16,6 +16,29 @@
       <p class="mt-space-sm" th:text="${'Đơn thuê #CR-' + inspection.bookingId}">Đơn thuê</p>
       <p class="mt-space-xs break-words [overflow-wrap:anywhere]" th:text="${'Địa điểm giao nhận: ' + inspection.pickupAddress}">Địa điểm</p>
     </section>
+    <section th:if="${beforeInspection != null}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm min-w-0">
+      <h2 class="font-headline-sm text-headline-sm">So sánh BEFORE / AFTER</h2>
+      <p class="my-space-sm">Đối chiếu bằng chứng trước và sau thuê. Ghi chú, số km và mức nhiên liệu/pin không tự phát sinh phụ phí hoặc thay đổi tổng tiền thuê.</p>
+      <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Bảng so sánh biên bản trước và sau thuê">
+        <table class="w-full min-w-[520px] text-left border-collapse">
+          <thead><tr class="border-b border-outline-variant"><th scope="col" class="p-space-sm">Nội dung</th><th scope="col" class="p-space-sm">BEFORE</th><th scope="col" class="p-space-sm">AFTER</th></tr></thead>
+          <tbody class="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+            <tr class="border-b border-outline-variant"><th scope="row" class="p-space-sm">Tình trạng</th><td class="p-space-sm" th:text="${beforeInspection.conditionNote}"></td><td class="p-space-sm" th:text="${inspection.conditionNote ?: 'Chưa nhập'}"></td></tr>
+            <tr class="border-b border-outline-variant"><th scope="row" class="p-space-sm">Hư hỏng</th><td class="p-space-sm" th:text="${beforeInspection.visibleDamage}"></td><td class="p-space-sm" th:text="${inspection.visibleDamage ?: 'Chưa nhập'}"></td></tr>
+            <tr class="border-b border-outline-variant"><th scope="row" class="p-space-sm">Số km</th><td class="p-space-sm" th:text="${beforeInspection.odometerKm}"></td><td class="p-space-sm" th:text="${inspection.odometerKm ?: 'Chưa nhập'}"></td></tr>
+            <tr class="border-b border-outline-variant"><th scope="row" class="p-space-sm">Nhiên liệu/pin (%)</th><td class="p-space-sm" th:text="${beforeInspection.energyPercent}"></td><td class="p-space-sm" th:text="${inspection.energyPercent ?: 'Chưa nhập'}"></td></tr>
+            <tr><th scope="row" class="p-space-sm">Phụ kiện</th><td class="p-space-sm" th:text="${beforeInspection.accessoriesNote}"></td><td class="p-space-sm" th:text="${inspection.accessoriesNote ?: 'Chưa nhập'}"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <a th:href="@{/bookings/{id}/inspections/BEFORE(id=${inspection.bookingId})}" class="inline-block my-space-md text-secondary underline">Xem toàn bộ biên bản và lịch sử BEFORE</a>
+      <h3 class="font-title-md">Ảnh BEFORE</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm mt-space-sm">
+        <a th:each="photo, iter : ${beforeInspection.images}" th:href="@{/bookings/{id}/inspections/BEFORE/images/{imageId}(id=${inspection.bookingId},imageId=${photo.id})}" target="_blank" rel="noopener" class="min-w-0">
+          <img th:src="@{/bookings/{id}/inspections/BEFORE/images/{imageId}(id=${inspection.bookingId},imageId=${photo.id})}" th:alt="${'Ảnh BEFORE ' + iter.count}" class="w-full aspect-[4/3] object-contain" loading="lazy"/>
+        </a>
+      </div>
+    </section>
     <section class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm min-w-0">
       <h2 class="font-headline-sm text-headline-sm mb-space-md">Tình trạng xe</h2>
       <form th:if="${inspection.editable}" th:action="${baseUrl + '/draft'}" th:object="${form}" method="post" class="flex flex-col gap-space-md">
@@ -68,29 +91,31 @@
       </div>
     </section>
     <section th:if="${inspection.canSubmit}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
-      <h2 class="font-headline-sm text-headline-sm">Gửi biên bản trước thuê</h2>
-      <p class="my-space-md">Kiểm tra đủ năm trường và 4–10 ảnh đã lưu. Sau khi gửi, nội dung và ảnh gốc không thể sửa hoặc xóa. Gửi biên bản chưa xác nhận thanh toán hay giao xe.</p>
-      <form th:action="${baseUrl + '/submit'}" method="post"><button type="submit" class="px-space-lg py-space-sm bg-secondary text-on-secondary rounded-lg">Gửi BEFORE</button></form>
+      <h2 class="font-headline-sm text-headline-sm" th:text="${inspection.phase.name() == 'BEFORE' ? 'Gửi biên bản trước thuê' : 'Gửi biên bản sau thuê'}"></h2>
+      <p class="my-space-md">Kiểm tra đủ năm trường và 4–10 ảnh đã lưu. Sau khi gửi, nội dung và ảnh gốc không thể sửa hoặc xóa.</p>
+      <p class="mb-space-md" th:text="${inspection.phase.name() == 'BEFORE' ? 'Gửi biên bản chưa xác nhận thanh toán hay giao xe.' : 'Gửi AFTER chưa xác nhận chủ xe đã nhận lại xe thực tế, chưa tạo nghĩa vụ thanh toán 70% và không tự tính phụ phí.'}"></p>
+      <form th:action="${baseUrl + '/submit'}" method="post"><button type="submit" class="px-space-lg py-space-sm bg-secondary text-on-secondary rounded-lg" th:text="${'Gửi ' + inspection.phase.name()}"></button></form>
     </section>
+    <p th:if="${inspection.phase.name() == 'AFTER' and inspection.status.name() != 'DRAFT'}" class="p-space-md rounded-lg bg-surface-container-low">AFTER đã được gửi; nội dung và ảnh gốc được giữ nguyên. Xem trạng thái nhận lại xe thực tế và nghĩa vụ 70% trong đơn thuê.</p>
     <section th:if="${not #lists.isEmpty(inspection.events)}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
       <h2 class="font-headline-sm text-headline-sm">Lịch sử bằng chứng</h2>
       <p class="my-space-sm">Nội dung và ảnh gốc được giữ nguyên. Ghi chú bổ sung và bất đồng được lưu cùng người thực hiện và thời điểm.</p>
       <ol class="flex flex-col gap-space-md mt-space-md">
         <li th:each="event : ${inspection.events}" class="border border-outline-variant rounded-lg p-space-md min-w-0 break-words [overflow-wrap:anywhere]">
-          <h3 class="font-title-md" th:text="${event.action.name() == 'PICKUP_CONFIRMED' ? 'Xác nhận hợp đồng và giao xe' : event.action.name() == 'BEFORE_ACCEPTED' ? 'Đồng ý BEFORE' : event.action.name() == 'SUBMITTED' ? 'Gửi biên bản' : (event.action.name() == 'ADDENDUM' ? 'Ghi chú bổ sung' : (event.action.name() == 'DISPUTED' ? 'Bất đồng' : event.action.name()))}"></h3>
+          <h3 class="font-title-md" th:text="${event.action.name() == 'RETURN_CONFIRMED' ? 'Chủ xe xác nhận đã nhận lại xe' : event.action.name() == 'RETURN_NOT_RECEIVED' ? 'Chủ xe chưa nhận lại xe thực tế' : event.action.name() == 'PICKUP_CONFIRMED' ? 'Xác nhận hợp đồng và giao xe' : event.action.name() == 'BEFORE_ACCEPTED' ? 'Đồng ý BEFORE' : event.action.name() == 'SUBMITTED' ? 'Gửi biên bản' : (event.action.name() == 'ADDENDUM' ? 'Ghi chú bổ sung' : (event.action.name() == 'DISPUTED' ? 'Bất đồng' : event.action.name()))}"></h3>
           <p th:text="${event.actorName + ' · ' + #temporals.format(event.createdAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss')}"></p>
           <p th:if="${event.note != null}" th:text="${event.note}" class="whitespace-pre-wrap mt-space-sm"></p>
         </li>
       </ol>
     </section>
-    <section th:if="${inspection.canDispute}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
+    <section th:if="${inspection.phase.name() == 'BEFORE' and inspection.canDispute}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
       <h2 class="font-headline-sm text-headline-sm">Đồng ý biên bản trước thuê</h2>
       <p class="my-space-md">Xem nội dung, ảnh gốc và toàn bộ lịch sử trao đổi trước khi đồng ý. Thao tác này mở yêu cầu trả trước 30% với hạn 15 phút, chưa xác nhận nhận xe.</p>
       <form th:action="@{/bookings/{id}/accept-before(id=${inspection.bookingId})}" method="post">
         <button type="submit" class="px-space-lg py-space-sm bg-secondary text-on-secondary rounded-lg">Đồng ý BEFORE và mở trả trước</button>
       </form>
     </section>
-    <section th:if="${inspection.canAddendum or inspection.canDispute}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
+    <section th:if="${inspection.phase.name() == 'BEFORE' and (inspection.canAddendum or inspection.canDispute)}" class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg min-w-0">
       <h2 class="font-headline-sm text-headline-sm" th:text="${inspection.canAddendum ? 'Ghi chú bổ sung trước khi khách hàng đồng ý' : 'Ghi nhận bất đồng về biên bản'}"></h2>
       <p class="my-space-sm">Hai bên có thể trao đổi và lưu phản hồi. Ghi chú không thay đổi giá thuê hoặc tự mở thanh toán.</p>
       <form th:action="${baseUrl + (inspection.canAddendum ? '/addendum' : '/dispute')}" method="post" class="flex flex-col items-start gap-space-sm">

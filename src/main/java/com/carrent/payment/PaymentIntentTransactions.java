@@ -66,7 +66,8 @@ public class PaymentIntentTransactions {
         Instant now = clock.instant();
         if (obligation.getStatus() != PaymentObligationStatus.OPEN
                 || obligation.getAmountSettled() >= obligation.getAmountDue()
-                || obligation.getDueAt() != null && !now.isBefore(obligation.getDueAt())) {
+                || obligation.getPurpose() != PaymentPurpose.BALANCE
+                    && obligation.getDueAt() != null && !now.isBefore(obligation.getDueAt())) {
             throw new BusinessException("Nghĩa vụ thanh toán đã kết thúc hoặc hết hạn.");
         }
         var active = intents.findByObligationIdAndStatus(obligation.getId(), PaymentIntentStatus.ACTIVE);
@@ -74,9 +75,14 @@ public class PaymentIntentTransactions {
         if (!active.isEmpty()) {
             var current = locks.current(PaymentIntent.class, active.getFirst().getId());
             if (!now.isBefore(current.getExpiresAt())) {
-                throw new BusinessException("Lần thanh toán đã hết hạn, đang chờ xử lý kết thúc.");
+                if (obligation.getPurpose() != PaymentPurpose.BALANCE) {
+                    throw new BusinessException("Lần thanh toán đã hết hạn, đang chờ xử lý kết thúc.");
+                }
+                current.setStatus(PaymentIntentStatus.EXPIRED);
+                routes.handler(route.subject()).expire(current.getId());
+            } else {
+                return view(current);
             }
-            return view(current);
         }
         var candidates = channels.findByUserIdAndPurposeAndEnabledTrue(obligation.getCollector().getId(),
                 PaymentChannelPurpose.COLLECT).stream().filter(c -> c.getProvider() == PaymentProvider.SEPAY).toList();
@@ -92,7 +98,8 @@ public class PaymentIntentTransactions {
             throw new BusinessException("Kênh nhận tiền chưa hợp lệ.");
         }
         Instant expiry = now.plusSeconds(900);
-        if (obligation.getDueAt() != null && obligation.getDueAt().isBefore(expiry)) expiry = obligation.getDueAt();
+        if (obligation.getPurpose() != PaymentPurpose.BALANCE
+                && obligation.getDueAt() != null && obligation.getDueAt().isBefore(expiry)) expiry = obligation.getDueAt();
         var intent = intents.saveAndFlush(PaymentIntent.builder().obligation(obligation).channel(channel)
                 .code("CR" + UUID.randomUUID().toString().replace("-", "").toUpperCase(java.util.Locale.ROOT))
                 .amount(obligation.getAmountDue() - obligation.getAmountSettled())
@@ -145,10 +152,14 @@ public class PaymentIntentTransactions {
             throw new ForbiddenException("Bạn không có quyền thao tác thanh toán này.");
         }
         var user = em.find(User.class, actor.getId());
-        em.refresh(user);
+        boolean currentBalance = obligation.getPurpose() == PaymentPurpose.BALANCE
+                && !org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly();
+        if (currentBalance) em.refresh(user, LockModeType.PESSIMISTIC_READ);
+        else em.refresh(user);
         Role payerRole = obligation.getPurpose() == PaymentPurpose.SUBSCRIPTION ? Role.OWNER : Role.CUSTOMER;
         Role collectorRole = obligation.getPurpose() == PaymentPurpose.SUBSCRIPTION ? Role.ADMIN : Role.OWNER;
-        em.refresh(obligation.getCollector());
+        if (currentBalance) em.refresh(obligation.getCollector(), LockModeType.PESSIMISTIC_READ);
+        else em.refresh(obligation.getCollector());
         if (user.getStatus() != UserStatus.ACTIVE || user.getRole() != payerRole || actor.getRole() != payerRole
                 || obligation.getCollector().getRole() != collectorRole) {
             throw new ForbiddenException("Tài khoản không có quyền thanh toán này.");
@@ -195,6 +206,21 @@ public class PaymentIntentTransactions {
                 rental = new PaymentIntentView.Rental(booking.getId(), booking.getAdvanceAmount(), booking.getBalanceAmount(),
                         cancelled, pending && booking.getAdvancePaidAt() == null && booking.getVehicleReceivedAt() == null, confirmationDelayed);
                 if ("ACTIVE".equals(status) && !pending) status = cancelled ? "CANCELLED" : "UNAVAILABLE";
+            }
+        }
+        if (intent.getObligation().getPurpose() == PaymentPurpose.BALANCE) {
+            var obligation = intent.getObligation();
+            var booking = em.find(Booking.class, obligation.getSubjectId());
+            if (booking != null && "VIETQR_V1".equals(booking.getWorkflowVersion())) {
+                em.refresh(booking);
+                long remaining = Math.max(0, obligation.getAmountDue() - obligation.getAmountSettled());
+                rental = new PaymentIntentView.Rental(booking.getId(), booking.getAdvanceAmount(), booking.getBalanceAmount(),
+                        false, intent.getStatus() == PaymentIntentStatus.ACTIVE && remaining > 0
+                                && clock.instant().isBefore(intent.getExpiresAt()), false,
+                        true, obligation.getId(), remaining, obligation.getDueAt(),
+                        booking.getStatus() == com.carrent.booking.BookingStatus.COMPLETED);
+                // Another QR may have settled the same debt while this attempt remains ACTIVE.
+                if (remaining == 0 && !hasRefund && !"REVIEW_REQUIRED".equals(status)) status = "SETTLED";
             }
         }
         String qr = "ACTIVE".equals(status) ? "https://img.vietqr.io/image/" + intent.getChannel().getBankBin()

@@ -2,6 +2,7 @@ package com.carrent.booking;
 
 import jakarta.persistence.LockModeType;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -31,6 +32,25 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             + "AND inspection_required=1 AND vehicle_received_at IS NOT NULL AND vehicle_returned_at IS NULL "
             + "ORDER BY id FOR UPDATE", nativeQuery = true)
     List<Long> findOutstandingCustodyForUpdate(@Param("carId") Long carId, @Param("bookingId") Long bookingId);
+
+    @Query(value = "SELECT b.id,b.car_id FROM bookings b JOIN booking_inspections i ON i.booking_id=b.id "
+            + "WHERE b.id>:afterId AND b.workflow_version='VIETQR_V1' AND b.inspection_required=1 "
+            + "AND b.status='CONFIRMED' AND b.vehicle_received_at IS NOT NULL AND b.vehicle_returned_at IS NULL "
+            + "AND b.after_reminder_sent_at IS NULL AND i.phase='AFTER' AND i.author_id=b.customer_id "
+            + "AND i.status IN ('SUBMITTED','ACCEPTED','DISPUTED','RESOLVED') "
+            + "AND i.submitted_at>=b.vehicle_received_at AND i.submitted_at<=:submittedBefore "
+            + "ORDER BY b.id LIMIT :limit", nativeQuery = true)
+    List<Object[]> findAfterReturnReminderCandidates(@Param("afterId") long afterId,
+            @Param("submittedBefore") LocalDateTime submittedBefore, @Param("limit") int limit);
+
+    @Query(value = "SELECT b.id,b.car_id FROM bookings b JOIN payment_obligations o ON o.subject_id=b.id "
+            + "WHERE b.id>:afterId AND b.workflow_version='VIETQR_V1' AND b.inspection_required=1 "
+            + "AND b.status='CONFIRMED' AND b.vehicle_received_at IS NOT NULL AND b.vehicle_returned_at IS NOT NULL "
+            + "AND b.balance_overdue_notified_at IS NULL AND o.business_key=CONCAT('BOOKING:',b.id,':BALANCE') "
+            + "AND o.subject_type='BOOKING' AND o.purpose='BALANCE' AND o.status='OPEN' "
+            + "AND o.amount_settled<o.amount_due AND o.due_at<=:now ORDER BY b.id LIMIT :limit", nativeQuery = true)
+    List<Object[]> findBalanceOverdueCandidates(@Param("afterId") long afterId,
+            @Param("now") LocalDateTime now, @Param("limit") int limit);
 
     Page<Booking> findByCustomerId(Long customerId, Pageable pageable);
 

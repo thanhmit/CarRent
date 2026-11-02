@@ -8,10 +8,13 @@ import com.carrent.car.ListingStatus;
 import com.carrent.payment.PaymentRepository;
 import com.carrent.payment.PaymentStatus;
 import com.carrent.payment.PaymentIntentRepository;
+import com.carrent.payment.PaymentObligationRepository;
 import com.carrent.common.exception.BusinessException;
 import com.carrent.inspection.BookingInspectionRepository;
 import com.carrent.inspection.InspectionPhase;
 import com.carrent.inspection.InspectionStatus;
+import com.carrent.inspection.InspectionService;
+import com.carrent.inspection.InspectionEventAction;
 import com.carrent.security.CustomUserPrincipal;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -41,9 +44,13 @@ public class BookingController {
     private final CarCommandExecutor commands;
     private final BookingInspectionRepository inspections;
     private final PaymentIntentRepository intents;
+    private final PaymentObligationRepository obligations;
+    private final InspectionService inspectionViews;
+    private final com.carrent.payment.PaymentRoutes paymentRoutes;
 
     public BookingController(BookingService bookings, CarService cars, CarImageRepository images,
-                             PaymentRepository payments, CarCommandExecutor commands, BookingInspectionRepository inspections, PaymentIntentRepository intents) {
+                             PaymentRepository payments, CarCommandExecutor commands, BookingInspectionRepository inspections, PaymentIntentRepository intents,
+                             PaymentObligationRepository obligations, InspectionService inspectionViews, com.carrent.payment.PaymentRoutes paymentRoutes) {
         this.bookings = bookings;
         this.cars = cars;
         this.images = images;
@@ -51,6 +58,9 @@ public class BookingController {
         this.commands = commands;
         this.inspections = inspections;
         this.intents = intents;
+        this.obligations = obligations;
+        this.inspectionViews = inspectionViews;
+        this.paymentRoutes = paymentRoutes;
     }
 
     @GetMapping("/bookings/new")
@@ -134,6 +144,19 @@ public class BookingController {
         model.addAttribute("hasBeforeReport", "VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.isInspectionRequired()
                 && inspections.findByBookingIdAndPhase(id, InspectionPhase.BEFORE)
                 .filter(r -> r.getStatus() != InspectionStatus.DRAFT).isPresent());
+        if ("VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.isInspectionRequired()) {
+            var after = inspections.findByBookingIdAndPhase(id, InspectionPhase.AFTER)
+                    .filter(report -> report.getStatus() != InspectionStatus.DRAFT).orElse(null);
+            model.addAttribute("hasAfterReport", after != null);
+            model.addAttribute("afterReportStatus", after == null ? null : after.getStatus());
+            model.addAttribute("returnNotReceived", after != null && booking.getVehicleReturnedAt() == null
+                    && inspectionViews.getView(id, InspectionPhase.AFTER, principal).events().stream()
+                        .anyMatch(event -> event.action() == InspectionEventAction.RETURN_NOT_RECEIVED));
+            model.addAttribute("balanceObligation", obligations.findByBusinessKey("BOOKING:" + id + ":BALANCE").orElse(null));
+            model.addAttribute("balanceAvailable", paymentRoutes.available(com.carrent.payment.PaymentSubject.BOOKING_BALANCE));
+            model.addAttribute("balanceIntentId", intents.findFirstByObligationBusinessKeyOrderByCreatedAtDescIdDesc("BOOKING:" + id + ":BALANCE")
+                    .map(com.carrent.payment.PaymentIntent::getId).orElse(null));
+        }
         var found = images.findByCarIdOrderByIdAsc(car.getId());
         model.addAttribute("thumbnail", found.isEmpty() ? null : found.getFirst().getImageUrl());
         return "booking/detail";

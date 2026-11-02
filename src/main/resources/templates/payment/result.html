@@ -10,8 +10,23 @@
     <p class="break-all" th:text="${payment.code}"></p>
     <p th:text="${#numbers.formatInteger(payment.amount, 0, 'POINT') + ' VNĐ'}"></p>
     <div th:if="${payment.rental != null}" class="flex flex-col gap-space-sm">
+      <section th:if="${payment.rental.balance}" class="flex flex-col gap-space-sm" id="balance-result">
+        <h2 class="font-title-md">Khoản nợ phần còn lại 70%</h2>
+        <p th:text="${payment.rental.remainingAmount == 0 ? 'Đã nhận đủ phần còn lại 70%.' : 'Còn phải trả: ' + #numbers.formatInteger(payment.rental.remainingAmount, 0, 'POINT') + ' VNĐ'}"></p>
+        <p th:if="${payment.rental.completed}">Đơn thuê đã hoàn tất. Khoản hoàn chuyển dư hoặc trùng được xử lý riêng.</p>
+        <p th:if="${payment.rental.remainingAmount > 0}">Hủy hoặc hết hạn QR không xóa khoản nợ và không đổi hạn trả. Nếu đã chuyển khoản, hãy kiểm tra kết quả trước khi chuyển thêm.</p>
+        <p>Hạn trả nợ: <time th:datetime="${payment.rental.dueAt}" th:text="${#temporals.format(payment.rental.dueAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time></p>
+        <form th:if="${payment.rental.remainingAmount > 0 and !payment.rental.canCancel and payment.status != 'UNAVAILABLE'}" method="post" th:action="@{/payment/obligations/{id}/attempts(id=${payment.rental.obligationId})}">
+          <button type="submit" class="p-space-sm rounded-lg bg-secondary text-on-secondary">Tạo lần thanh toán mới</button>
+        </form>
+        <form th:if="${payment.rental.canCancel}" method="post" th:action="@{/payment/intents/{id}/cancel(id=${payment.id})}">
+          <p>Thao tác này chỉ kết thúc lần thanh toán; khoản chuyển cần kiểm tra vẫn được giữ nguyên.</p>
+          <button type="submit" class="p-space-sm rounded-lg bg-error-container text-on-error-container">Hủy lần thanh toán</button>
+        </form>
+        <a th:if="${payment.status == 'ACTIVE'}" th:href="@{/payment/intents/{id}(id=${payment.id})}" class="text-secondary underline">Mở mã QR đang có hiệu lực</a>
+      </section>
       <a th:href="@{/bookings/{id}(id=${payment.rental.bookingId})}" class="text-secondary underline">Xem đơn thuê và biên bản</a>
-      <form th:if="${payment.rental.canCancel}" method="post" th:action="@{/payment/intents/{id}/cancel(id=${payment.id})}">
+      <form th:if="${!payment.rental.balance and payment.rental.canCancel}" method="post" th:action="@{/payment/intents/{id}/cancel(id=${payment.id})}">
         <p>QR không còn khả dụng không có nghĩa là đơn thuê đã được hủy. Bạn có thể hủy đặt xe để giải phóng lịch.</p>
         <button type="submit" class="p-space-sm rounded-lg bg-error-container text-on-error-container">Hủy đặt xe</button>
       </form>

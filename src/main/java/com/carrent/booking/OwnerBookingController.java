@@ -5,7 +5,14 @@ import com.carrent.concurrency.CarCommandExecutor;
 import com.carrent.common.exception.BusinessException;
 import com.carrent.payment.PaymentRepository;
 import com.carrent.payment.PaymentStatus;
+import com.carrent.payment.PaymentObligationRepository;
+import com.carrent.inspection.BookingInspectionRepository;
+import com.carrent.inspection.InspectionPhase;
+import com.carrent.inspection.InspectionStatus;
+import com.carrent.inspection.InspectionService;
+import com.carrent.inspection.InspectionEventAction;
 import com.carrent.security.CustomUserPrincipal;
+import jakarta.validation.Valid;
 import java.time.temporal.ChronoUnit;
 import java.time.LocalDate;
 import java.util.Map;
@@ -15,6 +22,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,14 +39,27 @@ public class OwnerBookingController {
     private final PaymentRepository payments;
     private final CarCommandExecutor commands;
     private final java.time.Clock clock;
+    private final BookingInspectionRepository inspections;
+    private final PaymentObligationRepository obligations;
+    private final InspectionService inspectionViews;
 
     public OwnerBookingController(BookingService bookings, CarImageRepository images, PaymentRepository payments,
-                                  CarCommandExecutor commands, java.time.Clock clock) {
+                                  CarCommandExecutor commands, java.time.Clock clock,
+                                  BookingInspectionRepository inspections, PaymentObligationRepository obligations,
+                                  InspectionService inspectionViews) {
         this.bookings = bookings;
         this.images = images;
         this.payments = payments;
         this.commands = commands;
         this.clock = clock;
+        this.inspections = inspections;
+        this.obligations = obligations;
+        this.inspectionViews = inspectionViews;
+    }
+
+    @InitBinder("returnForm")
+    void bindReturnForm(WebDataBinder binder) {
+        binder.setAllowedFields("decision", "note");
     }
 
     @GetMapping("/owner/bookings")
@@ -61,6 +85,17 @@ public class OwnerBookingController {
     public String detail(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal, Model model) {
         var booking = bookings.getBookingForView(id, principal);
         model.addAttribute("booking", booking);
+        if (!model.containsAttribute("returnForm")) model.addAttribute("returnForm", new ReturnReceiptForm());
+        if ("VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.isInspectionRequired()) {
+            var after = inspections.findByBookingIdAndPhase(id, InspectionPhase.AFTER)
+                    .filter(report -> report.getStatus() != InspectionStatus.DRAFT).orElse(null);
+            model.addAttribute("hasAfterReport", after != null);
+            model.addAttribute("afterReportStatus", after == null ? null : after.getStatus());
+            model.addAttribute("returnNotReceived", after != null && booking.getVehicleReturnedAt() == null
+                    && inspectionViews.getView(id, InspectionPhase.AFTER, principal).events().stream()
+                        .anyMatch(event -> event.action() == InspectionEventAction.RETURN_NOT_RECEIVED));
+            model.addAttribute("balanceObligation", obligations.findByBusinessKey("BOOKING:" + id + ":BALANCE").orElse(null));
+        }
         model.addAttribute("car", booking.getCar());
         model.addAttribute("days", ChronoUnit.DAYS.between(booking.getStartDate(), booking.getEndDate()));
         model.addAttribute("hasPaid", payments.existsByBookingIdAndStatus(id, PaymentStatus.PAID));
@@ -120,6 +155,31 @@ public class OwnerBookingController {
             redirect.addFlashAttribute("successMessage", "Đã xác nhận hợp đồng và giao xe. Chuyến thuê đang diễn ra.");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/owner/bookings/" + id;
+    }
+
+    @PostMapping("/owner/bookings/{id}/return")
+    public String confirmReturn(@PathVariable Long id, @Valid @ModelAttribute("returnForm") ReturnReceiptForm form,
+                                BindingResult errors, @AuthenticationPrincipal CustomUserPrincipal principal,
+                                Model model, RedirectAttributes redirect) {
+        var booking = bookings.getBookingForView(id, principal);
+        if (form.getDecision() == ReturnReceiptForm.Decision.RECEIVED_DISPUTED
+                && (form.getNote() == null || form.getNote().isBlank())) {
+            errors.rejectValue("note", "return.note.required", "Vui lòng ghi rõ nội dung bất đồng.");
+        }
+        if (errors.hasErrors()) return detail(id, principal, model);
+        try {
+            commands.execute(booking.getCar().getId(), () -> {
+                bookings.confirmReturn(id, form, principal);
+                return null;
+            });
+            redirect.addFlashAttribute("successMessage", form.getDecision() == ReturnReceiptForm.Decision.NOT_RECEIVED
+                    ? "Đã ghi nhận chủ xe chưa nhận lại xe thực tế. Chưa phát sinh nghĩa vụ 70%."
+                    : "Đã ghi nhận nhận lại xe thực tế và nghĩa vụ thanh toán 70% với hạn 1 giờ.");
+        } catch (BusinessException error) {
+            errors.reject("return.unavailable", error.getMessage());
+            return detail(id, principal, model);
         }
         return "redirect:/owner/bookings/" + id;
     }
