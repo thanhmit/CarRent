@@ -133,6 +133,7 @@ public class BookingController {
         var booking = bookings.getBookingForView(id, principal);
         var car = booking.getCar();
         model.addAttribute("booking", booking);
+        model.addAttribute("cancellationQuote", bookings.cancellationQuote(id, principal));
         model.addAttribute("car", car);
         model.addAttribute("carPublic", car.getApprovalStatus() == ApprovalStatus.APPROVED
                 && car.getListingStatus() == ListingStatus.ACTIVE);
@@ -163,17 +164,18 @@ public class BookingController {
     }
 
     @PostMapping("/bookings/{id}/cancel")
-    public String cancel(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal,
+    public String cancel(@PathVariable Long id, @RequestParam(required = false) String reason,
+                         @AuthenticationPrincipal CustomUserPrincipal principal,
                          RedirectAttributes redirect) {
         try {
             var booking = bookings.getBookingForView(id, principal);
             Long carId = booking.getCar().getId();
             commands.execute(carId, () -> {
-                bookings.cancelBooking(id, principal);
+                bookings.cancelBooking(id, principal, reason);
                 return null;
             });
             redirect.addFlashAttribute("successMessage", "VIETQR_V1".equals(booking.getWorkflowVersion())
-                    ? "Đã hủy đặt xe và yêu cầu trả trước; lịch đã được giải phóng."
+                    ? "Đã hủy đặt xe; lịch đã được giải phóng. Nếu có khoản hoàn, khoản này được xử lý riêng, chưa có nghĩa là đã hoàn tiền."
                     : "Đã hủy đơn thuê. Khoản đã thanh toán được hoàn tiền (giả lập).");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());

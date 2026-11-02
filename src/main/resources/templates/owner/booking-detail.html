@@ -85,6 +85,24 @@
             </form>
           </dialog>
         </section>
+        <section id="cancellation-quote" th:if="${cancellationQuote != null}" class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-space-sm min-w-0">
+          <h2 class="font-title-md text-title-md">Hủy trước khi giao xe</h2>
+          <dl class="flex flex-col gap-space-sm"><div><dt>Phí hủy dự kiến</dt><dd id="cancellation-fee" class="break-all" th:text="${#numbers.formatInteger(cancellationQuote.fee, 0, 'POINT') + ' VNĐ'}"></dd></div><div><dt>Khoản hoàn dự kiến</dt><dd id="cancellation-refund" class="break-all" th:text="${#numbers.formatInteger(cancellationQuote.refund, 0, 'POINT') + ' VNĐ'}"></dd></div></dl>
+          <p>Số tiền được tính lại khi xác nhận theo thời điểm hủy. Khoản hoàn được xử lý riêng, không có nghĩa là đã hoàn tiền.</p>
+          <form id="cancellation-form" method="post" th:action="@{/owner/bookings/{id}/cancel(id=${booking.id})}" class="flex flex-col gap-space-sm" data-confirm="Xác nhận hủy đơn trước khi giao xe?">
+            <label for="cancellation-reason">Lý do hủy (1–500 ký tự)</label>
+            <textarea id="cancellation-reason" name="reason" required maxlength="500" rows="3" class="w-full p-space-sm rounded-lg bg-surface-container-low" aria-describedby="cancellation-reason-help"></textarea>
+            <p id="cancellation-reason-help" class="text-body-sm">Lý do sẽ được lưu và gửi đến bên còn lại.</p>
+            <button type="submit" class="w-full py-3 px-space-md rounded-lg bg-error-container text-on-error-container">Hủy đơn thuê</button>
+          </form>
+        </section>
+        <section id="cancellation-summary" th:if="${booking.workflowVersion == 'VIETQR_V1' and booking.status.name() == 'CANCELLED' and booking.cancelledAt != null}" class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-space-sm min-w-0">
+          <h2 class="font-title-md text-title-md">Thông tin hủy đã ghi nhận</h2>
+          <dl class="flex flex-col gap-space-sm"><div><dt>Thời điểm hủy</dt><dd th:text="${#temporals.format(booking.cancelledAt, 'dd/MM/yyyy HH:mm:ss')}"></dd></div><div><dt>Phí hủy</dt><dd id="cancellation-saved-fee" class="break-all" th:text="${#numbers.formatInteger(booking.cancellationFee ?: 0, 0, 'POINT') + ' VNĐ'}"></dd></div><div><dt>Khoản hoàn khi hủy</dt><dd id="cancellation-saved-refund" class="break-all" th:text="${#numbers.formatInteger((booking.advancePaidAt != null ? booking.advanceAmount : 0) - (booking.cancellationFee ?: 0), 0, 'POINT') + ' VNĐ'}"></dd></div><div><dt>Lý do hủy</dt><dd id="cancellation-saved-reason" class="whitespace-pre-line break-words [overflow-wrap:anywhere]" th:text="${booking.cancellationReason ?: 'Không có lý do được lưu.'}"></dd></div></dl>
+          <p>Chưa có nghĩa là đã hoàn tiền. Khoản hoàn có thể đang chờ tài khoản nhận hoặc nguồn tiền. Xem trạng thái từng khoản hoàn trong tài chính.</p>
+          <p th:if="${booking.advancePaidAt == null}">Chưa nhận trả trước khi hủy: không tạo khoản hoàn. Nếu tiền đến sau, khoản hoàn đủ được xử lý riêng.</p>
+          <a th:href="@{/payment/finances(view='collected')}" class="text-secondary underline">Xem tình trạng hoàn tiền</a>
+        </section>
         <section th:if="${booking.workflowVersion == 'VIETQR_V1' and booking.status.name() == 'CONFIRMED' and booking.vehicleReceivedAt == null}" class="p-space-md bg-surface-container-lowest rounded-xl shadow-sm flex flex-col gap-space-md min-w-0">
           <h2 class="font-title-md">Hợp đồng và giao xe</h2>
           <p>Chỉ xác nhận sau khi đã ký hợp đồng ngoài ứng dụng và thực tế giao xe cho khách hàng. Từ bước này, hai bên không được hủy đơn.</p>

@@ -85,6 +85,7 @@ public class OwnerBookingController {
     public String detail(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal principal, Model model) {
         var booking = bookings.getBookingForView(id, principal);
         model.addAttribute("booking", booking);
+        model.addAttribute("cancellationQuote", bookings.cancellationQuote(id, principal));
         if (!model.containsAttribute("returnForm")) model.addAttribute("returnForm", new ReturnReceiptForm());
         if ("VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.isInspectionRequired()) {
             var after = inspections.findByBookingIdAndPhase(id, InspectionPhase.AFTER)
@@ -121,6 +122,22 @@ public class OwnerBookingController {
             });
             redirect.addFlashAttribute("successMessage", "VIETQR_V1".equals(booking.getWorkflowVersion())
                     ? "Đã chấp nhận yêu cầu. Vui lòng chuẩn bị biên bản trước thuê." : "Đã xác nhận đơn thuê.");
+        } catch (BusinessException ex) {
+            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/owner/bookings/" + id;
+    }
+
+    @PostMapping("/owner/bookings/{id}/cancel")
+    public String cancel(@PathVariable Long id, @RequestParam(required = false) String reason,
+                         @AuthenticationPrincipal CustomUserPrincipal principal, RedirectAttributes redirect) {
+        try {
+            Long carId = bookings.getBookingForView(id, principal).getCar().getId();
+            commands.execute(carId, () -> {
+                bookings.cancelByOwner(id, reason, principal);
+                return null;
+            });
+            redirect.addFlashAttribute("successMessage", "Đã hủy đặt xe. Nếu đã nhận trả trước, yêu cầu hoàn đủ được xử lý riêng, chưa có nghĩa là đã hoàn tiền.");
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
         }

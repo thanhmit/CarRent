@@ -16,6 +16,7 @@ class PaymentModelTest {
     void repositoriesRoundTripFinancialSnapshotsAndUtcInstantsOnTheMigratedSchema() throws Exception {
         try (var db = PaymentMigrationTest.populatedDatabase()) {
             RentalLifecycleTest.migrate(db, true);
+            CancellationReasonMigrationTest.migrate(db);
             TimeZone original = TimeZone.getDefault();
             TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             try (var app = new SpringApplicationBuilder(com.carrent.CarRentApplication.class)

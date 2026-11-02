@@ -122,6 +122,9 @@ public class Booking {
     @JdbcTypeCode(SqlTypes.TIMESTAMP_UTC)
     private Instant cancelledAt;
 
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
     @Column(name = "cancellation_fee")
     private Long cancellationFee;
 

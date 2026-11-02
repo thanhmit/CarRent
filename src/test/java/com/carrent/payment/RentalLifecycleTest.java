@@ -189,6 +189,7 @@ class RentalLifecycleTest {
             migrated.bootstrap(LEGACY);
             migrated.migrate(true);
             migrate(migrated, true);
+            CancellationReasonMigrationTest.migrate(migrated);
             fresh.bootstrap(Path.of("scriptDB.sql"));
 
             for (String table : List.of("bookings", "booking_inspections", "inspection_images", "inspection_events")) {
@@ -225,6 +226,7 @@ class RentalLifecycleTest {
             db.bootstrap(LEGACY);
             db.migrate(true);
             migrate(db, true);
+            CancellationReasonMigrationTest.migrate(db);
             return db;
         } catch (Exception failure) {
             db.close();
@@ -273,6 +275,8 @@ class RentalLifecycleTest {
     }
 
     private static String normalize(String ddl) {
-        return ddl.replaceAll(" AUTO_INCREMENT=\\d+", "").replaceAll("\\s+", " ").trim();
+        // MySQL rebuilds this ASCII-column check's literal charset during ADD COLUMN.
+        return ddl.replaceAll("_(?:ascii|utf8mb4)'(LEGACY|VIETQR_V1)'", "'$1'")
+                .replaceAll(" AUTO_INCREMENT=\\d+", "").replaceAll("\\s+", " ").trim();
     }
 }

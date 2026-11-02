@@ -222,14 +222,16 @@ class RentalHandoverTest {
     }
 
     @ParameterizedTest @ValueSource(booleans={true,false})
-    void cancellationCannotErasePaidOrHandedOverBookingInEitherOrder(boolean cancelFirst) throws Exception {
+    void paidCancellationAndHandoverKeepTheFirstWinnerInEitherOrder(boolean cancelFirst) throws Exception {
         ready(true); var owner=f.actor(2); var customer=f.actor(4);
         Runnable handover=()->bookings().confirmHandover(1L,true,owner);
-        Runnable cancel=()->assertThatThrownBy(()->bookings().cancelBooking(1L,customer)).isInstanceOf(BusinessException.class);
-        race(cancelFirst?cancel:handover,cancelFirst,cancelFirst?handover:cancel,!cancelFirst);
+        Runnable cancel=()->bookings().cancelBooking(1L,customer);
+        Runnable loser=()->assertThatThrownBy(()->{if(cancelFirst)handover.run();else cancel.run();}).isInstanceOf(BusinessException.class);
+        race(cancelFirst?cancel:handover,false,loser,true);
         var b=bookings().getBookingForView(1L,customer);
-        assertThat(b.getStatus().name()).isEqualTo("CONFIRMED");assertThat(b.getVehicleReceivedAt()).isEqualTo(HANDOVER);
-        assertThat(f.count("refunds")).isZero();
+        assertThat(b.getStatus().name()).isEqualTo(cancelFirst?"CANCELLED":"CONFIRMED");
+        assertThat(b.getVehicleReceivedAt()).isEqualTo(cancelFirst?null:HANDOVER);
+        assertThat(f.count("refunds")).isEqualTo(cancelFirst?1:0);
     }
 
     @ParameterizedTest @ValueSource(booleans={true,false})

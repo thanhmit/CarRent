@@ -1,6 +1,6 @@
 # CarRent — Phân công ba thành viên
 
-**Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. Tiếp theo P6.11 riêng.
+**Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. P6.11 đã hoàn thành trong working tree; tiếp theo P6.12→P6.13.
 
 **Ngày kiểm tra/phân công:** 2026-10-27. **Repo:** [thanhmit/CarRent](https://github.com/thanhmit/CarRent).
 
@@ -45,9 +45,9 @@ Số commit bao gồm merge, không phải tỷ lệ công sức. Git xác nhậ
 
 ## 3. Phần sắp làm — giao 45 task mới sau tách P4.2-A
 
-**Checkpoint P6.10 — 2026-11-02:** đủ **6/6 checklist**: QR BALANCE15phút độc lập hạn nợ1giờ, receipt QR cũ/dư/trùng/thiếu, auto-COMPLETED atomic sau physical return, dispute giữ evidence và nhắc nợ một lần. Full isolated clean verify **783/783 JUnit, 0 failure/error/skip**, JAR; Chromium **63/63**, 19 ảnh, 12 SQL invariant. **65/86 task**, còn21 (45task mới xong24). Tiếp theo **P6.11 riêng**. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.8–P6.10 đã tích hợp Git; xem checkpoint phía trên; DB ứng dụng vẫn7bảng, phase0/seed/ảnh giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. P4.2-A live vẫn chờ.
+**Checkpoint P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-paid-cancellation` từ main `a9c2a28`, chưa commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
 
-Trong45task mới: xong24, còn21. `thanhmit` còn1 (P4.2-A), `huy69332` còn5 (P6.11–P6.13/P5.5–P5.6), `ducbinhnguyen07ars` còn15. Checkpoint bên dưới giữ lịch sử.
+Trong45task mới: xong25, còn20. `thanhmit` còn1 (P4.2-A), `huy69332` còn4 (P6.12–P6.13/P5.5–P5.6), `ducbinhnguyen07ars` còn15. Checkpoint bên dưới giữ lịch sử.
 
 **Checkpoint P6.7 trước tích hợp Git:** P6.7 hoàn thành đủ **5/5 checklist**: Owner xác nhận hợp đồng và giao xe atomic, kiểm tra BEFORE/đủ30%/ngày Việt Nam/custody; UI Đang thuê và chặn hủy sau giao xe. Full isolated clean verify **683/683 JUnit test, 0 failure/error/skip** (638 hồi quy + RentalHandoverTest45), JAR đóng gói; **32/32 kiểm tra Chromium** desktop/mobile/no-JS đạt. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows và file phase-0 riêng giữ nguyên. Không migration DB ứng dụng, bật workflow/provider/scheduler, restart8080, commit/push, tiền thật hoặc human review mới. **62/86 task**, còn24; tiếp theo **P6.8 — Customer gửi AFTER và nhắc Owner**. P4.2-A tiếp tục hoãn; gate rental mặc định tắt. Trong45task mới: xong21, còn24; thanhmit cònP4.2-A, huy69332 còn8 (P6.8–P6.13/P5.5–P5.6), ducbinhnguyen07ars còn15.
 
@@ -68,7 +68,7 @@ Mỗi người làm đầy đủ backend, UI liên quan, kiểm chứng và tài
 
 Task không có độ khó bằng nhau: mảng thanh toán phải kiểm chứng provider, idempotency, payout và phục hồi sau crash. Số lượng gần nhau là cách theo dõi phạm vi, không phải cam kết công sức chính xác.
 
-**Lịch thực thi được chủ dự án duyệt 2026-11-01:** giữ phân công45task và checklist. P6.10 đã đóng; Phase6 còn2đợt: **P6.11** → (P6.12→P6.13). Lịch Phase8/5 tại [roadmap](README.md#cac-dot-con-lai-da-duyet) giữ nguyên. **65/86**, còn21. [Handoff P6.11](phase-6-batch-3-handoff.md). Agent review không thay human contributor review; P4.2-A live vẫn chờ.
+**Lịch thực thi được chủ dự án duyệt 2026-11-01:** giữ phân công45task và checklist. P6.11 đã đóng; Phase6 còn1đợt: **P6.12→P6.13**. Lịch Phase8/5 tại [roadmap](README.md#cac-dot-con-lai-da-duyet) giữ nguyên. **66/86**, còn20. [Handoff P6.12→P6.13](phase-6-batch-4-handoff.md). Agent review không thay human contributor review; P4.2-A live vẫn chờ.
 
 ### 3.1. thanhmit — Queue và thanh toán thật
 

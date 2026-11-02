@@ -2,6 +2,8 @@
 
 ## Phạm vi
 
+**P6.11:** bootstrap `scriptDB.sql` có `bookings.cancellation_reason VARCHAR(500) NULL`. Schema đã có Phase 6 nhưng thiếu cột này dùng migration riêng `2026-11-02-01-cancellation-reason.sql`, sau backup và dừng ứng dụng; đặt `@carrent_cancellation_backup_confirmed=1` trong session đã chọn đúng schema. Giữ nguyên migration rental cũ; nâng cấp từ legacy phải áp dụng rental rồi cancellation-reason. Script từ chối thiếu backup, thiếu Phase 6 hoặc đã có cột, không sửa dữ liệu cũ. Chỉ chạy trên schema fixture trong đợt implement P6.11; **chưa chạy lên DB ứng dụng**.
+
 `2026-10-27-01-payment-core.sql` tạo đúng 7 bảng tài chính trên schema legacy hiện hành. File không chọn database, không ghi/xóa dữ liệu legacy, không seed kênh thật và không chạy khi ứng dụng boot. `scriptDB.sql` dành cho bootstrap; không dùng `CREATE TABLE IF NOT EXISTS` của bootstrap làm công cụ sửa schema bị lệch.
 
 Yêu cầu MySQL **8.0.16+**, InnoDB, strict SQL mode và quyền đọc metadata, CREATE TABLE/REFERENCES, CREATE ROUTINE/ALTER ROUTINE/EXECUTE. Migration là **one-shot**: từ chối cả schema đã áp dụng đầy đủ lẫn schema payment-core còn dở. Không sửa file sau khi đã apply; thay đổi tiếp theo phải có migration mới.
