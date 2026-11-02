@@ -1,12 +1,14 @@
 # CarRent — Handoff hiện hành: Phase6 / đợt4 — P6.12 → P6.13
 
+**Tích hợp P6.11 — 2026-11-02:** feature `6de7526`, merge main `7aeb8a8`, author `huy69332`; đã push và giữ nhánh `feat/phase6-paid-cancellation`. Source merge khớp source đã clean verify816/816/JAR và browser79/79; sau merge chạy lại32/32 cancellation/UI test trên schema riêng. Phase0 riêng nằm ngoài commit và giữ nguyên. Tiến độ66/86, còn20; tiếp theo P6.12→P6.13, phụ trách `huy69332`, reviewer `thanhmit`. Không migrate DB ứng dụng/bật workflow/provider/scheduler/restart8080 hoặc chuyển tiền thật.
+
 **Phạm vi lần tới:** P6.12 tích hợp UI/job/queue, sau đó P6.13 gate rental và đồng bộ SDD. Đây là hai task trong một đợt đã duyệt, có checklist và trạng thái riêng; không suy ra hoàn thành từ evidence P6.11. Phụ trách `huy69332`, reviewer được giao `thanhmit`; agent review không thay human contributor review.
 
 ## Workspace và baseline
 
-- CWD `C:/Users/Admin/Documents/hoc/Car`, PowerShell. Main baseline `a9c2a28`; nhánh `feat/phase6-paid-cancellation` chứa P6.11 **chưa commit/push**. Kiểm tra HEAD/status thực tế; tiếp tục các thay đổi đã có, không checkout/reset/clean để về main.
+- CWD `C:/Users/Admin/Documents/hoc/Car`, PowerShell. Main đã tích hợp P6.11 tại `7aeb8a8` (feature `6de7526`), nhánh tính năng được giữ. Kiểm tra HEAD/remote/status thực tế, tạo nhánh đợt4 từ main; không reset/clean làm mất phase0 riêng.
 - `docs/plans/phase-0-init.md` là thay đổi riêng, phải giữ nguyên, không stage/sửa. Bảo toàn seed, uploads, private images, cấu hình và DB ứng dụng. Ghi fingerprint trước/sau mỗi đợt.
-- P6.8–P6.10 đã tích hợp bằng feature `983e7c9`, merge `0a1d9e6`; nhánh cũ giữ nguyên. P6.11 chỉ có thay đổi working tree, không gán thêm commit giả.
+- P6.8–P6.10 đã tích hợp bằng feature `983e7c9`, merge `0a1d9e6`; nhánh cũ giữ nguyên. P6.11 đã commit/push/merge theo checkpoint Git phía trên.
 
 ## Nền P6.11
 
@@ -31,3 +33,18 @@
 - Maven Wrapper chạy source thật trên schema disposable; không dùng DB ứng dụng làm datasource test. Không chạy `spring-boot:run` mặc định hoặc restart8080. Fixture dùng port ngẫu nhiên và dọn schema/private files sau test.
 - Được dùng subagent cho phần độc lập/review; phân file rõ, build/log/output riêng, primary tích hợp và kiểm chứng source cuối.
 - Không tự stage/commit/push, migrate DB ứng dụng, bật workflow/provider/scheduler ứng dụng hoặc chuyển tiền thật. P4.2-A live vẫn chờ; kết quả offline không mở gate live hoặc chứng minh Phase8/P5.9 đã đạt.
+
+## Phân tích khoảng trống sau tích hợp P6.11
+
+**Phân công:** P6.12 và P6.13 đều thuộc `huy69332`, reviewer `thanhmit`; mỗi task5checklist. Tiến độ hiện66/86, nếu đủ cả hai sẽ68/86, còn18. Chưa implement đợt4 từ phân tích này.
+
+| Phần | Đã có | Cần bổ sung/kiểm chứng |
+|---|---|---|
+| Timeline | Customer/Owner có custody/return/balance/cancellation summary | Timeline đủ9mốc cho cả Customer/Owner/Admin; hiện Admin chưa có booking timeline. Giữ Admin chỉ đọc trong phạm vi này. |
+| Trạng thái tiền | Checkout/poll và refund core Phase4 | `templates/booking/fragments.html` thiếu EXPIRED; summary còn ghi còn70% cả khi balance đã trả. Phân biệt tiền nhận/nợ/hoàn theo dữ liệu thật. |
+| Quyền/ảnh/input | InspectionPrivacyTest có draft/member/ACTIVE/escape/giữ input | Tái sử dụng và bổ sung kiểm tra theo các view/entry point mới; browser320/390/1440/no-JS. |
+| Job/queue | Job30s defaultoff; reminder/debt có durable marker, restart/queue reject tests | Audit toàn entry point qua executor→CarCommandExecutor→domain/current locks; kiểm chứng scheduler/reject/restart trong fixture riêng, không viết lại job đang có. |
+| Gate | Test race theo từng lifecycle đã có | Thêm RentalConcurrencyTest tích hợp hai connection thật + E2E xuyên BEFORE/30%/handover/AFTER dispute/received/70%/COMPLETED và cancel/expiry/late refund. |
+| SDD/decisions | Checkpoint mới đã phản ánh30/70 | Đồng bộ rule cũ còn ở SDD §nghiệp vụ và decisions D-25: Customer final pickup, unpaid pickup, cash giả lập, Admin resolve/AFTER accepted mới được complete. Giữ legacy và ghi rõ lịch sử/superseded. |
+
+**Cách triển khai:** lập ma trận checklist→source→evidence; làm P6.12 timeline/trạng thái/Admin và audit quyền/job/queue trước; sau đó P6.13 gate liên tục và tài liệu trên source cuối. Có thể giao agent độc lập phần view/Admin, test gate và review, tránh sửa chồng file/build output. Full clean verify/JAR và browser cuối là bằng chứng riêng của đợt4; không dùng số816/79 của P6.11 để tick task mới. Dừng trước Phase8 và giữ gate P4.2-A live pending.
