@@ -83,6 +83,44 @@ public class BookingService {
         }
     }
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void applyBalance(Long receiptId) {
+        var receipt = entityManager.find(PaymentReceipt.class, receiptId);
+        if (receipt == null || receipt.getIntent() == null) throw new BusinessException("Thiếu giao dịch thanh toán còn lại.");
+        var intent = receipt.getIntent();
+        var obligation = intent.getObligation();
+        var booking = entityManager.find(Booking.class, obligation.getSubjectId());
+        if (booking == null || !writeLocked(booking) || !writeLocked(booking.getCar())
+                || !writeLocked(obligation) || !writeLocked(intent)) {
+            throw new IllegalStateException("Lock Car, Booking, obligation and intent before applying a balance");
+        }
+        if (!"VIETQR_V1".equals(booking.getWorkflowVersion()) || !booking.isInspectionRequired()
+                || obligation.getPurpose() != PaymentPurpose.BALANCE || obligation.getSubjectType() != PaymentSubjectType.BOOKING
+                || !("BOOKING:" + booking.getId() + ":BALANCE").equals(obligation.getBusinessKey())
+                || !obligation.getPayer().getId().equals(booking.getCustomer().getId())
+                || !obligation.getCollector().getId().equals(booking.getCar().getOwner().getId())
+                || !obligation.getAmountDue().equals(booking.getBalanceAmount())
+                || booking.getAdvancePaidAt() == null || booking.getVehicleReceivedAt() == null || booking.getVehicleReturnedAt() == null
+                || booking.getStatus() != BookingStatus.CONFIRMED && booking.getStatus() != BookingStatus.COMPLETED
+                || obligation.getStatus() != PaymentObligationStatus.SETTLED
+                || !obligation.getAmountSettled().equals(obligation.getAmountDue())
+                || receipt.getStatus() != PaymentReceiptStatus.APPLIED && receipt.getStatus() != PaymentReceiptStatus.REFUND_REQUIRED) {
+            throw new BusinessException("Giao dịch chưa đủ điều kiện hoàn tất đơn thuê.");
+        }
+        long excess = Math.subtractExact(receipt.getAmount(), receipt.getAllocatedAmount());
+        if (excess > 0) {
+            boolean duplicate = receipt.getAllocatedAmount() == 0;
+            refunds.request((duplicate ? "DUPLICATE:" : "EXCESS:") + receiptId, receiptId, excess,
+                    duplicate ? RefundReason.DUPLICATE_PAYMENT : RefundReason.EXCESS_BALANCE);
+        }
+        if (booking.getStatus() == BookingStatus.COMPLETED) return;
+        booking.setStatus(BookingStatus.COMPLETED);
+        for (Long recipient : java.util.List.of(booking.getCustomer().getId(), booking.getCar().getOwner().getId())) {
+            notifications.notify(recipient, "BOOKING_COMPLETED", "Đơn thuê đã hoàn tất",
+                    "Đơn thuê #CR-" + booking.getId() + " đã nhận lại xe và thanh toán đủ phần còn lại.", "BOOKING", booking.getId());
+        }
+    }
+
     private Booking requireLockedAdvance(PaymentIntent intent) {
         var obligation = intent.getObligation();
         var booking = entityManager.find(Booking.class, obligation.getSubjectId());
@@ -395,6 +433,74 @@ public class BookingService {
         booking.setVehicleReceivedAt(now);
         notifications.notify(booking.getCustomer().getId(), "INSPECTION_PICKUP_CONFIRMED", "Chủ xe đã xác nhận giao xe",
                 "Chủ xe đã xác nhận hợp đồng và giao xe cho đơn #CR-" + id + ". Chuyến thuê đang diễn ra.", "BOOKING", id);
+    }
+
+    @Transactional
+    public void confirmReturn(Long id, ReturnReceiptForm form, CustomUserPrincipal principal) {
+        User owner = requireOwner(principal);
+        if (form == null || !validator.validate(form).isEmpty()) throw new BusinessException("Thông tin nhận lại xe không hợp lệ.");
+        if (form.getDecision() == ReturnReceiptForm.Decision.RECEIVED_DISPUTED
+                && (form.getNote() == null || form.getNote().isBlank())) throw new BusinessException("Vui lòng nhập ghi chú bất đồng.");
+        Booking booking = lockedBooking(id);
+        entityManager.refresh(owner, jakarta.persistence.LockModeType.PESSIMISTIC_READ);
+        if (owner.getRole() != Role.OWNER || owner.getStatus() != UserStatus.ACTIVE) {
+            throw new ForbiddenException("Tài khoản không được phép nhận lại xe.");
+        }
+        if (!booking.getCar().getOwner().getId().equals(owner.getId())) throw new NotFoundException("Đơn thuê không tồn tại.");
+        requireReturnWorkflow(booking);
+        var now = clock.instant();
+        boolean received = form.getDecision() != ReturnReceiptForm.Decision.NOT_RECEIVED;
+        PaymentObligation balance = null;
+        if (received) {
+            if (!Long.valueOf(RentalPolicy.balance(booking.getTotalAmount())).equals(booking.getBalanceAmount())
+                    || !Long.valueOf(RentalPolicy.advance(booking.getTotalAmount())).equals(booking.getAdvanceAmount())) {
+                throw new BusinessException("Số tiền thanh toán không khớp snapshot đơn thuê.");
+            }
+            balance = obligations.findByBusinessKeyForUpdate("BOOKING:" + id + ":BALANCE").orElse(null);
+            if (balance == null) {
+                if (booking.getVehicleReturnedAt() != null) throw new BusinessException("Thiếu nghĩa vụ thanh toán của xe đã nhận lại.");
+                balance = obligations.saveAndFlush(PaymentObligation.builder().businessKey("BOOKING:" + id + ":BALANCE")
+                        .purpose(PaymentPurpose.BALANCE).subjectType(PaymentSubjectType.BOOKING).subjectId(id)
+                        .payer(booking.getCustomer()).collector(owner).amountDue(booking.getBalanceAmount())
+                        .dueAt(now.plusSeconds(3600)).createdAt(now).updatedAt(now).build());
+            } else {
+                entityManager.detach(balance);
+                balance = obligations.findByIdForUpdate(balance.getId()).orElseThrow();
+                if (booking.getVehicleReturnedAt() == null || balance.getPurpose() != PaymentPurpose.BALANCE
+                        || balance.getSubjectType() != PaymentSubjectType.BOOKING || !id.equals(balance.getSubjectId())
+                        || !balance.getPayer().getId().equals(booking.getCustomer().getId())
+                        || !balance.getCollector().getId().equals(owner.getId())
+                        || !balance.getAmountDue().equals(booking.getBalanceAmount())
+                        || !booking.getVehicleReturnedAt().plusSeconds(3600).equals(balance.getDueAt())) {
+                    throw new BusinessException("Nghĩa vụ thanh toán còn lại không khớp đơn thuê.");
+                }
+            }
+        }
+        // The report is locked after BALANCE; invalid evidence rolls its creation back.
+        if (!inspections.confirmReturnLocked(booking, owner, form, now)) return;
+        if (received) booking.setVehicleReturnedAt(now);
+        notifications.notify(booking.getCustomer().getId(), received ? "INSPECTION_RETURN_CONFIRMED" : "INSPECTION_RETURN_NOT_RECEIVED",
+                received ? "Chủ xe đã nhận lại xe" : "Chủ xe chưa nhận lại xe",
+                received ? "Đơn #CR-" + id + " đã nhận lại xe thực tế. Còn " + balance.getAmountDue()
+                        + " VNĐ phải thanh toán trong một giờ; xem chi tiết đơn thuê."
+                        : "Chủ xe xác nhận chưa nhận lại xe thực tế của đơn #CR-" + id + ". Vui lòng liên hệ chủ xe.", "BOOKING", id);
+    }
+
+    @Transactional
+    public void remindAfterReturn(Long id) {
+        Booking booking = lockedBooking(id);
+        if (!"VIETQR_V1".equals(booking.getWorkflowVersion()) || !booking.isInspectionRequired()
+                || booking.getStatus() != BookingStatus.CONFIRMED || booking.getVehicleReceivedAt() == null
+                || booking.getVehicleReturnedAt() != null || booking.getAfterReminderSentAt() != null) return;
+        inspections.remindAfterReturnLocked(booking, clock.instant());
+    }
+
+    private void requireReturnWorkflow(Booking booking) {
+        if (!"VIETQR_V1".equals(booking.getWorkflowVersion()) || !booking.isInspectionRequired()
+                || booking.getStatus() != BookingStatus.CONFIRMED || booking.getVehicleReceivedAt() == null
+                || clock.instant().isBefore(booking.getVehicleReceivedAt())) {
+            throw new BusinessException("Chỉ được nhận lại xe thuộc đơn đang thuê, đã giao xe thực tế.");
+        }
     }
 
     @Transactional

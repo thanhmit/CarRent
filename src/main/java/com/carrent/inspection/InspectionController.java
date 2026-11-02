@@ -22,6 +22,7 @@ import java.util.List;
 @RequestMapping("/bookings/{bookingId}/inspections/{phase}")
 public class InspectionController {
     private final InspectionService inspections;
+    private final BookingInspectionRepository reports;
     private final CarCommandExecutor commands;
 
     @InitBinder("form")
@@ -34,7 +35,7 @@ public class InspectionController {
                        @AuthenticationPrincipal CustomUserPrincipal actor, Model model) {
         var view = inspections.getView(bookingId, phase(phase), actor);
         model.addAttribute("form", InspectionForm.from(view));
-        return render(view, model);
+        return render(view, actor, model);
     }
 
     @PostMapping("/draft")
@@ -43,12 +44,12 @@ public class InspectionController {
                        @AuthenticationPrincipal CustomUserPrincipal actor, Model model, RedirectAttributes redirect) {
         var kind = phase(phase);
         var view = inspections.getView(bookingId, kind, actor);
-        if (errors.hasErrors()) return render(view, model);
+        if (errors.hasErrors()) return render(view, actor, model);
         try {
             commands.execute(view.carId(), () -> { inspections.saveDraft(bookingId, kind, form, actor); return null; });
         } catch (BusinessException error) {
             model.addAttribute("errorMessage", error.getMessage());
-            return render(inspections.getView(bookingId, kind, actor), model);
+            return render(inspections.getView(bookingId, kind, actor), actor, model);
         }
         redirect.addFlashAttribute("successMessage", "Đã lưu nháp biên bản.");
         return "redirect:" + base(bookingId, kind) + "/draft";
@@ -93,13 +94,18 @@ public class InspectionController {
     @PostMapping("/submit")
     public String submit(@PathVariable Long bookingId, @PathVariable String phase,
                          @AuthenticationPrincipal CustomUserPrincipal actor, RedirectAttributes redirect) {
-        requireBefore(phase);
-        var view = inspections.getView(bookingId, InspectionPhase.BEFORE, actor);
+        var kind = phase(phase);
+        var view = inspections.getView(bookingId, kind, actor);
         try {
-            commands.execute(view.carId(), () -> { inspections.submitBefore(bookingId, actor); return null; });
-            redirect.addFlashAttribute("successMessage", "Đã gửi biên bản trước thuê.");
+            commands.execute(view.carId(), () -> {
+                if (kind == InspectionPhase.BEFORE) inspections.submitBefore(bookingId, actor);
+                else inspections.submitAfter(bookingId, actor);
+                return null;
+            });
+            redirect.addFlashAttribute("successMessage", kind == InspectionPhase.BEFORE
+                    ? "Đã gửi biên bản trước thuê." : "Đã gửi biên bản sau thuê. Đang chờ chủ xe nhận lại xe thực tế.");
         } catch (BusinessException error) { redirect.addFlashAttribute("errorMessage", error.getMessage()); }
-        return "redirect:" + base(bookingId, InspectionPhase.BEFORE);
+        return "redirect:" + base(bookingId, kind);
     }
 
     @PostMapping("/addendum")
@@ -136,8 +142,14 @@ public class InspectionController {
         if (phase(value) != InspectionPhase.BEFORE) throw new NotFoundException("Biên bản không tồn tại.");
     }
 
-    private String render(InspectionView view, Model model) {
+    private String render(InspectionView view, CustomUserPrincipal actor, Model model) {
         model.addAttribute("inspection", view);
+        if (view.phase() == InspectionPhase.AFTER) {
+            reports.findByBookingIdAndPhase(view.bookingId(), InspectionPhase.BEFORE)
+                    .filter(report -> report.getStatus() != InspectionStatus.DRAFT)
+                    .ifPresent(report -> model.addAttribute("beforeInspection",
+                            inspections.getView(view.bookingId(), InspectionPhase.BEFORE, actor)));
+        }
         model.addAttribute("baseUrl", base(view.bookingId(), view.phase()));
         model.addAttribute("phaseTitle", view.phase() == InspectionPhase.BEFORE ? "Biên bản trước thuê" : "Biên bản sau thuê");
         model.addAttribute("statusTitle", switch (view.status()) {

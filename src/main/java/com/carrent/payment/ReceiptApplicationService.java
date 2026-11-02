@@ -82,7 +82,8 @@ public class ReceiptApplicationService {
             intent.setStatus(PaymentIntentStatus.EXPIRED);
             handler.expire(intent.getId());
         }
-        boolean applicable = intent.getStatus() == PaymentIntentStatus.ACTIVE
+        // A BALANCE QR identifies durable debt even after that particular attempt has ended.
+        boolean applicable = (intent.getStatus() == PaymentIntentStatus.ACTIVE || obligation.getPurpose() == PaymentPurpose.BALANCE)
                 && obligation.getStatus() == PaymentObligationStatus.OPEN && remaining > 0;
         if (applicable) {
             long allocated = Math.min(event.amount(), remaining);

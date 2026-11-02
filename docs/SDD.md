@@ -1,11 +1,12 @@
 # CarRent — Software Design Document (SDD)
 
-**Phiên bản:** 2.39
-**Tích hợp Git 2026-11-01:** P6.4–P6.7 đã commit `4a6af85` và merge main `66c2d8b`, author `huy69332`; clean verify mới683/683, post-merge handover45/45. Agent review không thấy blocker; chưa có human contributor review/provider-live mới. Xem §14.33; tiếp theo P6.8+P6.9 từ main.
-**Lịch hiện hành được duyệt 2026-11-01:** chat tiếp theo triển khai **P6.8 + P6.9** cùng đợt; các đợt Phase6/8/5 tại §14.1. Đây là cập nhật plan, không có code/test hoặc task hoàn thành mới; xem [handoff](plans/phase-6-batch-1-handoff.md).
+**Phiên bản:** 2.41
+**Checkpoint P6.10 — 2026-11-02:** đủ **6/6 checklist**: QR BALANCE15phút độc lập hạn nợ1giờ, receipt QR cũ/dư/trùng/thiếu, auto-COMPLETED atomic sau physical return, dispute giữ evidence và nhắc nợ một lần. Full isolated clean verify **783/783 JUnit, 0 failure/error/skip**, JAR; Chromium **63/63**, 19 ảnh, 12 SQL invariant. **65/86 task**, còn21 (45task mới xong24). Tiếp theo **P6.11 riêng**. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Thay đổi local chưa commit; DB ứng dụng vẫn7bảng, phase0/seed/ảnh giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. P4.2-A live vẫn chờ. Xem §14.36.
+**Tích hợp Git 2026-11-01:** P6.4–P6.7 đã commit `4a6af85` và merge main `66c2d8b`, author `huy69332`; clean verify mới683/683, post-merge handover45/45. Agent review không thấy blocker; chưa có human contributor review/provider-live mới. Xem §14.33 (snapshot trước đợt P6.8/P6.9); trạng thái hiện hành ở §14.36.
+**Lịch hiện hành:** P6.1–P6.10 đã đóng; tiếp theo **P6.11 riêng**, rồi (P6.12→P6.13). [Handoff](plans/phase-6-batch-3-handoff.md).
 **Quy tắc subagent được duyệt 2026-11-01:** Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối. Thay giới hạn cũ chỉ dùng khi được yêu cầu cho các đợt tiếp theo; giữ nguyên ghi nhận self-review/không dùng subagent của checkpoint lịch sử, không coi agent review là human contributor review.
 **Checkpoint P6.7 trước tích hợp Git:** P6.7 hoàn thành đủ **5/5 checklist**: Owner xác nhận hợp đồng và giao xe atomic, kiểm tra BEFORE/đủ30%/ngày Việt Nam/custody; UI Đang thuê và chặn hủy sau giao xe. Full isolated clean verify **683/683 JUnit test, 0 failure/error/skip** (638 hồi quy + RentalHandoverTest45), JAR đóng gói; **32/32 kiểm tra Chromium** desktop/mobile/no-JS đạt. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows và file phase-0 riêng giữ nguyên. Không migration DB ứng dụng, bật workflow/provider/scheduler, restart8080, commit/push, tiền thật hoặc human review mới. **62/86 task**, còn24; tiếp theo **P6.8 — Customer gửi AFTER và nhắc Owner**. P4.2-A tiếp tục hoãn; gate rental mặc định tắt.
-**Ngày:** 2026-11-01
+**Ngày:** 2026-11-02
 **Nền tảng:** Java 21, Spring Boot 4.1.x, Spring MVC + Thymeleaf, Spring Security, Spring Data JPA/Hibernate, MySQL 8, Maven Wrapper
 **Kiến trúc:** Monolithic Web Application — Server-side MVC + 3-layer architecture
 **Ngôn ngữ tài liệu:** Tiếng Việt
@@ -1441,21 +1442,21 @@ Hợp đồng nghiệp vụ, money model, default kỹ thuật, interface, schem
 - **Phase 5:** doanh thu Admin từ gói hợp lệ, không SUM tiền thuê. Kết quả fixture/live được ghi riêng, không tick từ kế hoạch.
 - Cộng dồn/hoàn lệch tiền trả trước 30% tạm hoãn tại §1.4. Một Owner thật + Admin trước; live capability của nhà cung cấp cần kiểm chứng.
 
-**Tiến độ hiện tại:** 41 task lịch sử +21 task mới (P7.1–P7.4, P4.2 offline/P4.3–P4.11, P6.1–P6.7) = **62/86**, còn24. P4.2-A hoãn; tiếp theo P6.8. Không migration DB ứng dụng hoặc live pass.
+**Tiến độ hiện tại:** 41 task lịch sử +24 task mới (P7.1–P7.4, P4.2 offline/P4.3–P4.11, P6.1–P6.10) = **65/86**, còn21. P4.2-A live hoãn; tiếp theo P6.11 riêng.
 
 #### Lịch các đợt còn lại — được duyệt ngày 2026-11-01
 
-Chủ dự án duyệt chia theo nhóm nghiệp vụ nhỏ, giữ nguyên ID/checklist/người phụ trách và bằng chứng riêng từng task. Lịch này là cập nhật tổ chức công việc, không thêm tính năng hoặc kết quả kiểm chứng: **62/86**, còn24.
+Chủ dự án duyệt chia theo nhóm nghiệp vụ nhỏ, giữ ID/checklist/người phụ trách và bằng chứng riêng từng task. P6.10 đã đóng tại §14.36: **65/86**, còn21.
 
 | Phase | Các đợt theo thứ tự |
 |---|---|
-| 6 — còn4đợt | **P6.8 + P6.9** → P6.10 → P6.11 → (P6.12 → P6.13) |
+| 6 — còn2đợt | **P6.11** → (P6.12 → P6.13) |
 | 8 — 6đợt | P8.1 → (P8.2 + P8.3) → (P8.4 + P8.5) → P8.6 → P8.7 → P8.8 |
 | 5 — 6đợt | (P5.1 + P5.2) → P5.3 → P5.4 → (P5.5 + P5.6) → P5.7 → (P5.8 → P5.9) |
 
 **+** là cùng đợt, triển khai theo phụ thuộc; **→ trong ngoặc** yêu cầu tích hợp/audit xong trước gate cuối. Chạy test tập trung trong quá trình làm, full regression và browser phù hợp trên source cuối; ghi checkpoint và giới hạn riêng từng task. Không dồn UI/job cần thiết của task sang đợt cuối, không tick gate từ fixture hoặc kết quả build đơn thuần. P4.2-A riêng; P8.8/P5.9 còn gate live thì giữ pending. Không tự migrate DB ứng dụng, bật workflow/provider/scheduler, stage/commit/push hoặc chạy tiền thật.
 
-Chi tiết: [roadmap](plans/README.md#cac-dot-con-lai-da-duyet), [Phase6](plans/phase-6-inspection.md#cac-dot-da-duyet), [Phase8](plans/phase-8-owner-subscriptions.md#cac-dot-da-duyet), [Phase5](plans/phase-5-admin-polish.md#cac-dot-da-duyet). **Chat tiếp theo P6.8 + P6.9** dùng [handoff](plans/phase-6-batch-1-handoff.md), bắt đầu từ main đã chứa commit triển khai `4a6af85`/merge `66c2d8b` của P6.4–P6.7. Hướng dẫn working tree chưa commit trên f8f12d8 đã được thay sau tích hợp; giữ mọi dirty changes hiện có.
+Chi tiết: [roadmap](plans/README.md#cac-dot-con-lai-da-duyet), [Phase6](plans/phase-6-inspection.md#cac-dot-da-duyet), [Phase8](plans/phase-8-owner-subscriptions.md#cac-dot-da-duyet), [Phase5](plans/phase-5-admin-polish.md#cac-dot-da-duyet). **Chat tiếp theo P6.11 riêng** dùng [handoff](plans/phase-6-batch-3-handoff.md), giữ working tree P6.8–P6.10 chưa commit, không reset/checkout làm mất thay đổi.
 
 #### Phase 4 — 7 đợt, cập nhật được duyệt ngày 2026-10-30
 
@@ -1790,8 +1791,88 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 - Fingerprint schema/toàn bộ rows DB ứng dụng trước/sau cả hai lượt test giữ nguyên7bảng; fixture tự dọn. Không migrate DB ứng dụng, bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật.
 - [Handoff](plans/phase-6-batch-1-handoff.md) đã đổi sang main chứa merge66c2d8b, bỏ hướng dẫn hiện hành tiếp tục working tree chưa commit trên f8f12d8. Các checkpoint trước tích hợp giữ nguyên lịch sử. Tiến độ vẫn **62/86**, còn24; đợt tiếp theo **P6.8 + P6.9**.
 
+### 14.34. P6.8 — AFTER bất biến và reminder, 2026-11-02
+
+Đủ **4/4 checklist**; phụ trách `huy69332`, reviewer được giao `thanhmit`; chưa có human review.
+
+| Điều kiện | Triển khai và bằng chứng |
+|---|---|
+| AFTER đúng người/mốc | `submitAfter` + POST phase AFTER qua Car queue; Customer đúng booking/current ACTIVE/role, CONFIRMED và đã handover/chưa nhận lại. Cho gửi sớm/đúng ngày/trễ, không dùng endDate để giả định trả xe. Năm trường/4–10 ảnh được kiểm tra lại dưới khóa. SUBMITTED/event/Owner notice cùng commit; retry không nhân event/notice, không set returnedAt/tạo BALANCE |
+| Bất biến và quyền | Nội dung/ảnh gốc không sửa/xóa sau gửi; draft chỉ tác giả, submitted đúng thành viên/Admin ACTIVE. Test private images, CSRF/IDOR/XSS, hash ảnh không đổi, thiếu evidence và notification failure rollback |
+| Reminder bền vững | `RentalDeadlineJob` quét keyset50 theo dữ liệu DB; executor → Car queue → transaction/current Car/Booking/AFTER; đủ submittedAt+1giờ, chưa returned/chưa marker thì marker+Owner/Admin notices cùng commit. Clock biên3599/3600s, lỗi Admin rollback cả Owner notice/marker, reject ở cả2queue, retry,50row lỗi không chặn row51; scheduler30s thật phục hồi sau restart. Flag `carrent.rental.deadlines.enabled` mặc định tắt |
+| UI và kiểm chứng | So sánh năm trường/ảnh BEFORE-AFTER, chờ nhận lại/NOT_RECEIVED rõ; ghi chú/km/energy không tính phí. Browser draft→submit/refresh/private/no-JS/mobile; hai connection submit/submit và reminder/return hai thứ tự |
+
+
+**Kiểm chứng chung source cuối:** full isolated clean verify **746/746 JUnit**, 0 failure/error/skip, JAR (683 hồi quy + RentalAfterReturnTest49 + AfterReturnUiTest9 + RentalAfterReminderJobTest5). Lệnh:
+
+```powershell
+java '@.scratch/phase6/p68-p69/full-suite.args'
+# .\mvnw.cmd -f .scratch/phase6/p68-p69/verification-pom.xml -o '-Dmaven.compiler.useIncrementalCompilation=false' '-Dtest=*Test' clean verify
+```
+
+POM/harness dùng toàn bộ source/resources thật, output/schema tạm riêng; không sửa rootPOM hoặc DB ứng dụng. Log `full-clean-verify.log`, manifest `verified-source-hashes.json`; Chromium **58/58**,16 PNG,14 SQL invariant, `browser-evidence.json`/`browser-fixture.log`/`browser-source-manifest.json`, không mock endpoint nghiệp vụ (CSS/fonts cache riêng). Browser incoming processor/inbox offline thật; không gọi provider tiền thật. Đã xem PNG320/1440 và no-JS390, không tràn trang.
+
+**Review và sửa finding:** UI/job được giao file tách biệt; hai agent cross-review phần của nhau và domain chính. Không tạo thêm reviewer mới do giới hạn thread; đây là agent review, chưa có human reviewer `thanhmit`. Đã tái hiện rồi sửa NOT_RECEIVED khóa ORM trên event `@Immutable` (đổi native scalar current read), và tài khoản BANNED sau snapshot RR cũ vẫn được thao tác (current shared actor read sau Car/Booking). Các test hai connection xác nhận cả ban/đổi role. Đã sửa setup UTC/contract reset và race receipt: claim ngoài transaction, ReceiptApplicationService.apply bên trong; không bỏ Propagation.NEVER của processor.
+
+**Bảo toàn:** HEAD/index, diff/hash phase0, nguyên `scriptDB.sql`/seed,9ảnh uploads và fingerprint schema/toàn bộ rows ứng dụng trước/sau bằng nhau; ứng dụng vẫn7bảng. Fixture DB/private files/port đã dọn. Không thay source để khớp kết quả browser sau khi chạy. Evidence riêng `.scratch/phase6/p68-p69/`; không ghi đè evidence đợt cũ.
+
+**Tiến độ sau task P6.8:** 63/86, còn23; P6.9 được hoàn thành ngay trong cùng đợt dưới đây.
+
+### 14.35. P6.9 — nhận lại xe và BALANCE, 2026-11-02
+
+Đủ **5/5 checklist**; phụ trách `huy69332`, reviewer được giao `thanhmit`; chưa có human review.
+
+| Điều kiện | Triển khai và bằng chứng |
+|---|---|
+| Ba quyết định vật lý | `ReturnReceiptForm` chỉ decision/note; RECEIVED_ACCEPTED ghi returnedAt + AFTER ACCEPTED; RECEIVED_DISPUTED ghi returnedAt + AFTER DISPUTED/event/note bắt buộc. NOT_RECEIVED giữ chưa trả và không BALANCE/deadline; note trống dùng câu xác nhận máy chủ vì SQL event yêu cầu note. Quyết định giống nhau lặp không nhân event/notice; quyết định khác sau nhận bị chặn |
+| Atomic/lock | Owner current ACTIVE/role sau Car/Booking, rồi tạo/khóa `BOOKING:<id>:BALANCE` trước AFTER. Current detach+locking reread vượt stale managed snapshot. Đúng purpose/subject/payer Customer/collector Owner/snapshot; dueAt=server returnedAt+3600s, không chờ mở trang. Report/notify lỗi rollback obligation/timestamp/status/event; existing mismatched BALANCE bị từ chối, retry không reset |
+| Guards/evidence | AFTER phải đã gửi, đúng Customer, submittedAt>=handover và không ở tương lai, đủ5trường/4–10ảnh. Owner đúng xe, không Admin thay nhận vật lý; overpost actor/time/amount bị bỏ qua. Form lỗi giữ input/escape/field errors, chưa trả/đã trả/dispute và số tiền/hạn/trạng thái70% chỉ đọc |
+| Snapshot/custody | Test trả sớm/đúng/trễ giữ start/end/total/price snapshot; physical return giải phóng outstanding custody; date overlap vẫn giữ theo policy CONFIRMED hiện hành. Không auto-COMPLETED hoặc tính phụ phí |
+| Hai connection thật | Submit/return/NOT_RECEIVED lặp, reminder/return hai thứ tự, report/obligation đổi sau RR snapshot, tài khoản ban/đổi role sau snapshot, return-vs-duplicate ADVANCE receipt hai thứ tự. Receipt/refund vẫn thuộc advance, không settle BALANCE hoặc xóa nợ; trigger lỗi thông báo rollback đồng thời |
+
+
+**Kiểm chứng chung source cuối:** full isolated clean verify **746/746 JUnit**, 0 failure/error/skip, JAR (683 hồi quy + RentalAfterReturnTest49 + AfterReturnUiTest9 + RentalAfterReminderJobTest5). Lệnh:
+
+```powershell
+java '@.scratch/phase6/p68-p69/full-suite.args'
+# .\mvnw.cmd -f .scratch/phase6/p68-p69/verification-pom.xml -o '-Dmaven.compiler.useIncrementalCompilation=false' '-Dtest=*Test' clean verify
+```
+
+POM/harness dùng toàn bộ source/resources thật, output/schema tạm riêng; không sửa rootPOM hoặc DB ứng dụng. Log `full-clean-verify.log`, manifest `verified-source-hashes.json`; Chromium **58/58**,16 PNG,14 SQL invariant, `browser-evidence.json`/`browser-fixture.log`/`browser-source-manifest.json`, không mock endpoint nghiệp vụ (CSS/fonts cache riêng). Browser incoming processor/inbox offline thật; không gọi provider tiền thật. Đã xem PNG320/1440 và no-JS390, không tràn trang.
+
+**Review và sửa finding:** UI/job được giao file tách biệt; hai agent cross-review phần của nhau và domain chính. Không tạo thêm reviewer mới do giới hạn thread; đây là agent review, chưa có human reviewer `thanhmit`. Đã tái hiện rồi sửa NOT_RECEIVED khóa ORM trên event `@Immutable` (đổi native scalar current read), và tài khoản BANNED sau snapshot RR cũ vẫn được thao tác (current shared actor read sau Car/Booking). Các test hai connection xác nhận cả ban/đổi role. Đã sửa setup UTC/contract reset và race receipt: claim ngoài transaction, ReceiptApplicationService.apply bên trong; không bỏ Propagation.NEVER của processor.
+
+**Bảo toàn:** HEAD/index, diff/hash phase0, nguyên `scriptDB.sql`/seed,9ảnh uploads và fingerprint schema/toàn bộ rows ứng dụng trước/sau bằng nhau; ứng dụng vẫn7bảng. Fixture DB/private files/port đã dọn. Không thay source để khớp kết quả browser sau khi chạy. Evidence riêng `.scratch/phase6/p68-p69/`; không ghi đè evidence đợt cũ.
+
+**Tiến độ cuối đợt:** **64/86**, còn22 (45task mới xong23, còn22). **Tiếp theo P6.10**; P4.2-A vẫn hoãn. Apply/QR BALANCE, nhắc nợ70% và auto-COMPLETED thuộc P6.10; paid cancellation tiếp tục bị chặn đến P6.11. Scheduler chỉ bật trong schema/port fixture riêng.
+Handoff: [P6.10](plans/phase-6-batch-2-handoff.md).
+
+### 14.36. P6.10 — BALANCE, quá hạn và tự hoàn tất, 2026-11-02
+
+Đủ **6/6 checklist**; phụ trách `huy69332`, reviewer được giao `thanhmit`; chưa có human review.
+
+| Checklist | Triển khai và bằng chứng |
+|---|---|
+| 1 — Attempt | `RentalBalancePaymentHandler` riêng, đăng ký BOOKING_BALANCE khi `carrent.rental.balance.enabled=true`; không thay handler ADVANCE. QR15phút không bị cắt theo dueAt; nợ quá hạn vẫn mở QR được. Cancel/expiry chỉ kết thúc attempt; POST tạo lại, GET/poll read-only. Attempt active đã hết hạn được kết thúc khi POST tạo lại, không cần chờ maintenance. |
+| 2 — Receipt cũ/dư/trùng | Payment core cho BALANCE QR expired/cancelled thanh toán đúng obligation còn OPEN/nợ. Phân bổ tối đa phần còn thiếu; dư tạo EXCESS_BALANCE, đã đủ tạo DUPLICATE_PAYMENT, nguồn payout đúng Owner. Provider replay idempotent; receipt/obligation/booking/refund/notice cùng commit. |
+| 3 — Chuyển thiếu | Receipt thấp hơn remaining giữ REVIEW_REQUIRED, không cộng dồn, không complete. UI giữ cảnh báo review dù nợ đã đủ; attempt đang mở có nút hủy riêng trước khi tạo lại. UI/poll tách trạng thái receipt/refund khỏi nợ và booking. |
+| 4 — Hoàn tất | `BookingService.applyBalance(receiptId)` chỉ VIETQR_V1 đã giao/nhận lại, snapshot/parties/obligation hợp lệ và SETTLED đủ tiền; tự COMPLETED atomic. AFTER DISPUTED không chặn, text/ảnh/event gốc giữ nguyên; Owner complete manual vẫn bị chặn. |
+| 5 — Quá hạn | `BalanceDeadlineService` current Car→Booking→BALANCE, dueAt tới và còn nợ thì marker balance_overdue_notified_at + Customer/Owner/Admin notices cùng commit một lần. Job keyset50/cursor riêng qua executor→Car queue; restart/reject/rollback không mất việc. Chỉ cảnh báo, không ban/chặn đặt/phạt/refund advance. |
+| 6 — Gate | Test thực MySQL đủ/thiếu/dư/trùng/oldQR/sau hạn/restart/legacy/dispute, stale RR payer/obligation, concurrent receipts, reminder-vs-payment và return retry-vs-receipt hai thứ tự. Actual AFTER ảnh/submit/confirmReturn; rollback first return không tạo payable debt. Browser CSRF/quyền/POST/no-JS/mobile/đóng tab, GET/status không mutate. |
+
+**Kiểm chứng source cuối:** isolated clean verify **783/783 JUnit**, 0 failure/error/skip, JAR; Chromium **63/63**, 19 PNG320/390/1440/no-JS và 12 SQL invariant. Targeted mới37/37 đạt trước full gate. Lệnh:
+
+```powershell
+java '@.scratch/phase6/p610/full-suite.args'
+# .\mvnw.cmd -f .scratch/phase6/p610/verification-pom.xml -o '-Dmaven.compiler.useIncrementalCompilation=false' '-Dtest=*Test' clean verify
+```
+
+POM/output/schema fixture riêng; source/resources thật. Evidence `.scratch/phase6/p610/`: `full-clean-verify.log`, `targeted-green.log`, `verified-source-hashes.json`, `browser-evidence.json`, `browser-source-manifest.json`, `browser-sql-invariants.txt`, `browser-preservation.json`, `protected-checks.json`. Browser dùng HTTP/inbox/domain thật trong fixture offline, không mock endpoint nghiệp vụ. Provider/live chưa được kiểm chứng.
+
+**Bảo toàn và giới hạn:** DB ứng dụng vẫn7bảng, fingerprint schema/rows và phase0/seed/ảnh không đổi; schema/private files/port fixture được dọn. Flags ADVANCE/BALANCE/deadlines chỉ bật fixture, cấu hình mặc định ứng dụng không đổi. Không migrate DB ứng dụng, restart8080, tiền thật hoặc stage/commit/push. Có phân công agent độc lập và review; chưa có human reviewer `thanhmit`. P4.2-A giữ pending.
+
+**Tiến độ:** **65/86**, còn21; 45task mới xong24/còn21. P6.1–P6.10 đã đóng, P6.11–P6.13 chưa đóng. Paid cancellation tiếp tục bị chặn chờ P6.11. Tiếp theo [P6.11 riêng](plans/phase-6-batch-3-handoff.md).
+
 ## 15. Kết luận
 
-**Cập nhật sau tích hợp:** P6.4–P6.7 đã commit/merge theo §14.33. Đoạn dưới là kết quả checkpoint P6.7 trước tích hợp Git; trạng thái hiện hành và handoff đã được cập nhật ở trên.
-
-CarRent là monolith Spring Boot/Thymeleaf/MySQL. P6.7 hoàn thành đủ **5/5 checklist**: Owner xác nhận hợp đồng và giao xe atomic, kiểm tra BEFORE/đủ30%/ngày Việt Nam/custody; UI Đang thuê và chặn hủy sau giao xe. Full isolated clean verify **683/683 JUnit test, 0 failure/error/skip** (638 hồi quy + RentalHandoverTest45), JAR đóng gói; **32/32 kiểm tra Chromium** desktop/mobile/no-JS đạt. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows và file phase-0 riêng giữ nguyên. Không migration DB ứng dụng, bật workflow/provider/scheduler, restart8080, commit/push, tiền thật hoặc human review mới. **62/86 task**, còn24; tiếp theo **P6.8 — Customer gửi AFTER và nhắc Owner**. P4.2-A tiếp tục hoãn; gate rental mặc định tắt. [Roadmap](plans/README.md) và [checkpoint P6.7](plans/phase-6-inspection.md#checkpoint-p67--2026-11-01); tiếp tục thứ tự6→8→5.
+CarRent là monolith Spring Boot/Thymeleaf/MySQL. **Checkpoint P6.10 — 2026-11-02:** đủ **6/6 checklist**: QR BALANCE15phút độc lập hạn nợ1giờ, receipt QR cũ/dư/trùng/thiếu, auto-COMPLETED atomic sau physical return, dispute giữ evidence và nhắc nợ một lần. Full isolated clean verify **783/783 JUnit, 0 failure/error/skip**, JAR; Chromium **63/63**, 19 ảnh, 12 SQL invariant. **65/86 task**, còn21 (45task mới xong24). Tiếp theo **P6.11 riêng**. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Thay đổi local chưa commit; DB ứng dụng vẫn7bảng, phase0/seed/ảnh giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. P4.2-A live vẫn chờ. Xem [roadmap](plans/README.md), §14.36 và [handoff P6.11](plans/phase-6-batch-3-handoff.md).

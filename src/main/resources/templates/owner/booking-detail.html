@@ -43,9 +43,34 @@
       </div>
       <aside class="lg:col-span-4 flex flex-col gap-space-md lg:sticky lg:top-20 min-w-0">
         <section th:replace="~{booking/fragments :: custodySummary(${booking})}"></section>
+        <section th:replace="~{booking/fragments :: returnSummary(${booking})}"></section>
+        <section th:replace="~{booking/fragments :: balanceSummary}"></section>
         <section class="bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md"><h2 class="font-headline-sm text-headline-sm text-primary">Chi tiết thanh toán</h2><dl class="flex flex-col gap-space-sm"><div><dt class="text-on-surface-variant">Đơn giá đã lưu khi đặt</dt><dd class="font-title-md text-title-md break-all" th:text="${#numbers.formatInteger(booking.pricePerDaySnapshot, 0, 'POINT') + ' VNĐ/ngày'}">Đơn giá</dd></div><div class="flex justify-between"><dt>Số ngày thuê</dt><dd th:text="${days + ' ngày'}">Số ngày</dd></div><div class="h-px bg-surface-container my-space-xs"></div><div><dt class="font-title-md text-title-md text-primary">Tổng tiền thuê</dt><dd class="font-headline-sm text-headline-sm text-secondary font-bold break-all" th:text="${#numbers.formatInteger(booking.totalAmount, 0, 'POINT') + ' VNĐ'}">Tổng tiền</dd></div></dl><p th:if="${booking.workflowVersion != 'VIETQR_V1'}" id="payment-status" class="p-space-sm rounded-lg font-label-md text-label-md" th:classappend="${hasPaid ? 'bg-emerald-50 text-emerald-800' : 'bg-surface-container-low text-on-surface-variant'}" th:text="${hasPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}">Trạng thái thanh toán</p><th:block th:if="${booking.workflowVersion == 'VIETQR_V1'}"><div th:replace="~{booking/fragments :: rentalPaymentSummary(${booking})}"></div></th:block></section>
         <p th:if="${booking.status.name() == 'PENDING'}" class="p-space-md rounded-lg bg-amber-50 text-amber-900" th:text="${booking.workflowVersion == 'VIETQR_V1' and booking.ownerAcceptedAt != null ? 'Đã chấp nhận yêu cầu. Đơn vẫn đang chờ biên bản và trả trước, chưa giao xe.' : 'Đơn đã gửi đến chủ xe và đang chờ xác nhận.'}"></p>
         <a th:if="${booking.workflowVersion == 'VIETQR_V1' and booking.inspectionRequired and booking.ownerAcceptedAt != null}" th:href="@{/bookings/{id}/inspections/BEFORE(id=${booking.id})}" class="py-space-sm px-space-md rounded-lg bg-secondary text-on-secondary text-center">Lập / xem biên bản trước thuê</a>
+        <a th:if="${hasAfterReport == true}" th:href="@{/bookings/{id}/inspections/AFTER(id=${booking.id})}" class="py-space-sm px-space-md rounded-lg bg-secondary text-on-secondary text-center">Xem AFTER và so sánh BEFORE / AFTER</a>
+        <section th:if="${hasAfterReport == true and booking.status.name() == 'CONFIRMED' and booking.vehicleReceivedAt != null and booking.vehicleReturnedAt == null}" class="p-space-md bg-surface-container-lowest rounded-xl shadow-sm flex flex-col gap-space-md min-w-0">
+          <h2 class="font-title-md">Xác nhận nhận lại xe thực tế</h2>
+          <p>Đọc AFTER và đối chiếu BEFORE trước khi chọn. Nhận xe dù có bất đồng vẫn ghi thời điểm trả thực tế và bắt đầu hạn thanh toán 70% trong 1 giờ.</p>
+          <form method="post" th:action="@{/owner/bookings/{id}/return(id=${booking.id})}" th:object="${returnForm}" class="flex flex-col gap-space-md min-w-0">
+            <ul th:if="${#fields.hasGlobalErrors()}" class="text-error" role="alert"><li th:each="error : ${#fields.globalErrors()}" th:text="${error}"></li></ul>
+            <div class="min-w-0"><label for="return-decision" class="block mb-space-xs">Tình trạng nhận xe</label>
+              <select id="return-decision" th:field="*{decision}" required aria-describedby="return-decision-error" class="w-full min-w-0 p-space-sm border border-outline rounded-lg">
+                <option value="">Chọn tình trạng</option>
+                <option value="RECEIVED_ACCEPTED">Đã nhận xe và đồng ý AFTER</option>
+                <option value="RECEIVED_DISPUTED">Đã nhận xe, có bất đồng AFTER</option>
+                <option value="NOT_RECEIVED">Chưa nhận lại xe thực tế</option>
+              </select>
+              <p id="return-decision-error" th:if="${#fields.hasErrors('decision')}" th:errors="*{decision}" class="text-error" role="alert"></p>
+            </div>
+            <div><label for="return-note" class="block mb-space-xs">Ghi chú (bắt buộc khi có bất đồng, tối đa 2000 ký tự)</label>
+              <textarea id="return-note" th:field="*{note}" maxlength="2000" rows="4" aria-describedby="return-note-error" class="w-full min-w-0 p-space-sm border border-outline rounded-lg"></textarea>
+              <p id="return-note-error" th:if="${#fields.hasErrors('note')}" th:errors="*{note}" class="text-error" role="alert"></p>
+            </div>
+            <p>Chọn chưa nhận lại xe sẽ giữ trạng thái đang thuê, chưa tạo nghĩa vụ 70%. Ghi chú không tự tạo phụ phí.</p>
+            <button type="submit" class="w-full py-3 px-space-md rounded-lg bg-secondary text-on-secondary">Ghi nhận tình trạng nhận xe</button>
+          </form>
+        </section>
         <section th:if="${booking.status.name() == 'PENDING' and (booking.workflowVersion != 'VIETQR_V1' or booking.beforeAcceptedAt == null)}" class="p-space-md bg-surface-container-lowest rounded-xl shadow-sm flex flex-col gap-space-md">
           <h2 class="font-title-md text-title-md">Xử lý yêu cầu thuê</h2>
           <form th:if="${booking.workflowVersion != 'VIETQR_V1' or booking.ownerAcceptedAt == null}" method="post" th:action="@{/owner/bookings/{id}/confirm(id=${booking.id})}" th:attr="data-confirm=${booking.workflowVersion == 'VIETQR_V1' ? 'Chấp nhận yêu cầu và chuẩn bị biên bản trước thuê?' : 'Xác nhận cho khách hàng thuê xe trong khoảng ngày này?'}"><button type="submit" class="w-full py-3 px-space-md rounded-lg bg-secondary text-on-secondary" th:text="${booking.workflowVersion == 'VIETQR_V1' ? 'Chấp nhận yêu cầu' : 'Xác nhận đơn thuê'}"></button></form>

@@ -81,6 +81,108 @@ public class InspectionService {
                 "Chủ xe đã gửi biên bản trước thuê cho đơn #CR-" + bookingId + ". Vui lòng xem bằng chứng.", "BOOKING", bookingId);
     }
 
+    @Transactional
+    public void submitAfter(Long bookingId, CustomUserPrincipal principal) {
+        User customer = actor(principal);
+        Booking booking = lockedBooking(bookingId, InspectionPhase.AFTER);
+        // Check current account state after aggregate locks, even in an older repeatable-read snapshot.
+        em.refresh(customer, jakarta.persistence.LockModeType.PESSIMISTIC_READ);
+        if (customer.getStatus() != UserStatus.ACTIVE || customer.getRole() != principal.getRole()) {
+            throw new ForbiddenException("Tài khoản không được phép gửi biên bản.");
+        }
+        requireAuthor(booking, InspectionPhase.AFTER, customer);
+        if (booking.getStatus() != BookingStatus.CONFIRMED || !writable(booking, InspectionPhase.AFTER)
+                || clock.instant().isBefore(booking.getVehicleReceivedAt())) {
+            throw new BusinessException("Chỉ được gửi AFTER sau khi đã nhận xe và trước khi chủ xe nhận lại.");
+        }
+        var report = lockedReport(bookingId, InspectionPhase.AFTER);
+        if (report == null || !report.getAuthor().getId().equals(customer.getId())) throw missing();
+        if (report.getStatus() == InspectionStatus.SUBMITTED) return;
+        if (report.getStatus() != InspectionStatus.DRAFT) throw new BusinessException("Biên bản đã được phản hồi.");
+        validateEvidence(booking, report);
+        var at = clock.instant();
+        report.setStatus(InspectionStatus.SUBMITTED); report.setSubmittedAt(at);
+        events.save(InspectionEvent.builder().inspection(report).actor(customer)
+                .action(InspectionEventAction.SUBMITTED).createdAt(at).build());
+        notifications.notify(booking.getCar().getOwner().getId(), "INSPECTION_AFTER_SUBMITTED", "Khách hàng đã gửi biên bản sau thuê",
+                "Đơn #CR-" + bookingId + " đang chờ chủ xe xác nhận đã nhận lại xe thực tế.", "BOOKING", bookingId);
+    }
+
+    /** BALANCE must be locked/created before entering this method for a physical return. */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public boolean confirmReturnLocked(Booking booking, User owner, ReturnReceiptForm form, java.time.Instant at) {
+        requireCoreLocks(booking);
+        if (!booking.getCar().getOwner().getId().equals(owner.getId())) throw missing();
+        var report = submittedAfterLocked(booking);
+        if (report == null || at.isBefore(report.getSubmittedAt())) {
+            throw new BusinessException("Cần biên bản AFTER hợp lệ đã được khách hàng gửi.");
+        }
+        validateEvidence(booking, report);
+        var decision = form.getDecision();
+        if (booking.getVehicleReturnedAt() != null) {
+            var expected = decision == ReturnReceiptForm.Decision.RECEIVED_ACCEPTED ? InspectionStatus.ACCEPTED
+                    : decision == ReturnReceiptForm.Decision.RECEIVED_DISPUTED ? InspectionStatus.DISPUTED : null;
+            if (report.getStatus() != expected) throw new BusinessException("Xe đã được xác nhận nhận lại; không thể thay đổi quyết định.");
+            return false;
+        }
+        if (report.getStatus() != InspectionStatus.SUBMITTED) throw new BusinessException("Biên bản AFTER không còn chờ nhận lại xe.");
+        String note = trim(form.getNote());
+        InspectionEventAction action;
+        if (decision == ReturnReceiptForm.Decision.NOT_RECEIVED) {
+            action = InspectionEventAction.RETURN_NOT_RECEIVED;
+            if (note == null || note.isBlank()) note = "Chủ xe xác nhận chưa nhận lại xe thực tế.";
+            var history = events.findLatestForUpdate(report.getId());
+            if (!history.isEmpty()) {
+                var last = history.getFirst();
+                if (action.name().equals(last[0]) && owner.getId().longValue() == ((Number) last[1]).longValue()
+                        && note.equals(last[2])) return false;
+            }
+        } else {
+            boolean disputed = decision == ReturnReceiptForm.Decision.RECEIVED_DISPUTED;
+            report.setStatus(disputed ? InspectionStatus.DISPUTED : InspectionStatus.ACCEPTED);
+            action = disputed ? InspectionEventAction.DISPUTED : InspectionEventAction.RETURN_CONFIRMED;
+        }
+        events.save(InspectionEvent.builder().inspection(report).actor(owner).action(action).note(note).createdAt(at).build());
+        return true;
+    }
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void remindAfterReturnLocked(Booking booking, java.time.Instant at) {
+        requireCoreLocks(booking);
+        var report = submittedAfterLocked(booking);
+        if (report == null || report.getStatus() != InspectionStatus.SUBMITTED
+                || at.isBefore(report.getSubmittedAt().plusSeconds(3600))) return;
+        booking.setAfterReminderSentAt(at);
+        notifications.notify(booking.getCar().getOwner().getId(), "INSPECTION_AFTER_RETURN_OVERDUE", "Cần xác nhận nhận lại xe",
+                "AFTER của đơn #CR-" + booking.getId() + " đã gửi hơn một giờ. Vui lòng kiểm tra nhận lại xe thực tế.", "BOOKING", booking.getId());
+        for (var admin : users.findByRole(Role.ADMIN)) {
+            notifications.notify(admin.getId(), "INSPECTION_AFTER_RETURN_OVERDUE", "Đơn thuê chờ xác nhận nhận lại xe",
+                    "Đơn #CR-" + booking.getId() + " chưa được chủ xe xác nhận nhận lại sau một giờ kể từ khi gửi AFTER.", "BOOKING", booking.getId());
+        }
+    }
+
+    private BookingInspection submittedAfterLocked(Booking booking) {
+        var report = lockedReport(booking.getId(), InspectionPhase.AFTER);
+        return report != null && report.getStatus() != InspectionStatus.DRAFT && report.getSubmittedAt() != null
+                && report.getAuthor().getId().equals(booking.getCustomer().getId())
+                && !report.getSubmittedAt().isBefore(booking.getVehicleReceivedAt()) ? report : null;
+    }
+
+    private void requireCoreLocks(Booking booking) {
+        if (!writeLocked(booking) || !writeLocked(booking.getCar())) throw new IllegalStateException("Lock Car and Booking first");
+    }
+    private boolean writeLocked(Object entity) {
+        var mode = em.getLockMode(entity);
+        return mode == jakarta.persistence.LockModeType.PESSIMISTIC_WRITE || mode == jakarta.persistence.LockModeType.PESSIMISTIC_FORCE_INCREMENT;
+    }
+    private void validateEvidence(Booking booking, BookingInspection report) {
+        var form = InspectionForm.from(view(booking, report.getPhase(), report, false, false, false, false));
+        int count = lockedImages(report.getId()).size();
+        if (!validator.validate(form, InspectionForm.Submitted.class).isEmpty() || count < 4 || count > 10) {
+            throw new BusinessException("Biên bản cần đủ năm trường và 4–10 ảnh.");
+        }
+    }
+
     /** Caller holds current Car and Booking locks, then any financial locks. */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
     public void confirmPickupLocked(Booking booking, User owner, java.time.Instant at) {
@@ -152,8 +254,9 @@ public class InspectionService {
         boolean editable = author(booking, phase, actor) && writable(booking, phase)
                 && (report == null || report.getStatus() == InspectionStatus.DRAFT);
         boolean open = phase == InspectionPhase.BEFORE && beforeOpen(booking);
+        boolean afterOpen = phase == InspectionPhase.AFTER && booking.getStatus() == BookingStatus.CONFIRMED && writable(booking, phase);
         boolean submitted = report != null && (report.getStatus() == InspectionStatus.SUBMITTED || report.getStatus() == InspectionStatus.DISPUTED);
-        return view(booking, phase, report, editable, open && editable && report != null,
+        return view(booking, phase, report, editable, (open || afterOpen) && editable && report != null,
                 open && submitted && author(booking, InspectionPhase.BEFORE, actor),
                 open && submitted && author(booking, InspectionPhase.AFTER, actor));
     }

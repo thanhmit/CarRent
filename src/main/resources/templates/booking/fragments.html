@@ -14,6 +14,27 @@
   <p th:text="${'Người xác nhận: ' + booking.contractConfirmedBy.fullName}"></p>
   <p>Hợp đồng được ký ngoài ứng dụng. Đơn không còn cho phép hủy sau giao xe.</p>
 </section>
+<section th:fragment="returnSummary(booking)" th:if="${booking.workflowVersion == 'VIETQR_V1' and booking.vehicleReceivedAt != null}" class="p-space-md rounded-xl bg-surface-container-low min-w-0 break-words [overflow-wrap:anywhere]">
+  <h2 class="font-title-md">Trả xe thực tế</h2>
+  <th:block th:if="${booking.vehicleReturnedAt == null}">
+    <p th:if="${returnNotReceived == true}" class="font-title-md">Chủ xe đã ghi nhận chưa nhận lại xe thực tế. Xem ghi chú trong lịch sử AFTER.</p>
+    <p th:text="${hasAfterReport == true ? 'AFTER đã gửi — đang chờ chủ xe xác nhận nhận lại xe thực tế.' : 'Xe đang được khách hàng sử dụng. Chưa có AFTER được gửi.'}"></p>
+    <p>Gửi biên bản chưa xác nhận đã trả xe và chưa phát sinh hạn thanh toán 70%.</p>
+  </th:block>
+  <th:block th:if="${booking.vehicleReturnedAt != null}">
+    <p th:text="${'Đã nhận lại xe lúc ' + #temporals.format(booking.vehicleReturnedAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss')}"></p>
+    <p th:text="${afterReportStatus != null and afterReportStatus.name() == 'DISPUTED' ? 'Xe đã trả thực tế; hai bên có bất đồng về AFTER. Bằng chứng bất đồng được lưu trong biên bản.' : 'Chủ xe đã nhận lại xe và đồng ý AFTER.'}"></p>
+    <p>Ngày thuê và tổng tiền đã lưu được giữ nguyên; ghi chú, km và nhiên liệu/pin không tự tạo phụ phí.</p>
+  </th:block>
+</section>
+<section th:fragment="balanceSummary" th:if="${balanceObligation != null}" class="p-space-md rounded-xl bg-surface-container-low min-w-0 break-words [overflow-wrap:anywhere]">
+  <h2 class="font-title-md">Nghĩa vụ thanh toán 70%</h2>
+  <p th:text="${'Số tiền: ' + #numbers.formatInteger(balanceObligation.amountDue, 0, 'POINT') + ' VNĐ'}"></p>
+  <p th:if="${balanceObligation.dueAt != null}" th:text="${'Hạn thanh toán: ' + #temporals.format(balanceObligation.dueAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss')}"></p>
+  <p th:text="${'Trạng thái: ' + balanceObligation.status.message()}"></p>
+  <p th:text="${'Đã ghi nhận: ' + #numbers.formatInteger(balanceObligation.amountSettled, 0, 'POINT') + ' VNĐ'}"></p>
+  <p>Hạn 1 giờ tính từ thời điểm chủ xe nhận lại xe thực tế. Chỉ ghi nhận đã thanh toán khi hệ thống xác nhận tiền thực nhận.</p>
+</section>
 <div th:fragment="rentalPaymentSummary(booking)" class="flex flex-col gap-space-sm">
   <p id="payment-status" class="p-space-sm rounded-lg bg-surface-container-low" th:text="${booking.advancePaidAt != null ? 'Đã nhận trả trước 30% — còn 70% thanh toán sau trả xe.' : 'Chưa nhận tiền trả trước 30%.'}"></p>
   <p th:if="${booking.advanceAmount != null}" th:text="${'Trả trước 30%: ' + #numbers.formatInteger(booking.advanceAmount, 0, 'POINT') + ' VNĐ'}"></p>
