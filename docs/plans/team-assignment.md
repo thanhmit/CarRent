@@ -1,5 +1,7 @@
 # CarRent — Phân công ba thành viên
 
+**Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. Tiếp theo P6.11 riêng.
+
 **Ngày kiểm tra/phân công:** 2026-10-27. **Repo:** [thanhmit/CarRent](https://github.com/thanhmit/CarRent).
 
 **Mục tiêu:** ghi lại đóng góp Git hiện có, phân công bảo trì các module đã triển khai và giao toàn bộ **45 task mới** sau khi thêm P4.2-A ngày 2026-10-29. Đây là phân công trong tài liệu local; chưa tạo issue, gửi thông báo, đổi Git author hoặc cập nhật assignee trên GitHub.
@@ -43,7 +45,7 @@ Số commit bao gồm merge, không phải tỷ lệ công sức. Git xác nhậ
 
 ## 3. Phần sắp làm — giao 45 task mới sau tách P4.2-A
 
-**Checkpoint P6.10 — 2026-11-02:** đủ **6/6 checklist**: QR BALANCE15phút độc lập hạn nợ1giờ, receipt QR cũ/dư/trùng/thiếu, auto-COMPLETED atomic sau physical return, dispute giữ evidence và nhắc nợ một lần. Full isolated clean verify **783/783 JUnit, 0 failure/error/skip**, JAR; Chromium **63/63**, 19 ảnh, 12 SQL invariant. **65/86 task**, còn21 (45task mới xong24). Tiếp theo **P6.11 riêng**. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Thay đổi local chưa commit; DB ứng dụng vẫn7bảng, phase0/seed/ảnh giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. P4.2-A live vẫn chờ.
+**Checkpoint P6.10 — 2026-11-02:** đủ **6/6 checklist**: QR BALANCE15phút độc lập hạn nợ1giờ, receipt QR cũ/dư/trùng/thiếu, auto-COMPLETED atomic sau physical return, dispute giữ evidence và nhắc nợ một lần. Full isolated clean verify **783/783 JUnit, 0 failure/error/skip**, JAR; Chromium **63/63**, 19 ảnh, 12 SQL invariant. **65/86 task**, còn21 (45task mới xong24). Tiếp theo **P6.11 riêng**. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.8–P6.10 đã tích hợp Git; xem checkpoint phía trên; DB ứng dụng vẫn7bảng, phase0/seed/ảnh giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. P4.2-A live vẫn chờ.
 
 Trong45task mới: xong24, còn21. `thanhmit` còn1 (P4.2-A), `huy69332` còn5 (P6.11–P6.13/P5.5–P5.6), `ducbinhnguyen07ars` còn15. Checkpoint bên dưới giữ lịch sử.
 

@@ -1,6 +1,8 @@
 # CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
 
-**Ngày cập nhật:** 2026-11-02. **Checkpoint P6.10 — 2026-11-02:** đủ **6/6 checklist**: QR BALANCE15phút độc lập hạn nợ1giờ, receipt QR cũ/dư/trùng/thiếu, auto-COMPLETED atomic sau physical return, dispute giữ evidence và nhắc nợ một lần. Full isolated clean verify **783/783 JUnit, 0 failure/error/skip**, JAR; Chromium **63/63**, 19 ảnh, 12 SQL invariant. **65/86 task**, còn21 (45task mới xong24). Tiếp theo **P6.11 riêng**. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Thay đổi local chưa commit; DB ứng dụng vẫn7bảng, phase0/seed/ảnh giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. P4.2-A live vẫn chờ.
+**Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. Tiếp theo P6.11 riêng.
+
+**Ngày cập nhật:** 2026-11-02. **Checkpoint P6.10 — 2026-11-02:** đủ **6/6 checklist**: QR BALANCE15phút độc lập hạn nợ1giờ, receipt QR cũ/dư/trùng/thiếu, auto-COMPLETED atomic sau physical return, dispute giữ evidence và nhắc nợ một lần. Full isolated clean verify **783/783 JUnit, 0 failure/error/skip**, JAR; Chromium **63/63**, 19 ảnh, 12 SQL invariant. **65/86 task**, còn21 (45task mới xong24). Tiếp theo **P6.11 riêng**. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.8–P6.10 đã tích hợp Git; xem checkpoint phía trên; DB ứng dụng vẫn7bảng, phase0/seed/ảnh giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080, chuyển tiền thật hoặc stage/commit/push. P4.2-A live vẫn chờ.
 
 **Spec:** các quyết định brainstorming được tổng hợp tại file này; [SDD](../SDD.md) §1.4–1.6 lưu backlog và phạm vi tiền thật. Những phần mock payment/inspection cũ trong SDD và D-04/D-06/D-07/D-12/D-25 là thiết kế hoặc checkpoint trước lần cập nhật này. Khi thực hiện các phase bên dưới, dùng hợp đồng mới tại đây cho workflow mới; giữ bằng chứng lịch sử và hành vi legacy. Đồng bộ các chương chi tiết của SDD trước khi kích hoạt workflow mới.
 
@@ -20,7 +22,7 @@ Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P
 
 **Tiến độ hiện tại:** **65/86 task hoàn thành, còn21**. P6.1–P6.10 đã đóng; [checkpoint P6.10](phase-6-inspection.md#checkpoint-p610--2026-11-02). Tiếp theo **P6.11 riêng**; P4.2-A live vẫn chờ.
 
-**Tích hợp Git 2026-11-01 theo yêu cầu chủ dự án:** P6.4–P6.7 được commit với author `huy69332` tại `4a6af85`, merge vào main bằng `66c2d8b`; nhánh tính năng được giữ. Không đưa thay đổi riêng `docs/plans/phase-0-init.md` vào commit. Đoạn này là snapshot tích hợp trước P6.8/P6.9; hiện chat tiếp theo dùng [handoff P6.11](phase-6-batch-3-handoff.md), giữ working tree mới chưa commit. Việc tích hợp không tăng số task hoàn thành hoặc mở gate live.
+**Tích hợp Git 2026-11-01 theo yêu cầu chủ dự án:** P6.4–P6.7 được commit với author `huy69332` tại `4a6af85`, merge vào main bằng `66c2d8b`; nhánh tính năng được giữ. Không đưa thay đổi riêng `docs/plans/phase-0-init.md` vào commit. Đoạn này là snapshot tích hợp trước P6.8/P6.9; hiện chat tiếp theo dùng [handoff P6.11](phase-6-batch-3-handoff.md), dùng baseline main sau tích hợp. Việc tích hợp không tăng số task hoàn thành hoặc mở gate live.
 
 <a id="cac-dot-con-lai-da-duyet"></a>
 ### Các đợt còn lại — được chủ dự án duyệt 2026-11-01
@@ -42,7 +44,7 @@ Quy ước: **+** là cùng đợt, triển khai theo phụ thuộc; **→ trong
 - Tiếp tục giữ thay đổi riêng, không tự stage/commit/push, migrate DB ứng dụng, bật workflow/provider/scheduler hoặc chuyển tiền thật.
 - **Quy tắc subagent được chủ dự án duyệt 2026-11-01:** Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối. Quy tắc này thay giới hạn cũ “Chỉ dùng subagent khi được yêu cầu” cho các lần triển khai tiếp theo; không tự mở rộng đợt/task. Review bằng agent không được ghi thành human contributor review.
 
-**Chat tiếp theo:** triển khai riêng **Phase6 / đợt3 — P6.11**, theo [handoff](phase-6-batch-3-handoff.md); giữ toàn bộ working tree chưa commit và phase0 riêng. Đợt P6.10 cùng các đợt trước giữ checkpoint lịch sử.
+**Chat tiếp theo:** triển khai riêng **Phase6 / đợt3 — P6.11**, theo [handoff](phase-6-batch-3-handoff.md); bắt đầu từ main sau tích hợp và giữ phase0 riêng. Đợt P6.10 cùng các đợt trước giữ checkpoint lịch sử.
 
 ### Phân công ba thành viên
 
