@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/head :: head(title=${phaseTitle})}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
 <div th:replace="~{fragments/header :: header}"></div>
-<main class="w-full pt-16 min-h-screen">
+<main class="inspection-detail w-full pt-16 min-h-screen">
   <div class="max-w-5xl mx-auto px-gutter-mobile sm:px-gutter py-space-lg flex flex-col gap-space-lg min-w-0">
     <div><a th:href="@{/bookings/{id}(id=${inspection.bookingId})}" class="text-secondary underline">Quay lại đơn thuê</a>
       <h1 class="font-headline-lg text-headline-lg text-primary mt-space-md" th:text="${phaseTitle}">Biên bản</h1>

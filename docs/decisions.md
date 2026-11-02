@@ -1,8 +1,8 @@
 # CarRent — Hồ sơ quyết định (Decisions)
 
 **Ngày chốt:** 2026-10-09
-**Liên quan:** `CarRent.md` §16 (10 câu hỏi mở), `docs/SDD.md` v2.14
-**Trạng thái:** Các quyết định đã chốt cùng chủ dự án; bổ sung D-25 ngày 2026-10-12 cho Phase 6.
+**Liên quan:** `CarRent.md` §16 (10 câu hỏi mở), `docs/SDD.md` v2.43
+**Trạng thái:** Quyết định gốc và lịch sử được giữ; D-25A đồng bộ hợp đồng VIETQR_V1 hiện hành từ roadmap ngày 2026-10-27, cập nhật 2026-11-02 cho P6.12/P6.13. Kiểm chứng offline không thay gate provider/live.
 
 Quy ước: **D-xx** là số quyết định. "Mặc định §16" = chấp nhận đề xuất mặc định trong CarRent.md v1.0.
 
@@ -22,16 +22,20 @@ Chỉ duyệt lần đầu (PENDING). Sau khi APPROVED, Owner sửa trực tiế
 ### D-04. Booking PENDING chặn lịch
 PENDING và CONFIRMED đều tính là conflict khi kiểm tra overlap (BR-05). Không có timeout giải phóng booking quá hạn — **giới hạn đã ghi nhận của MVP**. *(Mặc định §16)*
 
+Giới hạn không timeout chỉ cho legacy; VIETQR_V1 hết hold ADVANCE thành EXPIRED, giải phóng lịch và hoàn tiền đến muộn theo D-25A.
+
 ### D-05. Giá tính theo ngày lịch
 `days = end - start` (≥1), `total = price_per_day × days`. Không phí lẻ giờ, không phụ phí. Số tiền BIGINT VND nguyên. *(Mặc định §16)*
 
 ### D-06. Payment chỉ khi CONFIRMED — nhiều lần thử, 1 lần PAID
 Customer thanh toán sau khi Owner confirm. Payment FAILED được thử lại (bảng payments không unique booking_id); Service chặn khi đã có payment PAID. Mock payment có tùy chọn giả lập thất bại để test. *(Mặc định §16)*
 
+Chỉ là payment legacy; VIETQR_V1 dùng obligation/intent/verified receipt 30/70 theo D-25A.
+
 ### D-07. COMPLETED do Owner đánh dấu thủ công
 Sau khi `end_date` đã qua, Owner bấm "Hoàn tất". Không auto-complete bằng scheduler — tránh nghiệp vụ bàn giao chưa định nghĩa. *(Mặc định §16)*
 
-**Bổ sung Phase 6 / D-25:** giữ Owner bấm thủ công. Với booking mới có `inspection_required=true`, thay điều kiện ngày đã qua bằng BEFORE được Customer chấp nhận và đã nhận xe, Owner đã nhận lại, AFTER được chấp nhận hoặc Admin xử lý bất đồng, và PAID. Có thể hoàn tất ngày trả hoặc khi trả sớm; không đổi tổng tiền. Đơn legacy giữ điều kiện cũ, không dựng biên bản quá khứ.
+**VIETQR_V1 / D-25A:** sau Owner nhận lại xe và nhận đủ BALANCE, apply tự COMPLETED; AFTER DISPUTED không chặn. Owner manual complete chỉ cho legacy, không dựng biên bản quá khứ; giá/tổng tiền không đổi khi trả sớm.
 
 ### D-08. Ưu tiên vô hiệu hóa, không xóa cứng dữ liệu có lịch sử
 User không bao giờ xóa cứng (chỉ đổi status). Car chỉ xóa cứng khi không có booking nào tham chiếu; ngược lại deactivate. *(Mặc định §16)*
@@ -48,6 +52,8 @@ Không có cột `is_primary` trên `car_images`. Ảnh đầu tiên (id nhỏ n
 ### D-12. Payment REFUNDED khi hủy booking đã PAID
 Hủy booking CONFIRMED mà có payment PAID → payment chuyển REFUNDED (giả lập) + notification. *(Người chuẩn hóa từ §16)*
 
+Chỉ legacy. VIETQR_V1 giữ nguyên receipt/settlement, tạo nghĩa vụ hoàn riêng; chưa SUCCEEDED không ghi đã hoàn theo D-25A.
+
 ### D-13. Chống đặt trùng và cập nhật booking đồng thời bằng khóa DB
 **Chủ dự án duyệt thay đổi ngày 2026-10-11:** thay quyết định cũ chấp nhận race bằng pessimistic locking trong transaction, không thêm cột/bảng/unique constraint.
 
@@ -58,7 +64,7 @@ Hủy booking CONFIRMED mà có payment PAID → payment chuyển REFUNDED (gi�
 - Khả dụng trên UI là thông tin tại lúc đọc, không giữ chỗ; submit luôn kiểm tra lại dưới khóa. Chỉ PENDING/CONFIRMED chặn lịch; hai khoảng chỉ chạm ngày kết thúc/bắt đầu không trùng ở cả hai chiều.
 - Kiểm chứng bằng hai transaction/kết nối MySQL độc lập: tạo trùng, confirm/reject/cancel tranh chấp, stale managed entity và tạo booking cùng lúc xóa/ẩn xe. Không dùng Java `synchronized` thay khóa DB. Chi phí: các mutation cùng xe phải chờ nhau; transaction giữ ngắn, lock timeout/deadlock trả lỗi có kiểm soát, không tạo booking/thông báo một phần.
 
-**Mở rộng dự kiến Phase 6:** Car → Booking → Payment (nếu cần) → Inspection → Image, sau đó append Event/Notification trong cùng transaction. Nhiều Booking của cùng Car đọc/khóa theo ID tăng dần; không khóa report rồi quay lại lấy Booking/Payment. Xác nhận nhận xe phải đọc current custody của booking khác cùng xe (nhận rồi/chưa trả), không chỉ overlap ngày. Cancel-vs-pickup, hai pickup cùng xe, submit-vs-edit, receipt/resolve-vs-complete và Owner cash-vs-Customer payment phải được kiểm chứng tại P6.13.
+**Phase 6 / D-25A:** Car → Booking → financial (nếu cần) → Inspection → Image, sau đó append Event/Notification trong cùng transaction; actor ACTIVE/role đọc lại sau aggregate lock. Nhiều Booking của cùng Car đọc/khóa theo ID tăng dần; không khóa report rồi quay lại lấy Booking/financial. Giao xe phải đọc current custody của booking khác cùng xe, không chỉ overlap ngày. Gate bao gồm cancel/receipt/handover, stale RR actor/return và cạnh tranh BALANCE; không thêm cash hoặc resolve vào workflow mới.
 
 **Cách triển khai Phase 3 đã duyệt:** 5 đợt — P3.1–P3.3; P3.4–P3.5; P3.6 → P4.1 → P3.7; P3.8–P3.10; P3.11–P3.13. P4.1 chỉ mapping/repository, các chức năng thanh toán còn lại theo Phase 4. Đầu ra và checkpoint từng đợt tại `plans/phase-3-booking.md`.
 
@@ -103,7 +109,15 @@ Ngày 2026-10-10, chủ dự án yêu cầu provision ngay tất cả bảng và
 
 **Ngoại lệ đã duyệt D-25:** 7 bảng là phạm vi Phase 0–5. Khi implement P6.1, thêm 3 bảng inspection và 3 cột bookings qua migration giữ dữ liệu, cập nhật bootstrap tương ứng; không đổi enum Booking/Payment, không reset seed, không tự DDL lúc boot. Lần cập nhật tài liệu ngày 2026-10-12 chưa chạy SQL.
 
-### D-25. Module biên bản bàn giao và trả xe ở Phase 6
+### D-25A. Hợp đồng VIETQR_V1 hiện hành — thay các quy tắc rental D-25 cũ
+
+**Phạm vi P6.1–P6.13:** Owner accept vẫn PENDING; Owner gửi BEFORE immutable, Customer đồng ý tạo ADVANCE30% và hold15phút; verified receipt đủ30% mới CONFIRMED. Owner xác nhận hợp đồng và physical handover; Customer không final pickup, không nhận xe chưa trả trước. Sau handover Customer gửi AFTER; Owner received/disputed đều ghi trả thực tế và BALANCE70% hạn1giờ; NOT_RECEIVED không tạo debt.
+
+Nhận đủ70% sau return tự COMPLETED cùng apply, AFTER DISPUTED giữ nguyên, không chờ Admin resolve hoặc manual Owner complete. Không cash/mock mới, không72giờ. Customer cancel trước handover: miễn đến đúng1giờ từ paidAt, sau đó ngày nhận cách ngày hủy Việt Nam>3ngày phí10%advance, còn≤3ngày phí50%; Owner hoàn đủ. Snapshot/refund obligation atomic, payout Phase4 ngoài transaction; receipt gốc vẫn tiền đã nhận. Unpaid không tạo hoàn giả, tiền đến sau hoàn đủ; sau handover/return cấm cancel xóa nợ.
+
+Nháp chỉ tác giả, submitted đúng Customer/Owner/Admin ACTIVE; ảnh/nội dung bất biến, text/event append-only. Admin timeline chỉ đọc; không thêm resolve endpoint trong đợt này. Job30giây defaultoff, durable reminder markers và notices atomic; queue reject không đánh dấu đã làm. Mutation current Car→Booking→financial→Inspection/Image, kiểm tra current actor sau lock; giữ legacy/seed/schema và không migrate/enable ứng dụng từ test fixture. Workflow rộng/live phải chờ Phase8 và gate tài khoản P4.2-A. Lịch hiện hành tại roadmap, thay lịch P6.14 cũ.
+
+### D-25. Thiết kế lịch sử — được thay bằng D-25A ở trên cho VIETQR_V1
 
 **Chủ dự án phê duyệt ngày 2026-10-12** sau brainstorm và trả lời các câu hỏi nghiệp vụ:
 
@@ -169,6 +183,7 @@ Interface, money states, khóa, transaction, sequence và cutover: [handoff P4.1
 | D-22 | Task mảnh theo tầng + verify tự động |
 | D-23 | Prototype Stitch là nguồn chân lý UI |
 | D-24 | DB-first: scriptDB.sql + seed trước Phase 1, Hibernate không sửa schema |
-| D-25 | Phase 6: biên bản BEFORE/AFTER, xác nhận chéo, nhận chưa PAID, trả rồi chờ PAID, Admin bất đồng, ảnh riêng tư/legacy |
+| D-25 | Thiết kế Phase 6 lịch sử, được D-25A thay cho VIETQR_V1 |
+| D-25A | Hiện hành: 30/70, Owner hợp đồng/giao/nhận lại, auto-COMPLETED, ảnh private, timeline Admin chỉ đọc |
 | D-26 | Chọn khoảng thuê ở sidebar Tìm xe, lọc lịch trước phân trang, bỏ kiểm tra riêng tại chi tiết, điền sẵn ngày đặt thuê |
 | D-27 | Nền tài chính: SePay/payOS, durable money states, handler Phase 6/8, giữ legacy và tách offline/live gates |

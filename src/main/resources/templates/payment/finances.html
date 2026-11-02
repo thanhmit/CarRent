@@ -18,6 +18,7 @@
       <p th:if="${obligations.empty}">Chưa có khoản thanh toán trong phạm vi này.</p>
       <article th:each="o : ${obligations}" class="p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-sm break-words">
         <h3 th:text="${'Khoản #' + o.id + ' · ' + o.purpose.message() + ' · Tham chiếu #' + o.subjectId}"></h3>
+        <a sec:authorize="hasRole('ADMIN')" th:if="${o.purpose.name() == 'ADVANCE' or o.purpose.name() == 'BALANCE'}" th:href="@{/admin/bookings/{id}(id=${o.subjectId})}" class="text-secondary underline">Xem timeline đơn thuê</a>
         <p th:text="${'Phải trả: ' + #numbers.formatInteger(o.amountDue, 0, 'POINT') + ' VNĐ · Đã ghi nhận: ' + #numbers.formatInteger(o.amountSettled, 0, 'POINT') + ' VNĐ'}"></p>
         <p th:text="${o.status.message()}"></p>
         <p th:if="${o.latestIntent != null}" th:text="${'Lần thanh toán gần nhất: ' + o.latestIntent.message}"></p>

@@ -63,6 +63,7 @@ public class InspectionService {
     public void submitBefore(Long bookingId, CustomUserPrincipal principal) {
         User actor = actor(principal);
         Booking booking = lockedBooking(bookingId, InspectionPhase.BEFORE);
+        requireCurrentActor(actor, principal);
         requireAuthor(booking, InspectionPhase.BEFORE, actor);
         requireBeforeOpen(booking);
         var report = lockedReport(bookingId, InspectionPhase.BEFORE);
@@ -85,11 +86,7 @@ public class InspectionService {
     public void submitAfter(Long bookingId, CustomUserPrincipal principal) {
         User customer = actor(principal);
         Booking booking = lockedBooking(bookingId, InspectionPhase.AFTER);
-        // Check current account state after aggregate locks, even in an older repeatable-read snapshot.
-        em.refresh(customer, jakarta.persistence.LockModeType.PESSIMISTIC_READ);
-        if (customer.getStatus() != UserStatus.ACTIVE || customer.getRole() != principal.getRole()) {
-            throw new ForbiddenException("Tài khoản không được phép gửi biên bản.");
-        }
+        requireCurrentActor(customer, principal);
         requireAuthor(booking, InspectionPhase.AFTER, customer);
         if (booking.getStatus() != BookingStatus.CONFIRMED || !writable(booking, InspectionPhase.AFTER)
                 || clock.instant().isBefore(booking.getVehicleReceivedAt())) {
@@ -222,6 +219,7 @@ public class InspectionService {
     private void appendBeforeEvent(Long bookingId, String note, CustomUserPrincipal principal, InspectionEventAction action) {
         User actor = actor(principal);
         Booking booking = lockedBooking(bookingId, InspectionPhase.BEFORE);
+        requireCurrentActor(actor, principal);
         requireAuthor(booking, action == InspectionEventAction.ADDENDUM ? InspectionPhase.BEFORE : InspectionPhase.AFTER, actor);
         requireBeforeOpen(booking);
         var report = lockedReport(bookingId, InspectionPhase.BEFORE);
@@ -265,6 +263,7 @@ public class InspectionService {
     public void saveDraft(Long bookingId, InspectionPhase phase, InspectionForm form, CustomUserPrincipal principal) {
         User actor = actor(principal);
         Booking booking = lockedBooking(bookingId, phase);
+        requireCurrentActor(actor, principal);
         requireAuthor(booking, phase, actor);
         if (!writable(booking, phase)) throw new BusinessException("Đơn thuê không còn cho phép sửa nháp biên bản.");
         if (form == null) throw new BusinessException("Dữ liệu biên bản không hợp lệ.");
@@ -284,7 +283,9 @@ public class InspectionService {
     @Transactional
     public void addImages(Long bookingId, InspectionPhase phase, List<MultipartFile> files, CustomUserPrincipal principal) {
         User actor = actor(principal);
-        var report = mutableReport(lockedBooking(bookingId, phase), phase, actor);
+        var booking = lockedBooking(bookingId, phase);
+        requireCurrentActor(actor, principal);
+        var report = mutableReport(booking, phase, actor);
         if (files == null || files.isEmpty() || files.size() > 4) {
             throw new BusinessException("Mỗi lần tải lên từ 1 đến 4 ảnh.");
         }
@@ -306,7 +307,9 @@ public class InspectionService {
     @Transactional
     public void deleteDraftImage(Long bookingId, InspectionPhase phase, Long imageId, CustomUserPrincipal principal) {
         User actor = actor(principal);
-        var report = mutableReport(lockedBooking(bookingId, phase), phase, actor);
+        var booking = lockedBooking(bookingId, phase);
+        requireCurrentActor(actor, principal);
+        var report = mutableReport(booking, phase, actor);
         var image = lockedImages(report.getId()).stream().filter(i -> i.getId().equals(imageId))
                 .findFirst().orElseThrow(this::missing);
         String key = image.getStorageKey();
@@ -378,6 +381,13 @@ public class InspectionService {
             throw new ForbiddenException("Tài khoản không được phép truy cập biên bản.");
         }
         return user;
+    }
+    private void requireCurrentActor(User actor, CustomUserPrincipal principal) {
+        // Read current account state after aggregate locks, including an older repeatable-read snapshot.
+        em.refresh(actor, jakarta.persistence.LockModeType.PESSIMISTIC_READ);
+        if (actor.getStatus() != UserStatus.ACTIVE || actor.getRole() != principal.getRole()) {
+            throw new ForbiddenException("Tài khoản không được phép xử lý biên bản.");
+        }
     }
     private boolean author(Booking b, InspectionPhase phase, User actor) {
         return phase == InspectionPhase.BEFORE

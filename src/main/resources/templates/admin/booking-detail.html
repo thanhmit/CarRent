@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title=${'Theo dõi đơn thuê #CR-' + booking.id})}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-20 px-gutter-mobile sm:px-gutter min-h-screen">
+  <div class="max-w-4xl mx-auto flex flex-col gap-space-md py-space-lg min-w-0 break-words [overflow-wrap:anywhere]">
+    <h1 class="font-headline-md" th:text="${'Theo dõi đơn thuê #CR-' + booking.id}"></h1>
+    <p>Chế độ quản trị chỉ đọc. Mốc giao nhận xe và trạng thái tiền được ghi nhận riêng.</p>
+    <span th:replace="~{booking/fragments :: progressBadge(${booking})}"></span>
+    <p th:text="${'Khách hàng: ' + booking.customer.fullName + ' · Chủ xe: ' + booking.car.owner.fullName}"></p>
+    <th:block th:if="${timeline != null}">
+      <div th:replace="~{booking/fragments :: rentalPaymentSummary(${booking})}"></div>
+      <section th:replace="~{booking/fragments :: timeline}"></section>
+      <a th:if="${timeline.beforeSubmitted}" th:href="@{/bookings/{id}/inspections/BEFORE(id=${booking.id})}" class="text-secondary underline">Xem BEFORE và bằng chứng</a>
+      <a th:if="${timeline.afterSubmitted}" th:href="@{/bookings/{id}/inspections/AFTER(id=${booking.id})}" class="text-secondary underline">Xem AFTER và bằng chứng</a>
+    </th:block>
+    <p th:if="${timeline == null}">Đơn thuê legacy: không áp dụng timeline VietQR 30/70.</p>
+    <a th:href="@{/payment/finances(view='managed')}" class="text-secondary underline">Quản trị tài chính và khoản hoàn</a>
+  </div>
+</main>
+</body></html>

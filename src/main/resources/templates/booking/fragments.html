@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"><body>
 <span th:fragment="statusBadge(status)" th:switch="${status.name()}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-md text-label-md"
       th:classappend="${status.name() == 'PENDING' ? 'bg-[#FEF3C7] text-[#92400E]' : (status.name() == 'CONFIRMED' ? 'bg-[#DBEAFE] text-[#1D4ED8]' : (status.name() == 'COMPLETED' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-error-container text-on-error-container'))}">
-  <span th:case="'PENDING'">Chờ xác nhận</span><span th:case="'CONFIRMED'">Đã xác nhận</span><span th:case="'REJECTED'">Bị từ chối</span><span th:case="'CANCELLED'">Đã hủy</span><span th:case="'COMPLETED'">Đã hoàn thành</span>
+  <span th:case="'PENDING'">Chờ xác nhận</span><span th:case="'CONFIRMED'">Đã xác nhận</span><span th:case="'REJECTED'">Bị từ chối</span><span th:case="'CANCELLED'">Đã hủy</span><span th:case="'COMPLETED'">Đã hoàn thành</span><span th:case="'EXPIRED'">Đã hết hạn</span>
 </span>
 <th:block th:fragment="progressBadge(booking)">
   <span th:if="${booking.workflowVersion == 'VIETQR_V1' and booking.status.name() == 'CONFIRMED' and booking.vehicleReceivedAt != null}" class="inline-flex px-3 py-1 rounded-full font-label-md text-label-md bg-emerald-50 text-emerald-800" th:text="${booking.vehicleReturnedAt == null ? 'Đang thuê' : 'Đã nhận lại xe'}"></span>
@@ -36,8 +36,28 @@
   <p>Hạn 1 giờ tính từ thời điểm chủ xe nhận lại xe thực tế. Chỉ ghi nhận đã thanh toán khi hệ thống xác nhận tiền thực nhận.</p>
 </section>
 <div th:fragment="rentalPaymentSummary(booking)" class="flex flex-col gap-space-sm">
-  <p id="payment-status" class="p-space-sm rounded-lg bg-surface-container-low" th:text="${booking.advancePaidAt != null ? 'Đã nhận trả trước 30% — còn 70% thanh toán sau trả xe.' : 'Chưa nhận tiền trả trước 30%.'}"></p>
+  <p id="payment-status" class="p-space-sm rounded-lg bg-surface-container-low" th:text="${timeline != null and timeline.balanceSettled ? 'Đã nhận đủ tiền thuê 30% + 70%.' : (booking.status.name() == 'COMPLETED' ? 'Đơn thuê đã hoàn thành; xem các giao dịch đã ghi nhận trong tài chính.' : (booking.status.name() == 'CANCELLED' or booking.status.name() == 'EXPIRED' or booking.status.name() == 'REJECTED' ? (booking.advancePaidAt != null ? 'Tiền trả trước đã nhận; khoản hoàn được xử lý riêng.' : 'Chưa nhận tiền trả trước; đơn thuê đã kết thúc.') : (booking.advancePaidAt != null ? 'Đã nhận trả trước 30% — còn 70% thanh toán sau trả xe.' : 'Chưa nhận tiền trả trước 30%.')))}"></p>
   <p th:if="${booking.advanceAmount != null}" th:text="${'Trả trước 30%: ' + #numbers.formatInteger(booking.advanceAmount, 0, 'POINT') + ' VNĐ'}"></p>
-  <p th:if="${booking.balanceAmount != null}" th:text="${'Còn lại 70%: ' + #numbers.formatInteger(booking.balanceAmount, 0, 'POINT') + ' VNĐ'}"></p>
+  <p th:if="${booking.balanceAmount != null and booking.status.name() != 'CANCELLED' and booking.status.name() != 'EXPIRED' and booking.status.name() != 'REJECTED' and booking.status.name() != 'COMPLETED' and (timeline == null or !timeline.balanceSettled)}" th:text="${'Còn lại 70%: ' + #numbers.formatInteger(booking.balanceAmount, 0, 'POINT') + ' VNĐ'}"></p>
 </div>
+<section th:fragment="timeline" th:if="${timeline != null}" id="rental-timeline" aria-labelledby="rental-timeline-heading" class="p-space-md rounded-xl bg-surface-container-lowest min-w-0 break-words [overflow-wrap:anywhere]">
+  <h2 id="rental-timeline-heading" class="font-title-md">Tiến trình đơn thuê</h2>
+  <ol class="flex flex-col gap-space-sm py-space-sm">
+    <li th:each="m : ${timeline.milestones}" th:attr="data-milestone=${m.key}">
+      <h3 class="font-title-sm" th:text="${m.label}"></h3>
+      <time th:if="${m.at != null}" th:datetime="${m.at}" th:text="${#temporals.format(m.at.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time>
+      <p th:if="${m.at == null}">Chưa ghi nhận</p>
+    </li>
+  </ol>
+  <p th:if="${timeline.afterStatus != null}" th:text="${timeline.afterStatus}"></p>
+  <h3 class="font-title-sm">Khoản hoàn tiền</h3>
+  <p th:if="${timeline.refunds.empty}">Chưa có khoản hoàn tiền được tạo.</p>
+  <ul>
+    <li th:each="r : ${timeline.refunds}" th:attr="data-refund-status=${r.status}">
+      <a th:href="@{/payment/finances/refunds/{id}(id=${r.id})}" class="text-secondary underline" th:text="${'Khoản hoàn #' + r.id + ': ' + #numbers.formatInteger(r.amount, 0, 'POINT') + ' VNĐ'}"></a>
+      <p th:text="${r.status.message()}"></p>
+    </li>
+  </ul>
+  <p>Tiền đã nhận và tiền hoàn được theo dõi riêng. Chỉ nhà cung cấp xác nhận thành công mới ghi nhận đã hoàn tiền.</p>
+</section>
 </body></html>

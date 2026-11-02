@@ -1,4 +1,17 @@
-# CarRent — Handoff hiện hành: Phase6 / đợt4 — P6.12 → P6.13
+# CarRent — Nghiệm thu Phase6 / đợt4 và bàn giao P8.1
+
+**Checkpoint P6.12 + P6.13 — 2026-11-02:** hoàn thành riêng **5/5 + 5/5 checklist**. Timeline Customer/Owner/Admin chỉ đọc, các mốc tiền/vật lý/hoàn độc lập; audit queue/deadline/current actor và gate rental liên tục. Full isolated **clean verify 856/856 JUnit, 0 failure/error/skip**, JAR; Chromium **109/109** trên source cuối, 320/390/1440 và no-JS. **68/86 task**, còn18 (45task mới xong27). Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-rental-gate` từ main `82a3852`, chưa stage/commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. Dừng trước Phase8; tiếp theo **P8.1 riêng**, phụ trách `ducbinhnguyen07ars`. P4.2-A live vẫn chờ.
+
+## Bàn giao hiện hành sau đợt4
+
+- P6.12/P6.13 đã hoàn thành; các mục “lần tới/khoảng trống” bên dưới là snapshot kế hoạch trước triển khai. Source mới chưa commit/push; không checkout/reset làm mất thay đổi hiện tại.
+- Tiếp theo P8.1 riêng (4checklist): catalog3gói, migration/model subscription_orders và owner_subscriptions, snapshot/quota/price/duration và schema/seed verification. Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; chưa triển khai P8.2/QR/entitlement/quota gate trong đợt này.
+- Đọc plan Phase8 cùng roadmap, kiểm tra branch/status/checkpoint thực tế trước làm. Giữ phase0 riêng, DB-first/ddl-auto=none, không migrate ứng dụng/tự cấp gói/enable workflow/provider/scheduler/restart8080/tiền thật. Chỉ commit/push khi có yêu cầu riêng.
+- Evidence rental cuối tại `.scratch/phase6/p612-p613/verification-summary.json`, SDD §14.38. Agent review có giới hạn ghi rõ; human review/provider live vẫn pending.
+
+Prompt chat mới: “Phân tích rồi implement P8.1 riêng tại C:\Users\Admin\Documents\hoc\Car theo handoff đợt4 và plan Phase8; mục tiêu đủ4/4checklist, test/schema/SDD, giữ thay đổi riêng phase0 và toàn bộ source chưa commit. Không migrate DB ứng dụng, tự cấp gói/bật workflow/provider/scheduler/restart8080, chuyển tiền thật hoặc tự stage/commit/push. Dừng trước P8.2.”
+
+## Snapshot kế hoạch trước triển khai P6.12/P6.13
 
 **Tích hợp P6.11 — 2026-11-02:** feature `6de7526`, merge main `7aeb8a8`, author `huy69332`; đã push và giữ nhánh `feat/phase6-paid-cancellation`. Source merge khớp source đã clean verify816/816/JAR và browser79/79; sau merge chạy lại32/32 cancellation/UI test trên schema riêng. Phase0 riêng nằm ngoài commit và giữ nguyên. Tiến độ66/86, còn20; tiếp theo P6.12→P6.13, phụ trách `huy69332`, reviewer `thanhmit`. Không migrate DB ứng dụng/bật workflow/provider/scheduler/restart8080 hoặc chuyển tiền thật.
 

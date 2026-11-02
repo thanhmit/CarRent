@@ -47,10 +47,12 @@ public class BookingController {
     private final PaymentObligationRepository obligations;
     private final InspectionService inspectionViews;
     private final com.carrent.payment.PaymentRoutes paymentRoutes;
+    private final BookingTimeline timeline;
 
     public BookingController(BookingService bookings, CarService cars, CarImageRepository images,
                              PaymentRepository payments, CarCommandExecutor commands, BookingInspectionRepository inspections, PaymentIntentRepository intents,
-                             PaymentObligationRepository obligations, InspectionService inspectionViews, com.carrent.payment.PaymentRoutes paymentRoutes) {
+                             PaymentObligationRepository obligations, InspectionService inspectionViews, com.carrent.payment.PaymentRoutes paymentRoutes,
+                             BookingTimeline timeline) {
         this.bookings = bookings;
         this.cars = cars;
         this.images = images;
@@ -61,6 +63,7 @@ public class BookingController {
         this.obligations = obligations;
         this.inspectionViews = inspectionViews;
         this.paymentRoutes = paymentRoutes;
+        this.timeline = timeline;
     }
 
     @GetMapping("/bookings/new")
@@ -133,6 +136,7 @@ public class BookingController {
         var booking = bookings.getBookingForView(id, principal);
         var car = booking.getCar();
         model.addAttribute("booking", booking);
+        model.addAttribute("timeline", timeline.view(id, principal));
         model.addAttribute("cancellationQuote", bookings.cancellationQuote(id, principal));
         model.addAttribute("car", car);
         model.addAttribute("carPublic", car.getApprovalStatus() == ApprovalStatus.APPROVED

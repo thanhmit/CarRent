@@ -1,13 +1,15 @@
 # CarRent — Software Design Document (SDD)
 
+**Checkpoint P6.12 + P6.13 — 2026-11-02:** hoàn thành riêng **5/5 + 5/5 checklist**. Timeline Customer/Owner/Admin chỉ đọc, các mốc tiền/vật lý/hoàn độc lập; audit queue/deadline/current actor và gate rental liên tục. Full isolated **clean verify 856/856 JUnit, 0 failure/error/skip**, JAR; Chromium **109/109** trên source cuối, 320/390/1440 và no-JS. **68/86 task**, còn18 (45task mới xong27). Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-rental-gate` từ main `82a3852`, chưa stage/commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. Dừng trước Phase8; tiếp theo **P8.1 riêng**, phụ trách `ducbinhnguyen07ars`. P4.2-A live vẫn chờ.
+
 **Tích hợp P6.11 — 2026-11-02:** feature `6de7526`, merge main `7aeb8a8`, author `huy69332`; đã push và giữ nhánh `feat/phase6-paid-cancellation`. Source merge khớp source đã clean verify816/816/JAR và browser79/79; sau merge chạy lại32/32 cancellation/UI test trên schema riêng. Phase0 riêng nằm ngoài commit và giữ nguyên. Tiến độ66/86, còn20; tiếp theo P6.12→P6.13, phụ trách `huy69332`, reviewer `thanhmit`. Không migrate DB ứng dụng/bật workflow/provider/scheduler/restart8080 hoặc chuyển tiền thật.
 
 **Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. P6.11 đã hoàn thành trong working tree; tiếp theo P6.12→P6.13.
 
-**Phiên bản:** 2.42
-**Checkpoint P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git phía trên. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
+**Phiên bản:** 2.43
+**Checkpoint lịch sử P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git phía trên. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
 **Tích hợp Git 2026-11-01:** P6.4–P6.7 đã commit `4a6af85` và merge main `66c2d8b`, author `huy69332`; clean verify mới683/683, post-merge handover45/45. Agent review không thấy blocker; chưa có human contributor review/provider-live mới. Xem §14.33 (snapshot trước đợt P6.8/P6.9); trạng thái hiện hành ở §14.36.
-**Lịch hiện hành:** P6.1–P6.11 đã đóng; tiếp theo **P6.12→P6.13** cùng đợt. [Handoff](plans/phase-6-batch-4-handoff.md).
+**Lịch hiện hành:** P6.1–P6.13 đã đóng; tiếp theo **P8.1 riêng** theo [roadmap](plans/README.md). Handoff nghiệm thu tại [đợt4](plans/phase-6-batch-4-handoff.md).
 **Quy tắc subagent được duyệt 2026-11-01:** Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối. Thay giới hạn cũ chỉ dùng khi được yêu cầu cho các đợt tiếp theo; giữ nguyên ghi nhận self-review/không dùng subagent của checkpoint lịch sử, không coi agent review là human contributor review.
 **Checkpoint P6.7 trước tích hợp Git:** P6.7 hoàn thành đủ **5/5 checklist**: Owner xác nhận hợp đồng và giao xe atomic, kiểm tra BEFORE/đủ30%/ngày Việt Nam/custody; UI Đang thuê và chặn hủy sau giao xe. Full isolated clean verify **683/683 JUnit test, 0 failure/error/skip** (638 hồi quy + RentalHandoverTest45), JAR đóng gói; **32/32 kiểm tra Chromium** desktop/mobile/no-JS đạt. DB ứng dụng vẫn7bảng, fingerprint schema/toàn bộ rows và file phase-0 riêng giữ nguyên. Không migration DB ứng dụng, bật workflow/provider/scheduler, restart8080, commit/push, tiền thật hoặc human review mới. **62/86 task**, còn24; tiếp theo **P6.8 — Customer gửi AFTER và nhắc Owner**. P4.2-A tiếp tục hoãn; gate rental mặc định tắt.
 **Ngày:** 2026-11-02
@@ -282,18 +284,19 @@ Mỗi tài khoản đúng **một role** (cột enum `users.role`).
 | Duyệt / từ chối Car | Có | Không | Không |
 | Tạo Booking | Không | Có | Không |
 | Xem Booking | Tất cả | Của mình | Liên quan xe của mình |
-| Confirm / Reject / Complete Booking | Giám sát | Không | Có (xe của mình) |
-| Hủy Booking | Không | Của mình (theo quy tắc) | Không |
-| Mock Payment | Không | Booking của mình (đã CONFIRMED) | Không |
+| Confirm / Reject Booking | Chỉ xem | Không | Có (xe của mình) |
+| Complete Booking | Chỉ xem | Không | Chỉ legacy; VIETQR_V1 tự hoàn tất khi trả xe và đủ tiền |
+| Hủy Booking | Không | Của mình (theo policy) | VIETQR_V1 của xe mình trước handover |
+| Mock Payment | Không | Chỉ booking LEGACY (đã CONFIRMED) | Không |
 | Xem Notification | Của mình | Của mình | Của mình |
 | Cập nhật Profile / đổi mật khẩu | Của mình | Của mình | Của mình |
 | Phase 6: lập biên bản BEFORE | Chỉ xem | Chỉ xem | Owner của xe |
-| Phase 6: xác nhận nhận xe / bất đồng BEFORE | Chỉ xem | Customer của booking | Không |
+| Phase 6: đồng ý / bất đồng BEFORE | Chỉ xem sau gửi | Customer của booking | Chỉ thêm addendum |
+| Phase 6: xác nhận hợp đồng và giao xe | Chỉ xem | Không | Owner của xe, đủ advance và điều kiện ngày/custody |
 | Phase 6: lập biên bản AFTER | Chỉ xem | Customer của booking | Chỉ xem |
 | Phase 6: xác nhận xe đã trả / bất đồng AFTER | Chỉ xem | Không | Owner của xe |
-| Phase 6: xem ảnh / bổ sung ghi chú biên bản đã gửi | ADMIN | Customer của booking | Owner của xe |
-| Phase 6: xử lý bất đồng | ADMIN | Không | Không |
-| Phase 6: ghi nhận đã thu tiền mặt giả lập | Không | Không | Owner của booking CONFIRMED chưa PAID |
+| Phase 6: xem ảnh biên bản đã gửi | ACTIVE | Customer đúng booking ACTIVE | Owner đúng xe ACTIVE |
+| Phase 6: timeline booking/tài chính | Chỉ xem | Của mình | Xe của mình |
 
 > Ẩn nút trên UI không đủ. **Mọi quyền và ownership phải kiểm tra ở backend** (SecurityConfig + Service). Owner A sửa xe của Owner B bằng cách đổi ID trên URL → 403/404.
 
@@ -431,7 +434,7 @@ stateDiagram-v2
     COMPLETED --> [*]
 ```
 
-`COMPLETED` là thao tác thủ công của Owner — không tự động (D-07). Phase 0–5 và đơn cũ dùng điều kiện ngày đã qua. Phase 6 với `inspection_required=true` dùng nhận/trả thực tế + biên bản + PAID tại BR-13; không thêm enum Booking. Tiến độ thuê xe, tình trạng thanh toán và bất đồng hiển thị riêng.
+Sơ đồ trên là hợp đồng legacy: `COMPLETED` do Owner thao tác sau ngày kết thúc (D-07). VIETQR_V1 dùng FR-16: đủ advance mới CONFIRMED, unpaid hết hạn thành EXPIRED, trả xe và đủ balance tự COMPLETED. Tiến độ thuê xe, tiền và bất đồng hiển thị riêng.
 
 ### FR-12. Thanh toán legacy và nền tài chính mới
 
@@ -444,7 +447,7 @@ stateDiagram-v2
 - Booking giữ nguyên `CONFIRMED` sau khi PAID (trạng thái thanh toán đọc từ payments).
 - Notification: PAID → customer + owner; FAILED → customer.
 - Không thu thập thông tin thẻ/ngân hàng thật.
-- **Phase 6:** việc nhận xe không đòi PAID. Khi xe đã trả nhưng chưa PAID, booking vẫn CONFIRMED để Customer thanh toán qua luồng này. Owner có thao tác riêng ghi nhận đã thu tiền mặt giả lập (method `CASH_SIMULATED`, amount từ booking); không đổi nghĩa endpoint thanh toán Customer và không tạo PAID lần hai. Chưa PAID là chưa thanh toán đủ tổng tiền; không làm trả góp, nhắc nợ tự động hay thu tiền thật.
+- **VIETQR_V1:** không dùng mock/cash legacy. Customer đồng ý BEFORE tạo ADVANCE30%, tiền hợp lệ xác nhận CONFIRMED; Owner xác nhận hợp đồng và giao xe khi đủ30%. Owner nhận lại xe tạo BALANCE70% hạn1giờ; nhận đủ balance tự COMPLETED trong transaction apply, kể cả AFTER còn DISPUTED. QR15phút độc lập hạn nợ, overdue chỉ nhắc, không xóa nợ hoặc chặn trả tiền.
 
 **Nền tài chính hiện hành:** POST `/payment/obligations/{id}/attempts`, POST cancel intent và GET checkout/result/status dùng obligation/intent/receipt/refund riêng; amount/source/payer do server quyết định, QR tối đa 15 phút. SePay xác thực và commit inbox trước ACK; core apply một lần cùng handler transaction. Payout payOS lưu attempt trước HTTP, UNKNOWN chỉ query, SUCCEEDED khớp mới hoàn tất. UI tài chính có receipt cần kiểm tra theo scope và cùng trạng thái tổng hợp với checkout. Lookup/provider/live còn P4.2-A; handler thuê/gói thật còn Phase 6/8, chưa bật workflow. Xem [handoff P4.11](plans/phase-4-handoff.md).
 
@@ -484,48 +487,41 @@ stateDiagram-v2
 - `/profile/change-password` (GET/POST): nhập mật khẩu hiện tại (verify BCrypt) + mật khẩu mới + xác nhận; sai mật khẩu hiện tại → lỗi validation.
 - Không làm avatar upload trong MVP (cột `avatar_url` để dự phòng).
 
-### FR-16. Biên bản bàn giao và trả xe — triển khai Phase 6
+### FR-16. Biên bản, hợp đồng và các mốc thuê VIETQR_V1
 
-**Đối tượng:** một Booking có tối đa một biên bản `BEFORE` và một `AFTER`; ảnh biên bản độc lập với `car_images`. Chỉ áp dụng cho booking tạo sau khi bật Phase 6 (`inspection_required=true`). Đơn cũ hiển thị nhãn chính sách cũ, không tạo bằng chứng quá khứ giả.
+**Phạm vi:** chỉ booking `workflow_version=VIETQR_V1`, `inspection_required=true` sau khi được phép kích hoạt. Legacy giữ chính sách và bằng chứng lịch sử, không tạo báo cáo quá khứ giả. Code/fixture đã có không đồng nghĩa workflow/provider live được bật.
 
-**Thông tin:** booking, xe, người lập và địa chỉ nhận/trả lấy từ server; dùng `bookings.pickup_address` đã snapshot cho cả hai lần. Khi gửi bắt buộc có mô tả tình trạng (trim 1–2000 ký tự), hư hỏng nhìn thấy (1–1000; có thể ghi “Không phát hiện”), odometer (số nguyên 0–9.999.999 km), nhiên liệu/pin (0–100%), phụ kiện bàn giao (1–500; có thể ghi “Không bàn giao”) và **4–10 ảnh**. Gợi ý ảnh trước/sau/hai bên, nội thất, đồng hồ; không tự kiểm chứng góc chụp hoặc thời điểm chụp. Odometer AFTER thấp hơn BEFORE chỉ cảnh báo để kiểm tra, không tự kết luận lỗi hay cản ghi nhận xe đã trả.
+**Bằng chứng:** tối đa một BEFORE/một AFTER mỗi booking; địa chỉ nhận/trả là `pickup_address` snapshot. Khi gửi cần conditionNote1–2000, visibleDamage1–1000, odometer0–9.999.999, energy0–100, accessories1–500 và4–10ảnh JPEG/PNG ≤5MiB/ảnh. AFTER odometer thấp hơn chỉ cảnh báo. Server quyết định booking/car/actor/timestamp; không chứng minh thời điểm chụp hoặc GPS.
 
-**BEFORE — Owner lập, Customer xác nhận:**
+**Trước giao xe:**
 
-1. Booking CONFIRMED: Owner lưu nháp, thêm/xóa ảnh nháp rồi gửi biên bản. Có thể chuẩn bị trước ngày nhận.
-2. Customer xem ảnh/nội dung và bấm **Đồng ý biên bản và xác nhận đã nhận xe** tại địa điểm snapshot; server ghi `vehicle_received_at`. Cho nhận khi chưa PAID, hiển thị tổng tiền chưa thanh toán. Thời điểm nhận phải thuộc `start_date ≤ hôm nay < end_date`.
-3. Nếu chưa đồng ý, Customer gửi lý do bất đồng; chưa ghi nhận nhận xe. Admin xử lý thủ công, sau đó Customer vẫn phải xác nhận đã nhận thực tế; Admin không xác nhận thay.
-4. Trước lúc xác nhận nhận xe, server kiểm tra cùng xe không còn được Customer của booking mới khác giữ thực tế (BR-15). Sau xác nhận, không còn hủy/hoàn tiền qua luồng cancellation.
+1. Customer tạo yêu cầu PENDING; Owner accept vẫn PENDING và chuẩn bị BEFORE. Owner gửi BEFORE không xác nhận tiền hoặc giao xe.
+2. Customer xem bằng chứng, có thể dispute trước khi đồng ý. Đồng ý BEFORE ghi accepted/event và tạo ADVANCE30%, QR giữ chỗ15phút trong cùng transaction; không ghi nhận nhận xe vật lý.
+3. Receipt đúng tiền, đúng chủ thể và đủ điều kiện xác nhận advancePaidAt/CONFIRMED cùng apply. QR hết hạn/cancel không hồi sinh booking khi tiền đến sau; khoản hợp lệ không thể cấp lịch được tạo nghĩa vụ hoàn theo Phase4.
+4. Owner xác nhận đã ký hợp đồng và giao xe trong `start_date ≤ ngày Việt Nam < end_date`, sau BEFORE agreed/đủ30% và current custody không có booking khác giữ xe. Server ghi contractConfirmedBy/At và vehicleReceivedAt cùng transaction. Customer không bấm xác nhận nhận xe lần hai.
 
-**AFTER — Customer lập, Owner nhận lại xe:**
+**Trả xe và thanh toán còn lại:**
 
-1. Sau khi đã nhận xe, Customer lập và gửi biên bản AFTER tại vị trí cũ; được trả sớm, đúng hạn hoặc trễ. Gửi báo cáo chưa có nghĩa Owner đã nhận xe.
-2. Owner chọn **Đã nhận xe, đồng ý tình trạng** hoặc **Đã nhận xe, có bất đồng** (lý do bắt buộc): cả hai ghi `vehicle_returned_at` ngay, lựa chọn thứ hai mở bất đồng. Nếu xe chưa tới, chọn **Chưa nhận được xe**: thêm event, giữ chờ xác nhận và không ghi thời điểm trả.
-3. Owner đã nhận xe có bất đồng: giữ nguyên bằng chứng, Admin xử lý; không xóa thời điểm trả. Trạng thái thanh toán hiển thị độc lập.
-4. Owner bấm **Hoàn tất đơn thuê** khi đủ BR-13; trả xe và đóng bất đồng không tự hoàn tất. Không phải đợi qua `end_date` nếu xe thực sự đã trả và đủ điều kiện; ngày thuê/giá snapshot/tổng tiền giữ nguyên.
+1. Customer lập/gửi AFTER sau handover; upload/submit không xác nhận Owner đã nhận lại. Báo cáo và ảnh đã submit bất biến; addendum/event không sửa bản gốc.
+2. Owner chọn RECEIVED_AGREED, RECEIVED_DISPUTED (bắt buộc lý do) hoặc NOT_RECEIVED. Hai lựa chọn đã nhận ghi physical return và tạo BALANCE70% cùng transaction, dueAt=returnedAt+3600giây; NOT_RECEIVED chỉ event/thông báo, không tạo nợ70%.
+3. AFTER DISPUTED giữ nguyên bằng chứng và physical timestamps; không chặn thanh toán hoặc auto-COMPLETED. Nhận đủ BALANCE sau physical return thì apply tự COMPLETED; không cần nút Owner complete hoặc Admin resolve. Ngày/giá/tổng tiền snapshot giữ nguyên khi trả sớm/trễ.
+4. Sau1giờ kể từ AFTER submitted mà chưa nhận lại, nhắc Owner/Admin một lần; BALANCE quá1giờ chưa đủ tiền nhắc Customer/Owner/Admin một lần. Durable marker và notices cùng commit; queue reject không đánh dấu hoàn tất. Job30giây mặc định tắt, chỉ bật fixture khi phát triển.
 
-**Lịch sử và riêng tư:** nháp chỉ người lập sửa/xem; sau gửi, Customer của booking, Owner của xe và Admin ACTIVE được xem. Bản gốc và ảnh đã gửi bất biến; ghi chú bổ sung dạng text, phản hồi và quyết định Admin được append vào `inspection_events` với actor/timestamp. Không bổ sung/thay ảnh bản gốc sau gửi. Admin chỉ đóng bất đồng kèm kết luận xử lý thủ công, không tự tính tiền hoặc thay xác nhận vật lý của hai bên. Người ngoài không truy cập ảnh qua URL trực tiếp; xem NFR-06 và §7.9.
+**Hủy/hoàn:** trước handover Customer áp policy BR-08, Owner hoàn đủ advance; unpaid không tạo hoàn giả, tiền đến sau hoàn đủ. Sau handover/return không được cancel để xóa nợ. Cancellation snapshot và refund obligation atomic, actual payout do Phase4 ngoài transaction. Pending refund chưa phải đã hoàn; receipt/settled tiền gốc không bị giảm hoặc bulk REFUNDED.
 
-**Luồng tiến độ dự kiến:**
+**Quyền và hiển thị:** nháp chỉ tác giả; sau submit chỉ Customer đúng booking, Owner đúng xe hoặc Admin ACTIVE được xem nội dung/ảnh. Text escape, POST CSRF, không URL public. Admin timeline chỉ đọc, không ghi nhận tiền/handover/return thay hai bên; không bổ sung workflow resolve trong đợt này. Timeline tách accept, BEFORE agreed, advance paid, contract/handover, AFTER, returned, balance paid và từng refund.
 
 ```mermaid
 flowchart TD
-    A[Booking CONFIRMED: chờ bàn giao] --> B[Owner gửi BEFORE]
-    B --> C{Customer đồng ý và đã nhận?}
-    C -->|Có; có thể chưa PAID| D[Đang thuê; khóa cancellation]
-    C -->|Bất đồng| E[Admin xử lý BEFORE]
-    E --> C
-    D --> F[Customer gửi AFTER]
-    F --> G{Owner đã nhận lại xe?}
-    G -->|Chưa| F
-    G -->|Có| H[Ghi thời điểm xe đã trả]
-    H --> I{AFTER được đồng ý hoặc Admin xử lý?}
-    I -->|Chưa| J[Chờ xử lý bất đồng AFTER]
-    J --> I
-    I -->|Rồi| K{Đã PAID?}
-    K -->|Chưa| L[Đã trả xe: chờ thanh toán; CONFIRMED]
-    L --> K
-    K -->|Rồi| M[Owner bấm Hoàn tất: COMPLETED]
+    A[PENDING: Owner accept] --> B[Owner gửi BEFORE]
+    B --> C[Customer đồng ý: ADVANCE30%]
+    C --> D[Nhận đủ30%: CONFIRMED]
+    D --> E[Owner xác nhận hợp đồng và giao xe]
+    E --> F[Customer gửi AFTER]
+    F --> G[Owner nhận lại thực tế: BALANCE70%]
+    G --> H[Nhận đủ70%: COMPLETED]
+    G --> I[AFTER có thể còn DISPUTED]
+    C --> J[Hủy hoặc hết giữ chỗ: tiền đến sau hoàn riêng]
 ```
 
 ---
@@ -577,15 +573,16 @@ Nhân tiền bằng `Math.multiplyExact`, overflow trả business error. Địa 
 
 ### BR-08. Cancellation
 
-- Customer hủy được khi status ∈ {`PENDING`, `CONFIRMED`}. Phase 0–5/đơn cũ không giới hạn thời gian; Phase 6 thêm điều kiện `vehicle_received_at IS NULL` cho booking theo chính sách mới.
-- Nếu booking có Payment `PAID` → payment đó chuyển `REFUNDED` (giả lập), kèm notification.
+- **Legacy:** Customer hủy PENDING/CONFIRMED chưa handover; Payment PAID chuyển REFUNDED giả lập theo D-12, không suy ra hoàn ngân hàng.
+- **VIETQR_V1:** Customer/Owner chỉ hủy trước physical handover/return. Unpaid PENDING đóng booking/intent/obligation không tạo refund; tiền đến sau hoàn đủ. CONFIRMED đã nhận advance: Owner hoàn đủ; Customer miễn phí đến đúng1giờ từ advancePaidAt, sau đó nếu ngày nhận cách ngày hủy hơn3ngày lịch Việt Nam phí10%advance, còn3ngày hoặc ít hơn (kể cả ngày nhận đã qua) phí50%. Làm tròn xuống VNĐ, refund=advance-fee.
+- POST tính lại tại server. cancelledAt/fee/reason và nghĩa vụ hoàn cùng commit, lần thắng đầu tiên giữ snapshot; provider chuyển tiền ngoài transaction. Receipt APPLIED và amountSettled vẫn là tiền đã nhận. Sau handover không cancel/xóa nợ; Owner phải dùng return.
 
 ### BR-09. Payment
 
 **Legacy:** các quy tắc Payment thuộc booking dưới đây áp dụng dữ liệu/luồng giả lập lịch sử. Không diễn giải PAID/REFUNDED legacy thành đã thu/hoàn qua ngân hàng.
 
 - Payment thuộc 1 booking; amount lấy từ `booking.total_amount` phía server.
-- Customer của booking đó được thanh toán; booking phải `CONFIRMED`. Phase 6 bổ sung Owner của xe ghi nhận đã thu tiền mặt giả lập (FR-12), dùng cùng guard CONFIRMED/chưa PAID và amount server.
+- Customer của booking legacy được thanh toán khi CONFIRMED/chưa PAID; không dùng endpoint mock/cash cho VIETQR_V1.
 - Tối đa **1 Payment `PAID`** mỗi booking (Service chặn trước khi tạo mới).
 - Theo D-13: khóa Car → Booking → Payment và kiểm tra CONFIRMED/chưa PAID bằng dữ liệu hiện tại trước insert; thanh toán đồng thời hoặc tranh chấp với cancel không tạo PAID trùng hay CANCELLED+PAID.
 
@@ -597,35 +594,35 @@ Nhân tiền bằng `Math.multiplyExact`, overflow trả business error. Địa 
 - Không xóa cứng dữ liệu được booking/payment tham chiếu (Car, User) — dùng deactivate.
 - Tạo booking + notification, payment + notification → cùng transaction.
 
-### BR-11. Chính sách và bằng chứng biên bản — Phase 6
+### BR-11. Chính sách và bằng chứng biên bản — VIETQR_V1
 
-- `inspection_required` do server đặt true cho booking mới sau kích hoạt; các row có sẵn giữ false. Client không được đổi cờ hoặc gửi actor/booking/car/timestamps/status để bypass.
-- UNIQUE `(booking_id, phase)`; BEFORE tác giả là Owner của xe, AFTER là Customer của booking. Draft cho phép thiếu thông tin, submit phải đủ FR-16 và booking CONFIRMED. AFTER chỉ tạo sau `vehicle_received_at` và trước khi đã ghi nhận trả xe.
-- `DRAFT → SUBMITTED → ACCEPTED` hoặc `DISPUTED → RESOLVED`. BEFORE đã RESOLVED vẫn cần Customer nhận thực tế (`RESOLVED → ACCEPTED` hoặc mở lại DISPUTED khi chưa nhận). AFTER RESOLVED không cần sửa bản gốc hay ghi nhận trả lần hai.
-- Nội dung/ảnh gốc bị khóa từ lần submit đầu. Ghi chú, bất đồng, xác nhận và xử lý Admin chỉ thêm event. Không xóa lịch sử khi đơn hủy trước nhận; đơn ở trạng thái cuối chỉ đọc.
+- Server quyết định workflow/inspection_required; row legacy giữ nguyên. UNIQUE booking/phase, BEFORE do Owner lập sau accept khi PENDING, AFTER do Customer lập sau handover và trước physical return.
+- Draft được sửa bởi tác giả; submit đủ FR-16 và khóa nội dung/ảnh từ lần đầu. BEFORE SUBMITTED/DISPUTED được Customer đồng ý thành ACCEPTED; AFTER Owner nhận đồng ý thành ACCEPTED hoặc bất đồng thành DISPUTED. RESOLVED là giá trị schema dành cho lịch sử/mở rộng, không phải điều kiện auto-complete hoặc endpoint Admin phải triển khai ở đây.
+- Event append-only actor/time server; terminal booking chỉ đọc evidence, không xóa báo cáo khi hủy/hết giữ chỗ.
 
-### BR-12. Xác nhận vật lý và địa điểm — Phase 6
+### BR-12. Xác nhận vật lý và hợp đồng — VIETQR_V1
 
-- Customer của booking xác nhận nhận xe; Owner của xe xác nhận nhận lại. Timestamp do server ghi một lần, không nhận thời gian do client khai. `vehicle_returned_at ≥ vehicle_received_at`; không xác nhận thay, không xác nhận nếu chỉ đã gửi report.
-- Trả xe tại snapshot `pickup_address`; không đổi địa chỉ theo Car hiện tại. Người thao tác xác nhận xe tại địa chỉ đó; hệ thống không chứng minh bằng GPS/EXIF.
-- Không bắt buộc PAID để nhận; nhận rồi cấm hủy/hoàn tiền qua BR-08. Trả sớm/trễ giữ nguyên ngày/tổng tiền; không tự tạo phí hoặc refund.
+- Owner xác nhận ký hợp đồng và giao xe sau BEFORE agreed/đủ30%, trong ngày thuê Việt Nam và không có outstanding custody. contractConfirmedAt=vehicleReceivedAt, contractConfirmedBy=Owner hiện tại ACTIVE. Customer không xác nhận nhận xe lần hai.
+- Owner nhận lại thực tế có3lựa chọn theo FR-16; returnedAt≥receivedAt. NOT_RECEIVED không tạo BALANCE. Địa chỉ luôn pickup_address snapshot; server không nhận timestamp client, không tự chứng minh GPS.
+- Sau giao/trả xe cấm cancellation, không dùng end_date để suy ra physical return. Trả sớm/trễ giữ nguyên ngày/tổng tiền; không tự tính phí phạt hoặc hoàn.
 
-### BR-13. Hoàn tất và khoản chưa thanh toán — Phase 6
+### BR-13. Hoàn tất, khoản còn lại và deadline — VIETQR_V1
 
-Với `inspection_required=true`, Owner chỉ complete khi: Booking CONFIRMED; BEFORE ACCEPTED và `vehicle_received_at` có giá trị; `vehicle_returned_at` có giá trị; AFTER ACCEPTED hoặc RESOLVED; có Payment PAID. Bất đồng AFTER đang mở chặn complete dù đã nhận lại xe/PAID. Không dùng riêng `end_date < hôm nay` để kết luận đã trả xe. Owner chưa nhận xe thì không được complete kể cả Admin đã đóng bất đồng.
+- Owner nhận lại thực tế tạo nghĩa vụ70% collectorOwner/payerCustomer, dueAt=returnedAt+3600s. QR mỗi attempt tối đa15phút; hết/cancel attempt không xóa debt hoặc gia hạn dueAt. Quá hạn vẫn được trả tiền.
+- Receipt đủ outstanding balance sau physical return tự COMPLETED cùng apply/notices. AFTER DISPUTED không chặn; không cần Admin resolve hoặc Owner manual complete. Legacy giữ complete/payment cũ.
+- Underpayment giữ REVIEW_REQUIRED, không cộng dồn; oldQR có thể settle current outstanding; overpay/duplicate tạo Owner refund phù hợp. Payout và refund pending không sửa booked money nhận được.
+- Nhắc AFTER chưa được nhận lại và nhắc BALANCE overdue dùng durable notified markers/notice cùng commit, mỗi mốc một lần;30sjob defaultoff, current checks khi đến lượt queue.
 
-Xe đã trả/chưa PAID vẫn CONFIRMED, hiện **Đã trả xe — chờ thanh toán**, tổng tiền chưa trả và CTA phù hợp role. PAID không tự complete. Tối đa một PAID; Owner ghi nhận cash và Customer mock pay đồng thời phải chỉ có một lần thành công. Khoản chưa PAID theo dõi trên chi tiết/danh sách đơn hiện có; không thêm trạng thái nợ, bảng công nợ, thanh toán một phần hoặc job nhắc nợ. Đơn cũ giữ chính sách complete/cancel lịch sử và có nhãn rõ.
+### BR-14. Đồng thời, quyền và bất biến — VIETQR_V1
 
-### BR-14. Đồng thời, xử lý bất đồng và ảnh — Phase 6
+- Mutation đi qua executor/CarCommandExecutor trước domain transaction; Car→Booking→financial→Inspection→Image, current read và kiểm tra ACTIVE/role/membership sau aggregate lock, nhiều booking ID tăng dần. Không khóa report trước rồi quay lại financial/Booking.
+- Retry giữ server timestamps/snapshot, không lặp money/obligation/refund/notice. Các race receipt/cancel/expiry/handover/return/payment và stale entity được kiểm chứng bằng hai connection MySQL, rollback notification không commit một phần.
+- Chỉ tác giả xem nháp; submitted đúng Customer/Owner/Admin ACTIVE. Ảnh private không public URL, text escape, POST CSRF; addendum/event không thay ảnh/text gốc.
+- Upload rollback phải dọn file mới; delete draft chỉ xóa file afterCommit. Không endpoint update/delete event hoặc sửa evidence sau submit. Admin chỉ đọc timeline/evidence, không xác nhận vật lý/tiền thay người dùng hoặc thêm resolve bắt buộc để complete.
 
-- Thứ tự khóa **Car → Booking → Payment (nếu cần) → Inspection → Image**; current read dưới khóa, events chỉ append trong cùng transaction. Nếu đọc nhiều Booking cùng xe, khóa theo ID tăng dần. Không khóa Inspection rồi quay lại lấy Payment/Booking. Tái sử dụng D-13, không dùng Java synchronized.
-- Submit/nhận/trả/dispute/resolve/complete/cash là transition một lần; gửi lặp hoặc thua race trả business error, không lặp timestamp/notification/payment. Ghi chú bổ sung có thể nhiều event hợp lệ; không là sửa nội dung gốc.
-- Admin chỉ resolve khi DISPUTED, phải ghi kết luận trim 1–2000 ký tự. Không đổi giá, trạng thái Payment/Booking, nội dung/ảnh gốc hay timestamp nhận/trả; mở lại BEFORE chỉ khi Customer chưa nhận, qua thao tác bất đồng của Customer.
-- Ảnh mới bị rollback phải dọn; xóa ảnh nháp chỉ xóa file afterCommit. Sau submit không xóa/thay ảnh. Transaction thất bại không để event/notification/receipt một phần; timeout/deadlock trả lỗi kiểm soát như D-13.
+### BR-15. Khả dụng theo lịch và custody — VIETQR_V1
 
-### BR-15. Khả dụng theo lịch và xe đang được giữ thực tế — Phase 6
-
-BR-05 vẫn quyết định đặt trước theo ngày. Riêng xác nhận nhận xe kiểm tra current Booking cùng Car có `inspection_required=true AND vehicle_received_at IS NOT NULL AND vehicle_returned_at IS NULL` (khác booking hiện tại) dưới khóa Car: có thì chặn bàn giao và báo Owner kiểm tra xe chưa trả. Không bỏ qua vì ngày cũ đã hết. Đơn đã trả nhưng chưa PAID không còn giữ xe thực tế; nếu khoảng ngày vẫn trùng, vẫn chịu BR-05. Dữ liệu legacy không có thời điểm bàn giao: Owner phải rà soát đơn đang thuê khi kích hoạt, không suy diễn xe đã trả từ thiếu timestamp.
+BR-05 kiểm tra overlap PENDING/CONFIRMED dưới khóa. Handover kiểm tra current booking khác cùng Car có receivedAt mà chưa returnedAt, dù ngày thuê đã qua. Xe đã trả nhưng còn nợ không còn physical custody; interval vẫn chịu BR-05 khi CONFIRMED. Không khóa quyền đặt/nhận đơn chỉ vì overdue; legacy thiếu timestamp cần rà soát khi cutover, không suy diễn đã trả.
 
 ---
 
@@ -854,9 +851,11 @@ Ngày 2026-10-10 trên MySQL 8.0.45, `localhost:3306`, database `carrent`:
 
 ---
 
-### 7.9. Schema và migration Phase 6.1 — đã triển khai trên bootstrap, chưa áp dụng DB ứng dụng
+### 7.9. Schema Phase 6 — bootstrap/fixture, chưa áp dụng DB ứng dụng
 
 **Bootstrap:** `scriptDB.sql` có 18 bảng (7 legacy, 7 payment-core, 1 refund account, 3 inspection) và giữ seed cũ. **DB ứng dụng:** vẫn chưa chạy migration. Migration one-shot là `docs/migrations/2026-10-27-02-rental-workflow.sql`; yêu cầu MySQL 8.0.16+, InnoDB, strict mode, backup marker và payment-core v1 đã tồn tại. Không chạy migration khi ứng dụng boot. BookingStatus/schema thêm `EXPIRED`; Payment legacy giữ nguyên.
+
+**Bổ sung P6.11:** `cancellation_reason VARCHAR(500) NULL`; schema đã có Phase6 nâng cấp bằng `2026-11-02-01-cancellation-reason.sql` có backup/schema guard, không sửa migration rental cũ.
 
 **Bổ sung `bookings`:**
 
@@ -871,7 +870,7 @@ Ngày 2026-10-10 trên MySQL 8.0.45, `localhost:3306`, database `carrent`:
 | advance_amount, balance_amount | BIGINT NULL | Snapshot 30/70, không backfill row legacy |
 | advance_paid_at | DATETIME NULL | Mốc tiền trả trước được xác nhận |
 | contract_confirmed_by, contract_confirmed_at | BIGINT/DATETIME NULL | Actor và thời gian luôn đi cùng; FK actor RESTRICT |
-| cancelled_at, cancellation_fee | DATETIME/BIGINT NULL | Snapshot hủy/fee khi policy Phase 6 chạy |
+| cancelled_at, cancellation_fee, cancellation_reason | DATETIME/BIGINT/VARCHAR(500) NULL | Snapshot thời điểm/phí/lý do hủy server-side |
 | after_reminder_sent_at, balance_overdue_notified_at | DATETIME NULL | Cờ nhắc bền vững, chống gửi trùng |
 
 Tất cả timestamp mới dùng UTC `DATETIME(6)` ↔ Java `Instant`/`TIMESTAMP_UTC`; `created_at`/`updated_at` legacy giữ kiểu cũ. CHECK: trả xe phải có nhận xe và `vehicle_returned_at >= vehicle_received_at`; row `inspection_required=false` không có hai timestamp. Actor/thời gian hợp đồng và thời gian giao xe cùng NULL hoặc cùng có giá trị, `contract_confirmed_at = vehicle_received_at`; actor FK users RESTRICT. Index `idx_bookings_custody(car_id, inspection_required, vehicle_returned_at, vehicle_received_at)` cho kiểm tra giữ xe thực tế. Cờ chính sách và timestamp không bind từ form; các guard actor/role/tiền và chuyển trạng thái thuộc task service sau P6.1.
@@ -897,11 +896,11 @@ UNIQUE `uk_inspection_booking_phase(booking_id, phase)`; index `idx_inspection_s
 
 **`inspection_images`:** `id BIGINT AUTO_INCREMENT PK`, `inspection_id BIGINT NOT NULL FK booking_inspections RESTRICT`, `storage_key VARCHAR(80) ASCII NOT NULL UNIQUE` (UUID chữ thường + .jpg/.png, khóa nội bộ), `media_type VARCHAR(30) NOT NULL`, `size_bytes INT UNSIGNED NOT NULL` (1–5.242.880), `created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`; index `(inspection_id, id)`, CHECK size và storage key/MIME tương ứng JPEG/PNG. Không lưu URL public hoặc tên/path client. Giới hạn 10 ảnh/biên bản được InspectionService kiểm tra dưới khóa từ P6.3.
 
-**`inspection_events`:** `id BIGINT AUTO_INCREMENT PK`, `inspection_id BIGINT NOT NULL FK booking_inspections RESTRICT`, `actor_id BIGINT NOT NULL FK users RESTRICT`, `action VARCHAR(40) NOT NULL`, `note VARCHAR(2000) NULL`, `created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`; index `(inspection_id, created_at, id)`. Action whitelist: `SUBMITTED`, `BEFORE_ACCEPTED`, `PICKUP_CONFIRMED`, `RETURN_CONFIRMED`, `DISPUTED`, `RETURN_NOT_RECEIVED`, `RESOLVED`, `ADDENDUM`. DISPUTED/RESOLVED/ADDENDUM/RETURN_NOT_RECEIVED bắt buộc note trim 1–2000. Nhận lại xe có bất đồng ghi RETURN_CONFIRMED + DISPUTED cùng transaction. Không endpoint update/delete event; sau gửi không endpoint sửa/xóa ảnh gốc. Tác giả/action/time lấy từ server.
+**`inspection_events`:** `id BIGINT AUTO_INCREMENT PK`, `inspection_id BIGINT NOT NULL FK booking_inspections RESTRICT`, `actor_id BIGINT NOT NULL FK users RESTRICT`, `action VARCHAR(40) NOT NULL`, `note VARCHAR(2000) NULL`, `created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`; index `(inspection_id, created_at, id)`. Action whitelist: `SUBMITTED`, `BEFORE_ACCEPTED`, `PICKUP_CONFIRMED`, `RETURN_CONFIRMED`, `DISPUTED`, `RETURN_NOT_RECEIVED`, `RESOLVED`, `ADDENDUM`. DISPUTED/RESOLVED/ADDENDUM/RETURN_NOT_RECEIVED bắt buộc note trim 1–2000. Nhận lại xe có bất đồng ghi DISPUTED cùng returnedAt; đồng ý ghi RETURN_CONFIRMED. RESOLVED chỉ là giá trị schema dự phòng, chưa có workflow resolve. Không endpoint update/delete event; sau gửi không endpoint sửa/xóa ảnh gốc. Tác giả/action/time lấy từ server.
 
-Ba entity mới map UTC `DATETIME(6)`/`Instant`. `InspectionEvent` dùng Hibernate `@Immutable`, không setter; repository chỉ expose save/read, không delete/update. Đây là bảo vệ qua ORM, không phải trigger cấm SQL quản trị. P6.1 chưa tạo service/controller/upload hoặc thay đổi quyền xem; các yêu cầu chức năng dưới đây thuộc P6.3–P6.13.
+Ba entity mới map UTC `DATETIME(6)`/`Instant`. `InspectionEvent` dùng Hibernate `@Immutable`, không setter; repository chỉ expose save/read, không delete/update. Đây là bảo vệ qua ORM, không phải trigger cấm SQL quản trị. Service/controller/upload và quyền xem thuộc P6.3–P6.13; chưa kích hoạt trên DB ứng dụng.
 
-**Notification:** thêm `INSPECTION_SUBMITTED`, `VEHICLE_RECEIVED`, `VEHICLE_RETURNED`, `INSPECTION_DISPUTED`, `INSPECTION_RESOLVED` vào whitelist của NotificationService; type hiện là VARCHAR, không đổi enum DB. `related_entity_type='BOOKING'`, id = booking.id; link vào chi tiết đơn và mục biên bản. Không nhét cả nội dung bất đồng vào notification (message ≤1000). Owner chọn chưa nhận lại xe: thêm RETURN_NOT_RECEIVED event và notify Customer bằng INSPECTION_SUBMITTED với nội dung yêu cầu kiểm tra việc trả xe; không đổi status hay ghi timestamp trả.
+**Notification:** dùng type hiện có trong NotificationService cho BEFORE/AFTER, pickup/return, booking/payment/refund/deadline; `related_entity_type=BOOKING`, id=booking.id. Marker deadline và notices atomic; Owner NOT_RECEIVED chỉ ghi event/notice không timestamp/BALANCE. Message≤1000, không nhét toàn bộ evidence/secret vào notice. Resolve Admin không phải flow đã bật.
 
 **Ảnh riêng tư:** thư mục runtime `private-uploads/inspections/` nằm ngoài resources và ngoài `/uploads/**`; Git bỏ qua từ P6.3. Cấu hình server `carrent.inspection.storage-root` có thể đổi root, không bind từ client. GET `/bookings/{bookingId}/inspections/{phase}/images/{imageId}` qua Controller có auth/ownership/report-image membership, nháp chỉ tác giả xem. Chỉ JPEG/PNG được decode bằng ImageIO chuẩn JDK; tối đa 5MiB/ảnh và 20 triệu pixel, từ chối nội dung hỏng hoặc định dạng khác; MIME/đuôi lưu do nội dung decode quyết định, không tin tên/MIME client. Không thêm thư viện chỉ để hỗ trợ định dạng mới. UI ghi rõ định dạng nhận; ảnh listing vẫn theo D-16.
 
@@ -953,17 +952,17 @@ Lưu opt-in cùng transaction xác nhận READY. Bảng này chỉ điền sẵn
 
 **Owner:** `/owner/dashboard`, `/owner/cars`, `/owner/cars/new`, `/owner/cars/{id}/edit`, `/owner/bookings`, `/owner/bookings/{id}`
 
-**Admin:** `/admin/dashboard`, `/admin/users`, `/admin/users/{id}`, `/admin/cars`, `/admin/cars/{id}`, `/admin/bookings`, `/admin/bookings/{id}`
+**Admin:** Phase6 có timeline chỉ đọc `/admin/bookings/{id}`, cùng tài chính managed và quản trị xe hiện có. Dashboard/users/danh sách booking tổng hợp còn thuộc Phase5, không suy ra đã triển khai từ route dự kiến.
 
-**P6.3 đã triển khai:** form nháp và chi tiết read-only dùng chung `templates/inspection/detail.html`. GET `/bookings/{id}/inspections/{BEFORE|AFTER}` hoặc `/draft`; POST `/draft`, `/images`, `/images/{imageId}/delete`; GET `/images/{imageId}` stream có auth và no-store/nosniff. Mutation qua CarCommandExecutor trước transaction. Nháp chỉ tác giả; sau submit đúng Customer/Owner/Admin ACTIVE được đọc. P6.4 bổ sung link BEFORE tối thiểu từ đơn Owner sau accept và từ đơn Customer sau publication; timeline đầy đủ thuộc P6.12, AFTER submit thuộc P6.8.
+**Biên bản:** form nháp và chi tiết read-only dùng chung `templates/inspection/detail.html`. GET `/bookings/{id}/inspections/{BEFORE|AFTER}` hoặc `/draft`; POST `/draft`, `/images`, `/images/{imageId}/delete`; GET `/images/{imageId}` stream có auth và no-store/nosniff. Mutation qua CarCommandExecutor trước transaction. Nháp chỉ tác giả; sau submit đúng Customer/Owner/Admin ACTIVE được đọc. Timeline dùng dữ liệu đã gửi và mốc server; ảnh/form/bảng dùng được không JS trên mobile.
 
-**P6.4 đã triển khai:** Owner POST confirm của VIETQR_V1 giữ PENDING, ghi owner_accepted_at bằng Clock và gửi BOOKING_OWNER_ACCEPTED một lần; legacy giữ confirm cũ. POST `/bookings/{id}/inspections/BEFORE/submit` khóa Car→Booking→Report→Images, validate đủ trường/4–10 ảnh, atomic SUBMITTED + event + notify Customer. Từ submit không sửa/xóa text/ảnh gốc. POST `/addendum` chỉ Owner, `/dispute` chỉ Customer, note trim1–2000ký tự; mỗi phản hồi append event actor/time và notification cùng transaction. Chỉ SUBMITTED/DISPUTED, chưa agreed và booking còn PENDING được phản hồi; addendum giữ DISPUTED. UI escape nội dung, hiển thị lịch sử và thời gian Việt Nam; tài khoản không ACTIVE/ngoài booking bị chặn, Admin chỉ đọc bằng chứng đã gửi. Không tạo hold/advance/handover chỉ vì submit/dispute. Customer đồng ý báo cáo/ghi chú + tạo advance thuộc P6.5, không có endpoint hoặc nút đồng ý trong P6.4. Không cần Admin phán quyết hoặc tính bồi thường để P6.5 tiếp tục. Whitelist hiện thêm BOOKING_OWNER_ACCEPTED/INSPECTION_SUBMITTED/INSPECTION_ADDENDUM/INSPECTION_DISPUTED; các type giao/trả/resolve khác vẫn là contract cho task sau.
+**Owner accept và BEFORE:** Owner POST confirm của VIETQR_V1 giữ PENDING, ghi owner_accepted_at bằng Clock và gửi BOOKING_OWNER_ACCEPTED một lần; legacy giữ confirm cũ. POST `/bookings/{id}/inspections/BEFORE/submit` khóa Car→Booking→Report→Images, validate đủ trường/4–10 ảnh, atomic SUBMITTED + event + notify Customer. Từ submit không sửa/xóa text/ảnh gốc. POST `/addendum` chỉ Owner, `/dispute` chỉ Customer, note trim1–2000ký tự; mỗi phản hồi append event actor/time và notification cùng transaction. Chỉ SUBMITTED/DISPUTED, chưa agreed và booking còn PENDING được phản hồi; addendum giữ DISPUTED. UI escape nội dung, hiển thị lịch sử/thời gian Việt Nam; tài khoản không ACTIVE/ngoài booking bị chặn, Admin chỉ đọc bằng chứng đã gửi. Không tạo hold/advance/handover chỉ vì submit/dispute; Customer đồng ý tạo advance bằng thao tác riêng. Không cần Admin phán quyết hoặc tính bồi thường để tiếp tục.
 
-**P6.5 đã triển khai:** POST /bookings/{id}/accept-before đồng ý BEFORE SUBMITTED hoặc DISPUTED và mở advance 30%/balance 70% từ snapshot, một obligation/intent và hold15phút trong cùng transaction. Khóa Car→Booking→tiền→Report→Images; lỗi rollback toàn bộ. Ghi before_accepted_at/ACCEPTED/event BEFORE_ACCEPTED, không ghi nhận tiền/handover. Hai tab/reload không gia hạn; checkout và booking đều hủy unpaid booking/obligation/intent và giải phóng lịch, kể cả manual cancel sau deadline. Gate carrent.rental.advance.enabled mặc định tắt; apply/expiry tự động còn fail-closed đến P6.6. Xem §14.30.
+**Customer đồng ý và trả trước:** POST `/bookings/{id}/accept-before` đồng ý BEFORE SUBMITTED hoặc DISPUTED và mở advance30%/balance70% từ snapshot, một obligation/intent và hold15phút trong cùng transaction. Khóa Car→Booking→tiền→Report→Images; lỗi rollback toàn bộ. Ghi before_accepted_at/ACCEPTED/event BEFORE_ACCEPTED, chưa ghi nhận tiền/handover. Hai tab/reload không gia hạn; checkout và booking đều hủy unpaid booking/obligation/intent và giải phóng lịch, kể cả manual cancel sau deadline. Handler advance apply/expiry đã có, receipt đủ và đúng hạn mới CONFIRMED; tiền muộn hoặc sau cancel/expiry tạo hoàn, không hồi sinh booking. Gate `carrent.rental.advance.enabled` mặc định tắt, chỉ fixture bật trong đợt này.
 
 **P6.7 đã triển khai:** POST `/owner/bookings/{id}/handover` chỉ nhận boolean contractSigned, đi qua CarCommandExecutor trước transaction. Service kiểm tra Owner ACTIVE đúng xe, VIETQR_V1/inspection, CONFIRMED/Owner accepted/BEFORE agreed, nghĩa vụ advance SETTLED đủ snapshot30% và đúng payer/collector, ngày Việt Nam thuộc [startDate,endDate), không outstanding custody. Khóa current Car→Booking→booking giữ xe khác→Obligation→BEFORE report; query custody không lọc status/ngày và không dùng snapshot thường. Ghi contract_confirmed_by/at và vehicle_received_at cùng Instant, append PICKUP_CONFIRMED và notify INSPECTION_PICKUP_CONFIRMED atomic; bấm lại không ghi thêm. Detail/list Customer/Owner hiển thị Đang thuê; detail có actor/time và số tiền30/70, ẩn hủy sau handover. Chặn complete thủ công cho VIETQR_V1 để không bỏ qua return/balance; legacy giữ nguyên. Checkbox chỉ xác nhận hợp đồng ngoài ứng dụng, không phải chữ ký điện tử. Xem §14.32.
 
-**Thiết kế tích hợp Phase 6 chưa hoàn tất:** mục **Biên bản nhận/trả xe** trên chi tiết booking của cả 3 role; CTA **Lập biên bản trước thuê** cho Owner, **Xem và đồng ý BEFORE** cho Customer, **Lập biên bản trả xe** cho Customer, **Kiểm tra xe trả** cho Owner. Form/detail dùng `templates/inspection/detail.html` hiện có; panel/timeline booking thuộc P6.12. Admin có `/admin/inspections?status=DISPUTED` và link **Bất đồng bàn giao** trong điều hướng Admin. Không có prototype riêng: theo design system D-23. Xem plan Phase 6 cho route và trạng thái nút.
+**Tích hợp Phase 6:** chi tiết booking Customer/Owner có biên bản và CTA theo quyền/trạng thái; Admin xem timeline tại `/admin/bookings/{id}` và biên bản đã gửi qua link. Form/detail dùng `templates/inspection/detail.html`; Admin không có endpoint resolve trong đợt này. Timeline và tài chính tách các mốc tiền/vật lý; theo design system D-23.
 
 Danh sách/chi tiết hiển thị riêng badge Booking, tiến độ xe, payment và bất đồng. Tiến độ suy ra từ timestamp + report: chờ nhận → đang thuê → chờ Owner nhận lại → đã trả; cảnh báo quá hạn nếu đang thuê và tới/quá end_date, không tự thu phí. Không gán “Đã trả” chỉ vì Customer upload ảnh. Màn hình trả xe có so sánh BEFORE/AFTER, địa chỉ snapshot, lịch sử actor/thời điểm và lý do nút complete/cancel bị khóa. Camera/gallery và preview dùng mobile, input vẫn hoạt động không JS; nháp riêng tư, lỗi upload không mất text đã lưu.
 
@@ -1137,7 +1136,7 @@ com.carrent
 
 Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ thể (không interface).
 
-**Bổ sung dự kiến Phase 6:** package `inspection/` gồm `BookingInspection`, `InspectionImage`, `InspectionEvent`, các enum/Repository tương ứng, `InspectionForm`, `ReturnReceiptForm`, `InspectionView`, `InspectionService`, `InspectionController`, `AdminInspectionController`; `storage/InspectionStorageService` cho ảnh riêng tư. BookingService vẫn sở hữu create/cancel/complete và dùng repository biên bản cho guards; InspectionService dùng hợp đồng khóa BookingService, tránh phụ thuộc vòng giữa services. PaymentService tái dùng protocol D-13 cho cash. Chi tiết file/interface ở plan Phase 6; chưa tạo class ở lần cập nhật này.
+**Phase 6:** package `inspection/` gồm các entity/repository, `InspectionForm`, `InspectionView`, `InspectionService`, `InspectionController`; `storage/InspectionStorageService` giữ ảnh riêng tư. `booking/` có `ReturnReceiptForm`, `BookingTimeline`, `AdminBookingController`, `RentalPaymentHandler`, `RentalBalancePaymentHandler`, `BalanceDeadlineService`, `RentalDeadlineJob`. BookingService sở hữu aggregate thuê và gọi InspectionService sau financial locks; InspectionService không phụ thuộc BookingService. Payment-core xử lý receipt/refund theo handler; không thêm cash hoặc AdminInspectionController.
 
 ---
 
@@ -1188,10 +1187,9 @@ Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ th�
 | POST | `/admin/cars/{id}/reject` | Từ chối xe + lý do | ADMIN |
 | POST | `/admin/cars/{id}/deactivate` | Ẩn xe, giữ kết quả duyệt | ADMIN/ACTIVE |
 | POST | `/admin/cars/{id}/activate` | Đăng lại xe APPROVED | ADMIN/ACTIVE |
-| GET | `/admin/bookings` | Toàn bộ booking | ADMIN |
-| GET | `/admin/bookings/{id}` | Chi tiết booking | ADMIN |
+| GET | `/admin/bookings/{id}` | Timeline chỉ đọc, link evidence đã gửi và tài chính | ADMIN/ACTIVE |
 
-**Route bổ sung Phase 6 (chưa triển khai):** `phase` chỉ nhận BEFORE/AFTER và luôn kiểm tra quyền theo vai trò của mỗi phase.
+**Route Phase 6 đã triển khai, chỉ kiểm chứng bằng fixture:** `phase` chỉ nhận BEFORE/AFTER; backend luôn kiểm tra role/ACTIVE/membership.
 
 | Method | Route | Chức năng / quyền |
 |---|---|---|
@@ -1201,16 +1199,15 @@ Enum của JPA dùng `@Enumerated(EnumType.STRING)`. Service là class cụ th�
 | POST | `/bookings/{id}/inspections/{phase}/images/{imageId}/delete` | Xóa ảnh nháp thuộc đúng report; chỉ tác giả |
 | GET | `/bookings/{id}/inspections/{phase}/images/{imageId}` | Stream ảnh riêng tư sau auth + membership |
 | POST | `/bookings/{id}/inspections/BEFORE/submit` | Owner gửi BEFORE |
-| POST | `/bookings/{id}/inspections/BEFORE/receive` | Customer đồng ý và đã nhận xe |
+| POST | `/bookings/{id}/accept-before` | Customer đồng ý BEFORE và tạo ADVANCE atomic; chưa nhận xe |
 | POST | `/bookings/{id}/inspections/BEFORE/dispute` | Customer bất đồng BEFORE + lý do |
 | POST | `/bookings/{id}/inspections/AFTER/submit` | Customer gửi AFTER |
-| POST | `/bookings/{id}/inspections/AFTER/receipt` | Owner chọn RECEIVED_ACCEPTED / RECEIVED_DISPUTED / NOT_RECEIVED |
-| POST | `/bookings/{id}/inspections/{phase}/notes` | Ghi chú bổ sung sau gửi; Customer/Owner liên quan hoặc Admin |
-| POST | `/owner/bookings/{id}/payment/cash-receipt` | Owner ghi nhận thu tiền mặt giả lập, CONFIRMED/chưa PAID |
-| GET | `/admin/inspections` | Danh sách phân trang, mặc định DISPUTED; chỉ filter status đã gửi, loại DRAFT; Admin |
-| POST | `/admin/inspections/{inspectionId}/resolve` | Admin đóng DISPUTED với kết luận, không đổi trạng thái Booking |
+| POST | `/owner/bookings/{id}/return` | Owner chọn RECEIVED_ACCEPTED / RECEIVED_DISPUTED / NOT_RECEIVED |
+| POST | `/bookings/{id}/inspections/BEFORE/addendum` | Owner append ghi chú sau gửi trước khi Customer đồng ý |
+| POST | `/owner/bookings/{id}/handover` | Owner xác nhận hợp đồng và giao xe sau advance hợp lệ |
+| POST | `/owner/bookings/{id}/cancel` | Owner hủy trước handover, hoàn đủ khoản đã nhận |
 
-Route complete hiện có giữ nguyên; guard sau Phase 6 theo BR-13 cho booking chính sách mới. Mọi POST mới vẫn CSRF; ID/phase/ảnh không khớp trả 404, payload không hợp lệ không tạo thay đổi DB/file.
+Route complete chỉ cho legacy; VIETQR_V1 tự COMPLETED khi trả xe và đủ tiền. Không route cash/receive/notes/resolve từ thiết kế cũ. Mọi POST mới vẫn CSRF và qua CarCommandExecutor; ID/phase/ảnh không khớp trả 404, payload không hợp lệ không tạo thay đổi DB/file.
 
 **Ghi chú:**
 - GET hiển thị; POST thay đổi. Mọi POST qua form Thymeleaf có CSRF token.
@@ -1896,4 +1893,23 @@ POM/output/schema fixture riêng; source/resources thật. Evidence `.scratch/ph
 
 ## 15. Kết luận
 
-**Checkpoint P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git đầu tài liệu. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ. Xem §14.37 và [handoff đợt4](plans/phase-6-batch-4-handoff.md).
+**Checkpoint lịch sử P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git đầu tài liệu. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ. Xem §14.37 và [handoff đợt4](plans/phase-6-batch-4-handoff.md).
+
+
+### 14.38. P6.12 và P6.13 — gate tích hợp rental, 2026-11-02
+
+**Checkpoint P6.12 + P6.13 — 2026-11-02:** hoàn thành riêng **5/5 + 5/5 checklist**. Timeline Customer/Owner/Admin chỉ đọc, các mốc tiền/vật lý/hoàn độc lập; audit queue/deadline/current actor và gate rental liên tục. Full isolated **clean verify 856/856 JUnit, 0 failure/error/skip**, JAR; Chromium **109/109** trên source cuối, 320/390/1440 và no-JS. **68/86 task**, còn18 (45task mới xong27). Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-rental-gate` từ main `82a3852`, chưa stage/commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. Dừng trước Phase8; tiếp theo **P8.1 riêng**, phụ trách `ducbinhnguyen07ars`. P4.2-A live vẫn chờ.
+
+| Task/checklist | Source và bằng chứng |
+|---|---|
+| P6.12 — timeline ba vai trò | BookingTimeline read-only, 8mốc và refund riêng; AdminBookingController GET-only; link tài chính managed. RentalTimelineTest kiểm tra EXPIRED, đủ tiền không còn nợ, timestamp bank, privacy/legacy/quyền Admin |
+| P6.12 — checkout/GET/ảnh/UI | Tái dùng Phase4, browser liên tục không mock nghiệp vụ; poll trước/sau expiry không ghi DB. Draft author-only, submitted đúng member/Admin ACTIVE, CSRF/XSS/hash ảnh; CSS inspection tối thiểu không phụ thuộc JS cho ảnh/form/bảng trên mobile |
+| P6.12 — queue/job/current actor | Audit ledger toàn POST inspection/booking/payment và job30s; executor→Car queue→domain. Durable markers/notices atomic, reject không đánh dấu xong; full suite chạy lại scheduler/restart/reject/rollback. Current user read sau Car/Booking cho BEFORE/handover và ADVANCE/BALANCE mutation, không thêm khóa vào GET |
+| P6.13 — concurrency/lifecycle | RentalConcurrencyTest27 và RentalLifecycleGateTest4: hai connection MySQL/RR, ban/role/image/event/advance, receipt/cancel hai thứ tự, rollback notice/retry, hai receipt BALANCE cạnh tranh. Luồng BEFORE30%→Owner contract/handover→AFTER DISPUTED→received→70%→COMPLETED giữ bằng chứng; cancel/expiry/late receipt hoàn đủ |
+| P6.13 — bảo toàn/SDD/gate | Fingerprint DB7bảng/schema/rows và protected files khớp; HEAD/index giữ nguyên. FR/BR/quyền/schema/routes/module map và decisions D-25A đồng bộ30/70/Owner contract/calendar policy; legacy/lịch sử được đánh dấu riêng. P8/P4.2-A chưa đạt, flags app vẫn tắt |
+
+**Evidence:** `.scratch/phase6/p612-p613/`: `final/full-clean-verify.log`, `verified-source-hashes.json`, `verification-summary.json`, `source-before.txt`/`source-after.txt`, `ledger.md`; `gate/actor-boundary-red.log`, `gate/advance-actor-red.log`, `gate/final-green.log`; `ui/cross-review.md`; `browser/browser-evidence.json`, `browser/browser-sql-invariants.txt`, `browser/browser-preservation.json`, source manifests và PNG. Test runner Maven Wrapper dùng POM/output/datasource riêng, cùng source/resources và `-Dmaven.compiler.useIncrementalCompilation=false clean verify`; không sửa rootPOM. Browser dùng HTTP/forms/inbox/domain thật, provider offline. Lần full trước CSS no-JS giữ log ở thư mục gốc; lần full source cuối nằm trong `final/`.
+
+**RED/lỗi và sửa:** stale RR cho phép tài khoản vừa ban/đổi role vẫn nhận đơn/gửi/đồng ý BEFORE, sửa draft/ảnh/event, handover hoặc mở/hủy ADVANCE; shared current actor read đã được kiểm chứng xanh. Browser no-JS320 phát hiện ảnh nội tại640px tràn trang; CSS scoped inspection đã sửa và rerun source cuối. Hai lỗi fixture UI dùng provider transaction ID không numeric được sửa trong test, không sửa constraint/schema. Các log fail giữ riêng; không dùng kết quả rerun cục bộ thay full clean gate.
+
+**Review:** agent timeline review độc lập domain/tests trước bản sửa ADVANCE cuối; primary kiểm tra call sites, tích hợp bản sửa và chạy full gate mới. Agent khác gián đoạn do quota/service; không có xác nhận review human `thanhmit` và không tuyên bố provider live đạt.
