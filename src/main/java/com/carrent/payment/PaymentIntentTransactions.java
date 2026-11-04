@@ -133,8 +133,9 @@ public class PaymentIntentTransactions {
     public PaymentIntentView status(Long id, CustomUserPrincipal actor) {
         var intent = em.find(PaymentIntent.class, id);
         if (intent == null) throw new NotFoundException("Không tìm thấy lần thanh toán.");
-        em.refresh(intent);
-        em.refresh(intent.getObligation());
+        // Refresh of an already locked row can fall back to MySQL's older snapshot.
+        if (em.getLockMode(intent) == LockModeType.NONE) em.refresh(intent);
+        if (em.getLockMode(intent.getObligation()) == LockModeType.NONE) em.refresh(intent.getObligation());
         requirePayer(intent.getObligation(), actor);
         return view(intent);
     }

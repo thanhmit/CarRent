@@ -39,6 +39,9 @@ public class PaymentRoutes {
     public boolean available(PaymentSubject subject) { return handlers.containsKey(subject); }
 
     boolean matchesParties(PaymentObligation obligation) {
+        if (obligation.getPurpose() == PaymentPurpose.SUBSCRIPTION) {
+            return handler(PaymentSubject.SUBSCRIPTION).matchesParties(obligation);
+        }
         if (obligation.getSubjectType() != PaymentSubjectType.BOOKING) return true;
         // The handler has already locked/refreshed Car and Booking before any financial lock.
         var booking = em.find(Booking.class, obligation.getSubjectId());

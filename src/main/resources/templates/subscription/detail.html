@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Yêu cầu mua gói')}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
+  <section class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md" id="subscription-order" th:attr="data-order-id=${order.orderId},data-status=${order.status}">
+    <h1 class="font-headline-md text-headline-md">Yêu cầu mua gói <span th:text="${order.planCode}"></span></h1>
+    <p th:if="${errorMessage}" th:text="${errorMessage}" role="alert" class="text-error"></p>
+    <dl class="flex flex-col gap-space-sm">
+      <div><dt>Mã yêu cầu</dt><dd th:text="${order.orderId}"></dd></div>
+      <div><dt>Hạn mức</dt><dd th:text="${order.quotaSnapshot + ' xe'}"></dd></div>
+      <div><dt>Thời hạn mua</dt><dd th:text="${order.durationDays + ' ngày'}"></dd></div>
+      <div><dt>Giá gói</dt><dd th:text="${#numbers.formatInteger(order.priceSnapshot, 0, 'POINT') + ' VNĐ'}"></dd></div>
+    </dl>
+    <div role="status" aria-live="polite" th:switch="${order.status}">
+      <p th:case="'PENDING'">Đang chờ thanh toán. Mở lại yêu cầu không gia hạn mã QR.</p>
+      <p th:case="'APPLIED'">Đã kích hoạt hoặc gia hạn gói thành công.</p>
+      <p th:case="'EXPIRED'">Yêu cầu đã hết hạn. Không chuyển tiền theo mã QR cũ.</p>
+      <p th:case="'CANCELLED'">Đã hủy yêu cầu. Thao tác này không đảo giao dịch ngân hàng hoặc xóa thời hạn gói đang dùng.</p>
+      <p th:case="'REFUND_PENDING'">Đang chờ hoàn tiền. Chưa xác nhận tiền đã về tài khoản nhận.</p>
+      <p th:case="*">Yêu cầu cần được kiểm tra.</p>
+    </div>
+    <a th:if="${order.intent != null}" th:href="@{/payment/intents/{id}(id=${order.intent.id})}" class="text-secondary underline">Xem thanh toán và trạng thái QR</a>
+    <form th:if="${order.status == 'PENDING'}" method="post" th:action="@{/owner/subscriptions/orders/{id}/cancel(id=${order.orderId})}">
+      <button type="submit" class="w-full p-space-sm rounded-lg bg-error-container text-on-error-container">Hủy yêu cầu mua gói</button>
+    </form>
+    <a th:href="@{/owner/subscriptions}" class="text-secondary underline">Xem các gói đăng xe</a>
+    <a th:href="@{/payment/finances}" class="text-secondary underline">Theo dõi thanh toán và hoàn tiền</a>
+  </section>
+</main>
+</body>
+</html>
