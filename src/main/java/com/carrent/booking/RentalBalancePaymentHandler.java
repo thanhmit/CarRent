@@ -6,6 +6,7 @@ import com.carrent.common.exception.NotFoundException;
 import com.carrent.payment.PaymentDomainHandler;
 import com.carrent.payment.PaymentSubject;
 import jakarta.persistence.EntityManager;
+import com.carrent.subscription.SubscriptionPolicy;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "carrent.rental.balance.enabled", havingValue = "true")
 public class RentalBalancePaymentHandler implements PaymentDomainHandler {
     private final EntityManager em;
+    private final SubscriptionPolicy subscriptions;
     private final ObjectProvider<BookingService> bookings;
 
     @Override public PaymentSubject subject() { return PaymentSubject.BOOKING_BALANCE; }
@@ -24,7 +26,9 @@ public class RentalBalancePaymentHandler implements PaymentDomainHandler {
     @Override public void lockSubject(Long id) {
         var route = em.find(Booking.class, id);
         if (route == null) throw new NotFoundException("Đơn thuê không tồn tại.");
-        current(Car.class, route.getCar().getId());
+        Long ownerId = subscriptions.lockCarOwner(route.getCar().getId());
+        var car = current(Car.class, route.getCar().getId());
+        subscriptions.requireSameOwner(car, ownerId);
         var booking = current(Booking.class, id);
         if (!"VIETQR_V1".equals(booking.getWorkflowVersion()) || !booking.isInspectionRequired()
                 || booking.getVehicleReceivedAt() == null || booking.getVehicleReturnedAt() == null

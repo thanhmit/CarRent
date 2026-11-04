@@ -7,6 +7,7 @@ import com.carrent.payment.PaymentDomainHandler;
 import com.carrent.payment.PaymentSubject;
 import com.carrent.payment.PaymentIntent;
 import jakarta.persistence.EntityManager;
+import com.carrent.subscription.SubscriptionPolicy;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.ObjectProvider;
 @ConditionalOnProperty(name = "carrent.rental.advance.enabled", havingValue = "true")
 public class RentalPaymentHandler implements PaymentDomainHandler {
     private final EntityManager em;
+    private final SubscriptionPolicy subscriptions;
     private final ObjectProvider<BookingService> bookings;
 
     @Override public PaymentSubject subject() { return PaymentSubject.BOOKING_ADVANCE; }
@@ -25,7 +27,9 @@ public class RentalPaymentHandler implements PaymentDomainHandler {
     @Override public void lockSubject(Long id) {
         var route = em.find(Booking.class, id);
         if (route == null) throw new NotFoundException("Đơn thuê không tồn tại.");
-        current(Car.class, route.getCar().getId());
+        Long ownerId = subscriptions.lockCarOwner(route.getCar().getId());
+        var car = current(Car.class, route.getCar().getId());
+        subscriptions.requireSameOwner(car, ownerId);
         var booking = current(Booking.class, id);
         if (!"VIETQR_V1".equals(booking.getWorkflowVersion()) || !booking.isInspectionRequired()) {
             throw new BusinessException("Đơn thuê không thuộc luồng trả trước mới.");

@@ -44,8 +44,7 @@ public class CarController {
         Car car = cars.getPublicCar(id, principal);
         model.addAttribute("car", car);
         model.addAttribute("carImages", images.findByCarIdOrderByIdAsc(car.getId()));
-        model.addAttribute("publicListing", car.getApprovalStatus() == ApprovalStatus.APPROVED
-                && car.getListingStatus() == ListingStatus.ACTIVE);
+        model.addAttribute("publicListing", cars.isPublicListing(car));
         return "cars/detail";
     }
 
