@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Tổng quan chủ xe')}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main id="owner-dashboard" class="pt-20 pb-10 px-4 sm:px-8 min-h-screen">
+  <div class="max-w-6xl mx-auto flex flex-col gap-6 break-words">
+    <header><p class="text-on-surface-variant" th:text="${stats.ownerName}"></p><h1 class="font-headline-md text-headline-md">Tổng quan chủ xe</h1></header>
+    <nav class="flex flex-wrap gap-4" aria-label="Chủ xe"><a class="text-secondary underline" th:href="@{/owner/cars}">Xe của tôi</a><a class="text-secondary underline" th:href="@{/owner/bookings}">Đơn thuê</a><a class="text-secondary underline" th:href="@{/payment/finances(view='collected')}">Khoản tôi thu</a><a class="text-secondary underline" th:href="@{/payment/finances(view='refunds')}">Khoản tôi nhận hoàn</a></nav>
+    <section id="owner-counts" aria-labelledby="counts-heading" class="flex flex-col gap-3">
+      <h2 id="counts-heading" class="font-title-lg">Xe và đơn thuê của tôi</h2>
+      <dl class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Xe đang công khai</dt><dd class="text-3xl font-bold" data-metric="publicCars" th:text="${stats.publicCars == null ? 'Chưa có dữ liệu' : stats.publicCars}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Xe chờ duyệt</dt><dd class="text-3xl font-bold" data-metric="pendingCars" th:text="${stats.pendingCars}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Xe chủ động ẩn</dt><dd class="text-3xl font-bold" data-metric="hiddenCars" th:text="${stats.hiddenCars}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Đơn thuê</dt><dd class="text-3xl font-bold" data-metric="bookings" th:text="${stats.bookings}"></dd></div>
+      </dl>
+    </section>
+    <th:block th:if="${subscriptionAvailable}"><div th:replace="~{subscription/overview :: overview}"></div></th:block>
+    <section th:unless="${subscriptionAvailable}" id="subscription-unavailable" class="bg-surface-container-lowest rounded-xl p-5"><h2 class="font-title-lg">Gói hiện tại</h2><p>Chưa có dữ liệu gói/hạn/quota. Chức năng gói đăng xe chưa sẵn sàng.</p></section>
+    <section th:unless="${stats.financialAvailable}" id="financial-unavailable" class="bg-surface-container-lowest rounded-xl p-5"><h2 class="font-title-lg">Tài chính thuê xe</h2><p>Chưa có dữ liệu tài chính mới. Lịch sử thanh toán giả lập cũ không được tính vào các số liệu này.</p></section>
+    <section th:if="${stats.financialAvailable}" aria-labelledby="rental-heading" class="flex flex-col gap-3">
+      <h2 id="rental-heading" class="font-title-lg">Tài chính thuê xe · xe của tôi</h2>
+      <p>Tiền thuê đã phân bổ và tiền đã hoàn được theo dõi riêng. Phí gói đã trả và lịch sử giả lập cũ không tính vào tiền thuê.</p>
+      <dl class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-primary text-on-primary rounded-xl p-5"><dt>Tiền thuê đã phân bổ</dt><dd class="text-2xl font-bold" data-metric="allocatedRental" th:text="${#numbers.formatInteger(stats.allocatedRental,0,'POINT') + ' VNĐ'}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Đã hoàn thành công</dt><dd class="text-2xl font-bold" data-metric="refundsSucceeded" th:text="${#numbers.formatInteger(stats.refundsSucceeded,0,'POINT') + ' VNĐ'}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Hoàn tiền đang chờ</dt><dd><strong data-metric="refundsPending" th:text="${stats.refundsPending}"></strong> khoản · <span data-metric="refundsPendingAmount" th:text="${#numbers.formatInteger(stats.refundsPendingAmount,0,'POINT') + ' VNĐ'}"></span></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Hoàn tiền quá hạn</dt><dd><strong data-metric="refundsOverdue" th:text="${stats.refundsOverdue}"></strong> khoản · <span data-metric="refundsOverdueAmount" th:text="${#numbers.formatInteger(stats.refundsOverdueAmount,0,'POINT') + ' VNĐ'}"></span></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Khách còn nợ 70%</dt><dd data-metric="outstandingDebt" th:text="${#numbers.formatInteger(stats.outstandingDebt,0,'POINT') + ' VNĐ'}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Nợ 70% quá hạn</dt><dd><strong data-metric="overdueDebts" th:text="${stats.overdueDebts}"></strong> khoản · <span data-metric="overdueDebtAmount" th:text="${#numbers.formatInteger(stats.overdueDebtAmount,0,'POINT') + ' VNĐ'}"></span></dd></div>
+      </dl>
+      <p class="text-on-surface-variant">Khoản hoàn đang xử lý hoặc chưa rõ kết quả vẫn là đang chờ. Nợ 70% quá hạn từ 1 giờ sau lúc nhận lại xe thực tế; chỉ cảnh báo, không khóa tài khoản hay chặn đơn thuê.</p>
+    </section>
+  </div>
+</main>
+</body></html>

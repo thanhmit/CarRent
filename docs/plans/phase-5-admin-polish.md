@@ -1,5 +1,7 @@
 # CarRent — Phase 5: Admin và hoàn thiện — Implementation Plan
 
+**Git scope P5.7 — 2026-11-05:** đưa riêng P5.7 của `ducbinhnguyen07ars` vào nhánh `feat/p57-owner`; P5.5/P5.6 và P5.9 vẫn ở workspace local. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).
+
 **Checkpoint P5.4 — 2026-11-04:** hoàn thành **4/4 checklist local** Admin booking/biên bản/khoản còn nợ: list/detail chỉ đọc, nghĩa vụ30/70 và receipts/refunds đúng booking, BEFORE/AFTER private kể cả COMPLETED còn bất đồng; lọc nợ70% quá hạn1giờ và hoàn quá hạn theo Clock/deadline nghiệp vụ. Admin không ký/giao nhận thay Owner hoặc buộc resolve AFTER. Full isolated **clean verify 993/993 JUnit, 0 failure/error/skip**, JAR; Chrome **205/205**, 30 PNG ở1440/390/320. **79/86 task**, còn **7** (`ducbinhnguyen07ars`4, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A live vẫn pending. Tiếp theo **P5.5 + P5.6 của huy69332**. Bảo toàn dirty prerequisites/phase0/config/seed/uploads/DB ứng dụng/HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-3-handoff.md).
 
 **Checkpoint P5.3 — 2026-11-04:** hoàn thành **4/4 checklist** Admin quản lý tài khoản: q/role/status/page20, hồ sơ và số liệu scoped target, POST status ACTIVE/INACTIVE/BANNED dưới khóa và kiểm tra Admin hiện tại; chống self-change/role-email tamper/CSRF, banned login và stale request trong queue. Full isolated **clean verify 986/986 JUnit, 0 failure/error/skip**, JAR; Chrome **107/107**, 33 PNG. **78/86 task**, còn **8** (`ducbinhnguyen07ars`5, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A gate thật vẫn pending. Tiếp theo **P5.4 riêng**. Bảo toàn dirty P8/P5,phase0/config/seed/uploads,DB ứng dụng,HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. [Bàn giao](phase-5-batch-2-handoff.md).
@@ -126,10 +128,10 @@ Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash n
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-- [ ] Owner dashboard: gói/hạn/quota, số xe public/pending/ẩn, số booking, tiền thuê đã phân bổ, đã hoàn thành công, hoàn đang chờ, còn nợ và quá hạn.
-- [ ] Query luôn có ownerId từ principal, không lấy ownerId form/query để đổi scope. Không cộng phí gói đã trả thành doanh thu cho thuê.
-- [ ] OwnerRevenueTest: Owner A không thấy tiền/khoản hoàn Owner B; refund một phần không làm mất toàn bộ receipt; payout pending không được coi đã hoàn.
-- [ ] Home chỉ hiện tối đa 8 xe mới đủ điều kiện public có gói hiệu lực theo Phase 8; direct URL/search/detail dùng cùng policy.
+- [x] Owner dashboard: gói/hạn/quota, số xe public/pending/ẩn, số booking, tiền thuê đã phân bổ, đã hoàn thành công, hoàn đang chờ, còn nợ và quá hạn.
+- [x] Query luôn có ownerId từ principal, không lấy ownerId form/query để đổi scope. Không cộng phí gói đã trả thành doanh thu cho thuê.
+- [x] OwnerRevenueTest: Owner A không thấy tiền/khoản hoàn Owner B; refund một phần không làm mất toàn bộ receipt; payout pending không được coi đã hoàn.
+- [x] Home chỉ hiện tối đa 8 xe mới đủ điều kiện public có gói hiệu lực theo Phase 8; direct URL/search/detail dùng cùng policy.
 
 ### Task P5.8 — Ma trận quyền, biên thời gian và hồi quy
 
