@@ -136,11 +136,11 @@ WHERE owner_id = :ownerId
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-- [ ] Gia hạn cùng gói khôi phục public cho xe đủ điều kiện trước expiry; xe chủ động INACTIVE hoặc bị Admin từ chối vẫn không hiện.
-- [ ] Khi hết hạn mua gói thấp hơn: trong transaction apply, giữ dữ liệu và đưa ý định đăng của các xe cũ về INACTIVE; lockSubject đã khóa Owner/entitlement/order và Car theo ID tăng trước phần tài chính. Không tự chọn 4/8 xe thay Owner.
-- [ ] Owner tự bật/gửi duyệt lại tối đa quota; đừng reset approval để bắt xe đã duyệt duyệt lại chỉ vì đổi gói. Chuyến đã xác nhận tiếp tục xử lý dù xe đang ẩn.
-- [ ] Test Business có 16 xe → hết hạn → Small: số xe public và reservedCount ban đầu 0, bật đủ 4 được, xe thứ 5 bị chặn; dữ liệu 16 xe và booking cũ còn nguyên.
-- [ ] Không thêm prorating/credit, nâng hạ giữa kỳ hoặc tự thu phí gia hạn.
+- [x] Gia hạn cùng gói khôi phục public cho xe đủ điều kiện trước expiry; xe chủ động INACTIVE hoặc bị Admin từ chối vẫn không hiện.
+- [x] Khi hết hạn mua gói thấp hơn: trong transaction apply, giữ dữ liệu và đưa ý định đăng của các xe cũ về INACTIVE; lockSubject đã khóa Owner/entitlement/order và Car theo ID tăng trước phần tài chính. Không tự chọn 4/8 xe thay Owner.
+- [x] Owner tự bật/gửi duyệt lại tối đa quota; đừng reset approval để bắt xe đã duyệt duyệt lại chỉ vì đổi gói. Chuyến đã xác nhận tiếp tục xử lý dù xe đang ẩn.
+- [x] Test Business có 16 xe → hết hạn → Small: số xe public và reservedCount ban đầu 0, bật đủ 4 được, xe thứ 5 bị chặn; dữ liệu 16 xe và booking cũ còn nguyên.
+- [x] Không thêm prorating/credit, nâng hạ giữa kỳ hoặc tự thu phí gia hạn.
 
 ### Task P8.7 — UI Owner và các khoản hoàn từ Admin
 

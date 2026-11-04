@@ -175,6 +175,15 @@ public class SubscriptionService {
         order.setUpdatedAt(clock.instant());
         var now = clock.instant();
         var base = current != null && current.getValidUntil().isAfter(now) ? current.getValidUntil() : now;
+        if (current != null && !current.getValidUntil().isAfter(now) && order.getQuotaSnapshot() < current.getQuota()) {
+            // These rows were locked in ID order by lockSubject; update only intent, even with an older RR snapshot.
+            em.createNativeQuery("UPDATE cars SET listing_status='INACTIVE' WHERE owner_id=:id")
+                    .setParameter("id", order.getOwner().getId()).executeUpdate();
+            // Re-read the already locked fleet with current-read semantics to refresh every managed Car.
+            em.createQuery("select c from Car c where c.owner.id=:id", Car.class)
+                    .setParameter("id", order.getOwner().getId()).setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                    .getResultList().forEach(em::refresh);
+        }
         if (current == null) current = OwnerSubscription.builder().ownerId(order.getOwner().getId()).createdAt(now).build();
         current.setPlanCode(order.getPlanCode()); current.setQuota(order.getQuotaSnapshot());
         if (current.getValidFrom() == null || !current.getValidUntil().isAfter(now)) current.setValidFrom(now);
