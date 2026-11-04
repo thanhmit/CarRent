@@ -1,5 +1,7 @@
 # CarRent
 
+**Git scope P5.8 — 2026-11-05:** nhánh `feat/p58-audit` tích hợp audit quyền/CSRF/HMAC, current actor locks và HTTP405 sau P5.7; profile P5.5/P5.6 và workflow P5.9 tiếp tục ngoài phạm vi commit. Xem [bàn giao Git](docs/plans/phase-5-p57-p58-git-handoff.md).
+
 **Git scope P5.7 — 2026-11-05:** đưa riêng P5.7 của `ducbinhnguyen07ars` vào nhánh `feat/p57-owner`; P5.5/P5.6 và P5.9 vẫn ở workspace local. Xem [bàn giao Git](docs/plans/phase-5-p57-p58-git-handoff.md).
 
 Ứng dụng thuê xe dùng Java 21, Spring Boot, Thymeleaf và MySQL 8. Phase 1 (đăng nhập, đăng ký, phân quyền) đã hoàn tất. Phase 2 đã triển khai P2.1–P2.14: Owner tạo/sửa xe, quản lý ảnh và ẩn/đăng lại; Admin lọc danh sách, duyệt/từ chối và ẩn/đăng lại; public tìm xe có lọc/sắp xếp/phân trang và xem chi tiết. Phase 3 đã hoàn tất P3.1–P3.13: notification, booking toàn vòng đời (đặt/xác nhận/từ chối/hủy/hoàn tất), hoàn tiền giả lập và xóa xe an toàn theo lịch sử thuê; P4.1 Payment mapping/repository đã có. Phase 7/P7.1–P7.4 đã hoàn tất queue/transaction. Nền tài chính offline P4.2–P4.11 và schema/model P6.1 đã hoàn thành; P6.2 policy/guard và P6.3 nháp biên bản/ảnh private đã hoàn thành (518 test toàn bộ và 24 kiểm tra trình duyệt đạt); P4.2-A/provider live tạm hoãn, tiếp theo P6.4. Chưa bật workflow thuê 30/70 trên DB ứng dụng.

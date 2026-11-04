@@ -1,5 +1,7 @@
 # CarRent — Phase 3: Notification & Booking — Implementation Plan
 
+> **Phạm vi lịch sử/LEGACY:** các task và checkpoint dưới đây ghi triển khai Phase 3 đã nghiệm thu, gồm payment giả lập và complete chưa PAID. Không áp dụng chúng làm yêu cầu mới cho `VIETQR_V1`. Workflow hiện hành dùng [Phase 6](phase-6-inspection.md), [Phase 4](phase-4-payment.md), D-25A/D-27: đủ30% trước Owner giao xe, Owner nhận lại xe rồi thu70%, giữ bất đồng AFTER và tự COMPLETED khi đủ tiền. Không triển khai thêm mock hoặc bật nhận xe chưa thanh toán từ plan lịch sử này.
+
 > **For agentic workers:** Dùng `superpowers:executing-plans`, chạy task-by-task theo 5 đợt đã duyệt; checkbox `- [ ]` tracking. Giữ checkout/nhánh và thay đổi đang có, không stage/commit/push (D-19). Quy ước compile/boot/HTTP/SQL ở `phase-0-init.md`; D-19 hiện tại và constraints bên dưới thay phần quy ước Git lịch sử của Phase 0.
 
 **Goal:** Notification trong DB + toàn bộ nghiệp vụ Booking (tạo → duyệt → hủy → hoàn tất) — FR-10, FR-11, FR-13, FR-14.
