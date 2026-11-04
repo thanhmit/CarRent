@@ -82,10 +82,10 @@ Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash n
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-- [ ] GET /admin/users có q/role/status/page; Specification/filter hợp lệ, giữ filter qua pager.
-- [ ] GET /admin/users/{id} có hồ sơ và số liệu liên quan có scope; POST status đổi ACTIVE/INACTIVE/BANNED sau xác thực Admin hiện tại.
-- [ ] Từ chối tự đổi status của chính mình, role tamper, CSRF sai; account BANNED không đăng nhập mới hoặc thực hiện mutation sau khi đã bị chặn.
-- [ ] Không tự ban từ khoản nợ/hoàn quá hạn. Test stale principal trong tác vụ đang chờ queue phải bị service kiểm tra lại khi chạy.
+- [x] GET /admin/users có q/role/status/page; Specification/filter hợp lệ, giữ filter qua pager.
+- [x] GET /admin/users/{id} có hồ sơ và số liệu liên quan có scope; POST status đổi ACTIVE/INACTIVE/BANNED sau xác thực Admin hiện tại.
+- [x] Từ chối tự đổi status của chính mình, role tamper, CSRF sai; account BANNED không đăng nhập mới hoặc thực hiện mutation sau khi đã bị chặn.
+- [x] Không tự ban từ khoản nợ/hoàn quá hạn. Test stale principal trong tác vụ đang chờ queue phải bị service kiểm tra lại khi chạy.
 
 ### Task P5.4 — Admin booking, biên bản và khoản còn nợ
 
