@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Hồ sơ tài khoản')}"></head>
+<body class="bg-surface font-body-md text-on-surface"><div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-20 pb-10 px-4 sm:px-8"><div class="max-w-4xl mx-auto flex flex-col gap-6">
+  <header><a th:href="@{/admin/users}" class="text-secondary underline">Quản lý tài khoản</a><h1 class="font-headline-md text-headline-md" th:text="${'Hồ sơ tài khoản #' + detail.user.id}"></h1></header>
+  <p th:if="${successMessage}" th:text="${successMessage}" role="status" class="bg-tertiary-fixed p-4 rounded-xl"></p>
+  <section class="bg-surface-container-lowest p-5 rounded-xl break-words"><h2 class="font-title-md text-title-md" th:text="${detail.user.fullName}"></h2>
+    <dl class="grid sm:grid-cols-2 gap-4 mt-4">
+      <div><dt>Email</dt><dd th:text="${detail.user.email}"></dd></div><div><dt>Điện thoại</dt><dd th:text="${detail.user.phone ?: 'Chưa cung cấp'}"></dd></div>
+      <div><dt>Vai trò</dt><dd th:text="${roleLabels[detail.user.role]}"></dd></div><div><dt>Trạng thái</dt><dd th:text="${statusLabels[detail.user.status]}"></dd></div>
+      <div><dt>Ngày tạo tài khoản</dt><dd th:text="${#temporals.format(detail.user.createdAt,'dd/MM/yyyy HH:mm')}"></dd></div>
+    </dl>
+  </section>
+  <section aria-labelledby="related" class="bg-surface-container-lowest p-5 rounded-xl"><h2 id="related" class="font-title-md text-title-md">Số liệu của tài khoản này</h2>
+    <dl class="grid sm:grid-cols-2 gap-4 mt-4">
+      <div><dt>Xe sở hữu</dt><dd th:text="${detail.ownedCars}"></dd></div><div><dt>Đơn đặt thuê</dt><dd th:text="${detail.customerBookings}"></dd></div>
+      <div><dt>Đơn thuê xe thuộc sở hữu</dt><dd th:text="${detail.ownerBookings}"></dd></div><div><dt>Đơn mua gói</dt><dd th:text="${detail.financialAvailable ? detail.subscriptionOrders : 'Chưa sẵn sàng'}"></dd></div>
+    </dl>
+  </section>
+  <section aria-labelledby="status-title" class="bg-surface-container-low p-5 rounded-xl flex flex-col gap-3">
+    <h2 id="status-title" class="font-title-md text-title-md">Quản lý trạng thái</h2><p>Thay đổi trạng thái không sửa vai trò, email, đơn thuê hoặc các khoản tiền đã ghi nhận.</p>
+    <p th:if="${self}">Bạn không thể đổi trạng thái tài khoản của chính mình.</p>
+    <form th:unless="${self}" method="post" th:action="@{/admin/users/{id}/status(id=${detail.user.id})}" class="flex flex-col sm:flex-row gap-3">
+      <label class="flex flex-col gap-1 min-w-0">Trạng thái mới<select name="status" class="w-full min-w-0 rounded-lg border border-outline p-2 bg-surface-container-lowest"><option th:each="s : ${statusLabels}" th:value="${s.key}" th:selected="${s.key == detail.user.status}" th:text="${s.value}"></option></select></label>
+      <button type="submit" class="self-start sm:self-end bg-primary text-on-primary rounded-lg px-5 py-2">Cập nhật trạng thái</button>
+    </form>
+  </section>
+</div></main></body></html>
