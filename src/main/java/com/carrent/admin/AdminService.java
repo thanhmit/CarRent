@@ -16,9 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class AdminService {
-    static final String BALANCE_OVERDUE_SQL = """
+    public static final String BALANCE_DEBT_SQL = """
             o.purpose='BALANCE' AND o.subject_type='BOOKING' AND o.status='OPEN'
-            AND o.amount_settled<o.amount_due AND o.due_at<=:now
+            AND o.amount_settled<o.amount_due
             AND EXISTS (SELECT 1 FROM bookings b JOIN cars car ON car.id=b.car_id
                 WHERE b.id=o.subject_id AND o.business_key=CONCAT('BOOKING:',b.id,':BALANCE')
                 AND o.payer_user_id=b.customer_id AND o.collector_user_id=car.owner_id
@@ -27,6 +27,7 @@ public class AdminService {
                 AND b.vehicle_received_at IS NOT NULL AND b.vehicle_returned_at IS NOT NULL
                 AND o.due_at=DATE_ADD(b.vehicle_returned_at,INTERVAL 1 HOUR))
             """;
+    static final String BALANCE_OVERDUE_SQL = BALANCE_DEBT_SQL + " AND o.due_at<=:now";
     /** Counts are systemwide; revenue and cash amounts belong to the current Admin's wallet.
      * refundsSucceeded is money actually refunded, while refundsPending/Overdue are counts. */
     public record DashboardStats(long users, long cars, long bookings, long subscriptionRevenue,

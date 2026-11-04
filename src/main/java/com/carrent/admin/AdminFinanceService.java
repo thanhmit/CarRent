@@ -105,7 +105,7 @@ public class AdminFinanceService {
         return result;
     }
 
-    static String bookingFrom(Kind kind) {
+    public static String bookingFrom(Kind kind) {
         String from="""
                 FROM bookings b JOIN cars car ON car.id=b.car_id
                 JOIN payment_obligations o ON o.subject_type='BOOKING' AND o.subject_id=b.id
