@@ -131,6 +131,29 @@ final class PaymentFlowFixture implements AutoCloseable {
                 """, at, at);
     }
 
+    void historicalSmallSubscription(long owner) {
+        // Existing paid entitlements remain usable even when new checkout is outside the pilot.
+        tx.executeWithoutResult(s -> {
+            var at = java.time.LocalDateTime.ofInstant(clock.instant(), java.time.ZoneOffset.UTC);
+            long order = jdbc.queryForObject("SELECT COALESCE(MAX(id),0)+1 FROM subscription_orders", Long.class);
+            jdbc.update("""
+                    INSERT INTO subscription_orders(id,owner_id,plan_code,quota_snapshot,price_snapshot,duration_days,created_at,updated_at,expires_at)
+                    VALUES(?,?,'SMALL',4,5000,30,?,?,?)
+                    """, order, owner, at, at, at.plusMinutes(15));
+            jdbc.update("""
+                    INSERT INTO payment_obligations(business_key,purpose,subject_type,subject_id,payer_user_id,collector_user_id,
+                    amount_due,amount_settled,status,created_at,updated_at)
+                    VALUES(?,'SUBSCRIPTION','SUBSCRIPTION_ORDER',?,?,1,5000,5000,'SETTLED',?,?)
+                    """, "SUBSCRIPTION:" + order, order, owner, at, at);
+            long obligation = jdbc.queryForObject("SELECT id FROM payment_obligations WHERE business_key=?", Long.class, "SUBSCRIPTION:" + order);
+            jdbc.update("UPDATE subscription_orders SET obligation_id=?,status='APPLIED',applied_at=? WHERE id=?", obligation, at, order);
+            jdbc.update("""
+                    INSERT INTO owner_subscriptions(owner_id,plan_code,quota,last_applied_order_id,valid_from,valid_until,created_at,updated_at)
+                    VALUES(?,'SMALL',4,?,?,?,?,?)
+                    """, owner, order, at, at.plusDays(30), at, at);
+        });
+    }
+
     CustomUserPrincipal actor(long id) {
         return tx.execute(s -> CustomUserPrincipal.from(em.find(User.class, id)));
     }

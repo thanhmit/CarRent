@@ -184,6 +184,7 @@ public class OwnerCarController {
         model.addAttribute("thumbnails", thumbnails);
         model.addAttribute("carsWithHistory", carIds.isEmpty() ? List.of() : bookings.findCarIdsWithHistory(carIds));
         model.addAttribute("publicCount", cars.countPublicCars(owner.getId()));
+        model.addAttribute("resubmissionEnabled", cars.resubmissionEnabled());
         model.addAttribute("pendingCount", cars.countPendingCars(owner.getId()));
         model.addAttribute("ownerName", owner.getFullName());
         model.addAttribute("paginationBaseUrl", UriComponentsBuilder.fromPath(request.getRequestURI())
