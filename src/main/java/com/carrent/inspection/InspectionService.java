@@ -8,6 +8,7 @@ import com.carrent.user.*;
 import com.carrent.notification.NotificationService;
 import java.time.Clock;
 import jakarta.persistence.EntityManager;
+import com.carrent.subscription.SubscriptionPolicy;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class InspectionService {
     private final BookingInspectionRepository reports;
     private final InspectionImageRepository images;
     private final EntityManager em;
+    private final SubscriptionPolicy subscriptions;
     private final Validator validator;
     private final InspectionStorageService storage;
     private final InspectionEventRepository events;
@@ -357,9 +359,11 @@ public class InspectionService {
 
     private Booking lockedBooking(Long id, InspectionPhase phase) {
         Booking route = supported(id, phase);
+        Long ownerId = subscriptions.lockCarOwner(route.getCar().getId());
         var car = cars.findByIdForUpdate(route.getCar().getId()).orElseThrow(this::missing);
         em.detach(car);
-        cars.findByIdForUpdate(route.getCar().getId()).orElseThrow(this::missing);
+        car = cars.findByIdForUpdate(route.getCar().getId()).orElseThrow(this::missing);
+        subscriptions.requireSameOwner(car, ownerId);
         var booking = bookings.findByIdForUpdate(id).orElseThrow(this::missing);
         em.detach(booking);
         return checkSupported(bookings.findByIdForUpdate(id).orElseThrow(this::missing), phase);

@@ -125,12 +125,12 @@ WHERE owner_id = :ownerId
 
 **Files:** CarSpecifications/Repository/Controller, HomeController, BookingService.createBooking; SubscriptionVisibilityTest.
 
-- [ ] Dùng một policy public nhất quán cho listing/detail/home/search: APPROVED + ý định ACTIVE + entitlement còn hạn. Chủ xe/Admin vẫn xem xe ẩn theo quyền hiện có.
-- [ ] Không chỉ ẩn nút trên UI: createBooking kiểm tra gói current dưới khóa Owner trước khóa Car, tại thời điểm submit. Gói hết hạn giữa lúc xem trang và POST phải bị chặn.
-- [ ] Quét job chỉ để nhắc/hiển thị, public predicate kiểm tra validUntil trực tiếp; job trễ không để xe tiếp tục nhận đơn mới.
-- [ ] Hết hạn không đổi/xóa hồ sơ, report, booking, debt hoặc refund; không chặn nhận/trả/thanh toán các đơn đã xác nhận. Các yêu cầu thuê đang có không bị tự hủy chỉ vì expiry gói.
-- [ ] Giữ listing_status thể hiện Owner muốn đăng/ẩn; tính trạng thái tạm ẩn do gói riêng để không bật nhầm xe Owner đã ẩn khi gia hạn.
-- [ ] Test public direct URL, home/search/filter/count/pagination và POST booking đều dùng cùng policy, không chỉ trang Owner.
+- [x] Dùng một policy public nhất quán cho listing/detail/home/search: APPROVED + ý định ACTIVE + entitlement còn hạn. Chủ xe/Admin vẫn xem xe ẩn theo quyền hiện có.
+- [x] Không chỉ ẩn nút trên UI: createBooking kiểm tra gói current dưới khóa Owner trước khóa Car, tại thời điểm submit. Gói hết hạn giữa lúc xem trang và POST phải bị chặn.
+- [x] Quét job chỉ để nhắc/hiển thị, public predicate kiểm tra validUntil trực tiếp; job trễ không để xe tiếp tục nhận đơn mới.
+- [x] Hết hạn không đổi/xóa hồ sơ, report, booking, debt hoặc refund; không chặn nhận/trả/thanh toán các đơn đã xác nhận. Các yêu cầu thuê đang có không bị tự hủy chỉ vì expiry gói.
+- [x] Giữ listing_status thể hiện Owner muốn đăng/ẩn; tính trạng thái tạm ẩn do gói riêng để không bật nhầm xe Owner đã ẩn khi gia hạn.
+- [x] Test public direct URL, home/search/filter/count/pagination và POST booking đều dùng cùng policy, không chỉ trang Owner.
 
 ### Task P8.6 — Gia hạn cùng gói và mua gói thấp hơn
 

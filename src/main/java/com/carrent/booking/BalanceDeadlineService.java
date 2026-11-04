@@ -10,6 +10,7 @@ import com.carrent.payment.PaymentSubjectType;
 import com.carrent.user.Role;
 import com.carrent.user.UserRepository;
 import jakarta.persistence.EntityManager;
+import com.carrent.subscription.SubscriptionPolicy;
 import jakarta.persistence.LockModeType;
 import java.time.Clock;
 import java.util.LinkedHashSet;
@@ -19,14 +20,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class BalanceDeadlineService {
     private final EntityManager em;
+    private final SubscriptionPolicy subscriptions;
     private final PaymentObligationRepository obligations;
     private final UserRepository users;
     private final NotificationService notifications;
     private final Clock clock;
 
     public BalanceDeadlineService(EntityManager em, PaymentObligationRepository obligations, UserRepository users,
-            NotificationService notifications, Clock clock) {
+            NotificationService notifications, Clock clock, SubscriptionPolicy subscriptions) {
         this.em = em;
+        this.subscriptions = subscriptions;
         this.obligations = obligations;
         this.users = users;
         this.notifications = notifications;
@@ -38,7 +41,9 @@ public class BalanceDeadlineService {
         var route = em.find(Booking.class, bookingId);
         if (route == null) return;
         Long carId = route.getCar().getId();
-        current(Car.class, carId);
+        Long ownerId = subscriptions.lockCarOwner(carId);
+        var car = current(Car.class, carId);
+        subscriptions.requireSameOwner(car, ownerId);
         var booking = current(Booking.class, bookingId);
         if (!"VIETQR_V1".equals(booking.getWorkflowVersion()) || !booking.isInspectionRequired()
                 || booking.getStatus() != BookingStatus.CONFIRMED || booking.getVehicleReceivedAt() == null

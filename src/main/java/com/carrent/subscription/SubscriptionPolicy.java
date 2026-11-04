@@ -76,6 +76,20 @@ public class SubscriptionPolicy {
         }
     }
 
+    public Specification<Car> publicCars() {
+        Specification<Car> visible = CarSpecifications.isPublic();
+        if (!enabled) return visible;
+        var now = clock.instant();
+        return visible.and((root, query, cb) -> {
+            var sub = query.subquery(Long.class);
+            var entitlement = sub.from(OwnerSubscription.class);
+            sub.select(entitlement.get("ownerId")).where(
+                    cb.equal(entitlement.get("ownerId"), root.get("owner").get("id")),
+                    cb.greaterThan(entitlement.get("validUntil"), now));
+            return cb.exists(sub);
+        });
+    }
+
     private <T> T current(Class<T> type, Long id) {
         var ref = em.getReference(type, id);
         var lock = em.getLockMode(ref);

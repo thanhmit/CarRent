@@ -1,6 +1,7 @@
 package com.carrent.booking;
 
 import com.carrent.car.ApprovalStatus;
+import com.carrent.subscription.SubscriptionPolicy;
 import com.carrent.car.Car;
 import com.carrent.car.CarRepository;
 import com.carrent.car.ListingStatus;
@@ -42,6 +43,7 @@ public class BookingService {
     private final InspectionService inspections;
     private final PaymentIntentRepository intents;
     private final RefundService refunds;
+    private final SubscriptionPolicy subscriptions;
 
     /** Payment-core owns aggregate and financial locks and commits receipt/booking atomically. */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
@@ -174,7 +176,7 @@ public class BookingService {
                           NotificationService notifications, Validator validator, EntityManager entityManager,
                           PaymentRepository payments, Clock clock, PaymentObligationRepository obligations,
                           PaymentIntentTransactions intentTransactions, InspectionService inspections,
-                          PaymentIntentRepository intents, RefundService refunds) {
+                          PaymentIntentRepository intents, RefundService refunds, SubscriptionPolicy subscriptions) {
         this.bookings = bookings;
         this.cars = cars;
         this.users = users;
@@ -188,6 +190,7 @@ public class BookingService {
         this.inspections = inspections;
         this.intents = intents;
         this.refunds = refunds;
+        this.subscriptions = subscriptions;
     }
 
     @Transactional
@@ -245,7 +248,10 @@ public class BookingService {
         LocalDate start = form.getStartDate();
         LocalDate end = form.getEndDate();
         validateDates(start, end);
+        Long ownerId = subscriptions.lockCarOwner(form.getCarId());
         Car car = lockedCar(form.getCarId());
+        subscriptions.requireSameOwner(car, ownerId);
+        subscriptions.requireActive(car.getOwner().getId());
         if (car.getApprovalStatus() != ApprovalStatus.APPROVED || car.getListingStatus() != ListingStatus.ACTIVE) {
             throw new BusinessException("Xe hiện không nhận đơn.");
         }
@@ -703,10 +709,13 @@ public class BookingService {
     }
 
     private Car lockedCar(Long carId) {
+        Long ownerId = subscriptions.lockCarOwner(carId);
         entityManager.flush();
         Car car = cars.findByIdForUpdate(carId).orElseThrow(() -> new NotFoundException("Xe không tồn tại."));
         // A locking query can return a stale managed Car; reread under the retained lock.
         entityManager.detach(car);
-        return cars.findByIdForUpdate(carId).orElseThrow(() -> new NotFoundException("Xe không tồn tại."));
+        car = cars.findByIdForUpdate(carId).orElseThrow(() -> new NotFoundException("Xe không tồn tại."));
+        subscriptions.requireSameOwner(car, ownerId);
+        return car;
     }
 }

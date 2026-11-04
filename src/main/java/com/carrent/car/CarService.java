@@ -66,7 +66,7 @@ public class CarService {
 
     @Transactional(readOnly = true)
     public long countPublicCars(Long ownerId) {
-        return cars.countByOwnerIdAndApprovalStatusAndListingStatus(ownerId, ApprovalStatus.APPROVED, ListingStatus.ACTIVE);
+        return cars.count(subscriptions.publicCars().and((root, query, cb) -> cb.equal(root.get("owner").get("id"), ownerId)));
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +98,7 @@ public class CarService {
             throw new BusinessException("Điều kiện lọc không hợp lệ. Vui lòng kiểm tra lại.");
         }
         List<Specification<Car>> specifications = new ArrayList<>();
-        specifications.add(CarSpecifications.isPublic());
+        specifications.add(subscriptions.publicCars());
         if (search.getStartDate() != null && search.getEndDate() != null) {
             specifications.add(CarSpecifications.availableBetween(search.getStartDate(), search.getEndDate()));
         }
@@ -154,8 +154,7 @@ public class CarService {
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");
         }
-        if (car.getApprovalStatus() == ApprovalStatus.APPROVED
-                && car.getListingStatus() == ListingStatus.ACTIVE) {
+        if (isPublicListing(car)) {
             return car;
         }
         if (principal != null && principal.getId() != null
@@ -371,6 +370,11 @@ public class CarService {
     }
 
     public boolean resubmissionEnabled() { return subscriptions.enabled(); }
+
+    @Transactional(readOnly = true)
+    public boolean isPublicListing(Car car) {
+        return cars.exists(subscriptions.publicCars().and((root, query, cb) -> cb.equal(root.get("id"), car.getId())));
+    }
 
     private User requireOwner(CustomUserPrincipal principal) {
         if (principal == null || principal.getRole() != Role.OWNER || principal.getId() == null) {

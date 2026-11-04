@@ -139,8 +139,7 @@ public class BookingController {
         model.addAttribute("timeline", timeline.view(id, principal));
         model.addAttribute("cancellationQuote", bookings.cancellationQuote(id, principal));
         model.addAttribute("car", car);
-        model.addAttribute("carPublic", car.getApprovalStatus() == ApprovalStatus.APPROVED
-                && car.getListingStatus() == ListingStatus.ACTIVE);
+        model.addAttribute("carPublic", cars.isPublicListing(car));
         model.addAttribute("days", ChronoUnit.DAYS.between(booking.getStartDate(), booking.getEndDate()));
         model.addAttribute("hasPaid", payments.existsByBookingIdAndStatus(id, PaymentStatus.PAID));
         model.addAttribute("advanceIntentId", "VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.getBeforeAcceptedAt() != null
