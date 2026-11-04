@@ -66,11 +66,13 @@ Java dưới `src/main/java/com/carrent/`:
 
 **Interfaces:** `SubscriptionOrderView createOrder(SubscriptionPlan plan, CustomUserPrincipal actor)`; `void cancelOrder(Long orderId, CustomUserPrincipal actor)`. View chứa orderId, snapshot plan/quota/price, intent view, status.
 
-- [ ] Viết test Owner đúng role/ACTIVE, không mua gói khác khi còn hạn, một order ACTIVE mỗi Owner dù double POST.
-- [ ] Khóa hàng Owner trước đọc entitlement và pending order; nếu có pending hợp lệ thì trả lại yêu cầu đó, không tạo thêm QR khác. Owner chỉ xem/hủy order của mình.
-- [ ] Tạo order + obligation + intent cùng transaction, deadline từ backend +15 phút. Checkout dùng QR tài khoản thu Admin; refresh không gia hạn.
-- [ ] Hủy/hết hạn kết thúc order/intent, không xóa dữ liệu và không mất hạn gói hiện tại. Tiền về sau canceled order dùng mặc định hoàn 100% trong README.
-- [ ] Test tamper amount/collector/ownerId, queue không có carId không được lấy một carId giả; đây là transaction khóa Owner, không Car queue.
+- [x] Viết test Owner đúng role/ACTIVE, không mua gói khác khi còn hạn, một order ACTIVE mỗi Owner dù double POST.
+- [x] Khóa hàng Owner trước đọc entitlement và pending order; nếu có pending hợp lệ thì trả lại yêu cầu đó, không tạo thêm QR khác. Owner chỉ xem/hủy order của mình.
+- [x] Tạo order + obligation + intent cùng transaction, deadline từ backend +15 phút. Checkout dùng QR tài khoản thu Admin; refresh không gia hạn.
+- [x] Hủy/hết hạn kết thúc order/intent, không xóa dữ liệu và không mất hạn gói hiện tại. Tiền về sau canceled order dùng mặc định hoàn 100% trong README.
+- [x] Test tamper amount/collector/ownerId, queue không có carId không được lấy một carId giả; đây là transaction khóa Owner, không Car queue.
+
+**Bằng chứng:** Order6/6 và HTTP4/4; full clean verify 914/914, Chromium47/47. [Checkpoint riêng đợt2](phase-8-batch-2-handoff.md).
 
 ### Task P8.3 — Áp dụng thanh toán và gia hạn đúng một lần
 

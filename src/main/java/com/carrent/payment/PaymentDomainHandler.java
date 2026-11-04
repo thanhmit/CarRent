@@ -7,4 +7,5 @@ public interface PaymentDomainHandler {
     void apply(Long receiptId);
     void expire(Long intentId);
     void cancel(Long intentId);
+    default boolean matchesParties(PaymentObligation obligation) { return true; }
 }
