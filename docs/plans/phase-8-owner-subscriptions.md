@@ -53,10 +53,12 @@ Java dưới `src/main/java/com/carrent/`:
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-- [ ] Tạo catalog 3 gói với code/quota/price/duration đúng Global Constraints; chưa cần Admin CRUD bảng giá. Không dùng giá client gửi.
-- [ ] Tạo subscription_orders và owner_subscriptions theo README; ownerId entitlement UNIQUE, order.obligationId UNIQUE, appliedAt nullable; trạng thái order PENDING/APPLIED/EXPIRED/CANCELLED/REFUND_PENDING.
-- [ ] Mỗi order lưu plan_code/quota_snapshot/price_snapshot/duration_days=30; Java dùng planCode/quotaSnapshot/priceSnapshot/durationDays. Liên kết nghĩa vụ bằng business key SUBSCRIPTION:orderId; không cần bookingId giả hoặc sửa payment legacy.
-- [ ] Test schema/checks và giữ nguyên seed/xe cũ. Migration không tự gán gói miễn phí cho mọi Owner; fixture kiểm chứng có entitlement riêng.
+- [x] Tạo catalog 3 gói với code/quota/price/duration đúng Global Constraints; chưa cần Admin CRUD bảng giá. Không dùng giá client gửi.
+- [x] Tạo subscription_orders và owner_subscriptions theo README; ownerId entitlement UNIQUE, order.obligationId UNIQUE, appliedAt nullable; trạng thái order PENDING/APPLIED/EXPIRED/CANCELLED/REFUND_PENDING.
+- [x] Mỗi order lưu plan_code/quota_snapshot/price_snapshot/duration_days=30; Java dùng planCode/quotaSnapshot/priceSnapshot/durationDays. Liên kết nghĩa vụ bằng business key SUBSCRIPTION:orderId; không cần bookingId giả hoặc sửa payment legacy.
+- [x] Test schema/checks và giữ nguyên seed/xe cũ. Migration không tự gán gói miễn phí cho mọi Owner; fixture kiểm chứng có entitlement riêng.
+
+**Bằng chứng:** schema21/21, catalog/JPA2/2, full clean verify 879/879 và JAR. [Checkpoint/bàn giao đợt1](phase-8-batch-1-handoff.md); không tự cấp entitlement hoặc migrate DB ứng dụng.
 
 ### Task P8.2 — Tạo yêu cầu mua/gia hạn và QR 15 phút
 

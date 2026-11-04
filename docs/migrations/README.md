@@ -95,3 +95,18 @@ Kiểm chứng sau migration: so hash các **cột legacy gốc** của bảy b�
 ```
 
 Các test dùng lại fixture schema tạm có tên được kiểm tra trước cleanup, không đọc/in secret và không gọi provider thật. `InspectionEvent` chỉ append/read qua ORM immutable/repository giới hạn; CHECK action/note không cấm quản trị viên dùng SQL trực tiếp để sửa/xóa.
+
+## Owner subscriptions — P8.1
+
+`2026-10-27-03-owner-subscriptions.sql` thêm `subscription_orders` và `owner_subscriptions`, không sửa hàng cũ hoặc tự cấp gói. Phụ thuộc users + payment-core v1; không phụ thuộc migration rental. Khi triển khai JAR hiện hành, DB phải có toàn bộ schema mà các entity yêu cầu: payment-core, refund accounts, rental, cancellation reason và subscription. Hibernate vẫn `ddl-auto=none`; khởi động server không chạy migration.
+
+Áp dụng quy trình backup/restore thử/dừng ghi và connection mới ở trên. Chỉ sau khi xác minh bản backup của đúng schema, người vận hành đặt `@carrent_owner_subscriptions_backup_confirmed=1` và chạy file. Phiên implement P8.1 không cấp phép chạy trên DB ứng dụng.
+
+```powershell
+& 'C:/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe' --host=localhost --port=3306 --user=root --password --database=carrent --execute="SET @carrent_owner_subscriptions_backup_confirmed=1; SOURCE docs/migrations/2026-10-27-03-owner-subscriptions.sql;"
+if ($LASTEXITCODE -ne 0) { throw 'Subscription migration stopped; inspect schema before retrying' }
+```
+
+Đổi database sang schema restore riêng khi diễn tập. Không dùng `--force`; DDL implicit commit. Guard yêu cầu MySQL 8.0.16+, strict mode, tám bảng nguồn InnoDB và BIGINT có dấu PK nguồn; từ chối bảng đích đã có/partial. Nếu lỗi, kiểm tra schema và procedure `carrent_owner_subscriptions_v1` còn lại trước khi quyết định phục hồi; không tự drop dữ liệu hoặc chạy lại.
+
+Sau migration: đối chiếu hash toàn bộ hàng legacy/core, hai bảng mới rỗng, DDL khớp bootstrap; FK RESTRICT, owner PK, obligation/last-order UNIQUE; CHECK plan/status/snapshot/duration/expiry/applied/validity. UTC `DATETIME(6)` ↔ `Instant`; không backfill entitlement. FK không thay kiểm tra Owner ACTIVE, nghĩa vụ đúng subject/purpose/payer/collector và apply atomic ở P8.2/P8.3. Test `SubscriptionMigrationTest` và `SubscriptionModelTest` dùng schema MySQL tạm và dọn sau chạy; không gọi provider.

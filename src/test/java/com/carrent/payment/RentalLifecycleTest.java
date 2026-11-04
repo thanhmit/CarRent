@@ -190,6 +190,7 @@ class RentalLifecycleTest {
             migrated.migrate(true);
             migrate(migrated, true);
             CancellationReasonMigrationTest.migrate(migrated);
+            SubscriptionMigrationTest.migrate(migrated, true);
             fresh.bootstrap(Path.of("scriptDB.sql"));
 
             for (String table : List.of("bookings", "booking_inspections", "inspection_images", "inspection_events")) {
@@ -227,6 +228,7 @@ class RentalLifecycleTest {
             db.migrate(true);
             migrate(db, true);
             CancellationReasonMigrationTest.migrate(db);
+            SubscriptionMigrationTest.migrate(db, true);
             return db;
         } catch (Exception failure) {
             db.close();
