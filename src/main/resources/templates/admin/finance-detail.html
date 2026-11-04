@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Chi tiết tài chính')}"></head>
+<body class="bg-surface font-body-md text-on-surface"><div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-20 pb-10 px-4 sm:px-8 max-w-4xl mx-auto flex flex-col gap-6">
+  <h1 class="font-headline-md text-headline-md" th:text="${'Chi tiết khoản #' + row.id}"></h1>
+  <section class="bg-surface-container-lowest p-5 rounded-xl"><dl th:replace="~{admin/finance-row :: fields(${row})}"></dl>
+    <p th:if="${kind.name() == 'RECEIPTS'}" th:text="${'Đã phân bổ: ' + #numbers.formatInteger(row.allocated,0,'POINT') + ' VNĐ'}"></p>
+    <p th:if="${kind.name() == 'OBLIGATIONS'}" th:text="${'Đã thanh toán: ' + #numbers.formatInteger(row.allocated,0,'POINT') + ' VNĐ'}"></p>
+  </section>
+  <p>Trang tra cứu chỉ hiển thị kết quả ghi nhận và đối soát. Khoản hoàn đang chờ xử lý chưa phải tiền đã trả cho người nhận.</p>
+  <a class="text-secondary underline" th:href="@{/admin/finance(kind=${kind})}">Về danh sách tài chính</a>
+</main></body></html>

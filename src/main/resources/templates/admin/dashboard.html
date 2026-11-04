@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Tổng quan quản trị')}"></head>
+<body class="bg-surface font-body-md text-on-surface">
+<div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-20 pb-10 px-4 sm:px-8 min-h-screen">
+  <div class="max-w-6xl mx-auto flex flex-col gap-6">
+    <header><p class="text-on-surface-variant">Quản trị</p><h1 class="font-headline-md text-headline-md">Tổng quan hệ thống</h1></header>
+    <nav class="flex flex-wrap gap-4" aria-label="Quản trị"><a class="text-secondary underline" th:href="@{/admin/finance}">Tra cứu tài chính</a><a class="text-secondary underline" th:href="@{/admin/cars}">Duyệt xe</a><a class="text-secondary underline" th:href="@{/payment/finances(view='collected')}">Khoản tôi thu</a></nav>
+    <section aria-labelledby="counts" class="flex flex-col gap-3">
+      <h2 id="counts" class="font-title-md text-title-md">Toàn hệ thống</h2>
+      <dl class="grid sm:grid-cols-3 gap-4">
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Tài khoản</dt><dd class="text-3xl font-bold" th:text="${stats.users}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Xe</dt><dd class="text-3xl font-bold" th:text="${stats.cars}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Đơn thuê</dt><dd class="text-3xl font-bold" th:text="${stats.bookings}"></dd></div>
+      </dl>
+    </section>
+    <section aria-labelledby="revenue" class="flex flex-col gap-3">
+      <h2 id="revenue" class="font-title-md text-title-md">Phí gói · ví Admin của tôi</h2>
+      <p>Chỉ tính gói đã kích hoạt. Tiền thuê thuộc chủ xe; khoản chuyển trùng hoặc chờ đối soát được theo dõi riêng.</p>
+      <dl class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-primary text-on-primary rounded-xl p-5"><dt>Doanh thu phí gói</dt><dd class="text-2xl font-bold break-words" th:text="${#numbers.formatInteger(stats.subscriptionRevenue,0,'POINT') + ' VNĐ'}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Phí gói tháng này · giờ Việt Nam</dt><dd class="text-2xl font-bold break-words" th:text="${#numbers.formatInteger(stats.monthlySubscriptionRevenue,0,'POINT') + ' VNĐ'}"></dd></div>
+      </dl>
+      <dl class="grid sm:grid-cols-3 gap-4">
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Tổng tiền đã nhận vào ví Admin</dt><dd th:text="${#numbers.formatInteger(stats.grossCashReceived,0,'POINT') + ' VNĐ'}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Đã phân bổ thanh toán</dt><dd th:text="${#numbers.formatInteger(stats.allocatedCash,0,'POINT') + ' VNĐ'}"></dd></div>
+        <div class="bg-surface-container-lowest rounded-xl p-5"><dt>Đã hoàn thành công từ ví Admin</dt><dd th:text="${#numbers.formatInteger(stats.refundsSucceeded,0,'POINT') + ' VNĐ'}"></dd></div>
+      </dl>
+      <p class="text-on-surface-variant">Các khoản hoàn trùng được theo dõi riêng, không trừ khỏi phí gói hợp lệ. Lịch sử thanh toán giả lập cũ không tính vào doanh thu này.</p>
+    </section>
+    <section aria-labelledby="attention" class="flex flex-col gap-3">
+      <h2 id="attention" class="font-title-md text-title-md">Cần theo dõi · toàn hệ thống</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a class="bg-surface-container-lowest rounded-xl p-5 underline" th:href="@{/admin/finance(kind='RECEIPTS',status='REVIEW_REQUIRED')}">Giao dịch cần đối soát <strong class="block text-2xl" th:text="${stats.unmatchedReceipts}"></strong></a>
+        <div class="bg-surface-container-lowest rounded-xl p-5">Khoản hoàn chưa thành công <strong class="block text-2xl" th:text="${stats.refundsPending}"></strong></div>
+        <a class="bg-surface-container-lowest rounded-xl p-5 underline" th:href="@{/admin/finance(kind='REFUNDS',overdue=true)}">Hoàn tiền quá hạn <strong class="block text-2xl" th:text="${stats.refundsOverdue}"></strong></a>
+        <a class="bg-surface-container-lowest rounded-xl p-5 underline" th:href="@{/admin/finance(overdue=true)}">Nợ phần còn lại quá hạn <strong class="block text-2xl" th:text="${stats.balanceDebtsOverdue}"></strong></a>
+      </div>
+      <p>Cảnh báo hỗ trợ theo dõi, không tự khóa tài khoản hoặc thay đổi trạng thái thanh toán.</p>
+    </section>
+  </div>
+</main>
+</body></html>
