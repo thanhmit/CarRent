@@ -80,9 +80,9 @@ Java dưới `src/main/java/com/carrent/`:
 
 **Interfaces:** `void applyPayment(Long receiptId)` trong SubscriptionService, được SubscriptionPaymentHandler subject SUBSCRIPTION gọi cùng apply transaction của Phase 4.
 
-- [ ] Viết test chuyển khoản đầu/trùng webhook/chuyển lần hai thật; assert một lần cấp quyền lợi và đúng khoản hoàn cho tiền trùng.
-- [ ] Implement PaymentDomainHandler.lockSubject(orderId): khóa Owner → entitlement → order; nếu hạ gói, khóa các Car cần ẩn theo ID tăng trước khi core khóa obligation/intent/receipt. Trong applyPayment dùng các khóa aggregate đã có; không lấy Car sau khi đã khóa tiền. Kiểm tra tài khoản nhận Admin, code, amount và creditedAt; order đã applied thì receipt mới tạo hoàn DUPLICATE_PAYMENT, không cộng thêm ngày.
-- [ ] Thời hạn:
+- [x] Viết test chuyển khoản đầu/trùng webhook/chuyển lần hai thật; assert một lần cấp quyền lợi và đúng khoản hoàn cho tiền trùng.
+- [x] Implement PaymentDomainHandler.lockSubject(orderId): khóa Owner → entitlement → order; nếu hạ gói, khóa các Car cần ẩn theo ID tăng trước khi core khóa obligation/intent/receipt. Trong applyPayment dùng các khóa aggregate đã có; không lấy Car sau khi đã khóa tiền. Kiểm tra tài khoản nhận Admin, code, amount và creditedAt; order đã applied thì receipt mới tạo hoàn DUPLICATE_PAYMENT, không cộng thêm ngày.
+- [x] Thời hạn:
 
 ```java
 Instant base = current != null && current.validUntil().isAfter(now)
@@ -92,9 +92,11 @@ Instant nextExpiry = base.plus(Duration.ofDays(30));
 
 Khi còn hạn, loại gói phải trùng. Order.appliedAt và entitlement update trong cùng commit; provider retry không được cộng lại.
 
-- [ ] Thực sự trả sau expiresAt: LATE_SUBSCRIPTION → hoàn 100% từ Admin, không cấp gói. Trả đúng hạn nhưng webhook chậm: kiểm tra creditedAt và entitlement hiện tại; không ghi đè một gói khác không tương thích, dùng refund INCOMPATIBLE_SUBSCRIPTION theo mặc định README.
-- [ ] Lệch amount mua gói: receipt REVIEW_REQUIRED, không cấp gói hoặc giả lập đã hoàn. Payout từ Admin đi qua RefundService chung, không tự viết HTTP chi trong SubscriptionService.
-- [ ] Test các biên validUntil==now, creditedAt==expiresAt, hai order/webhook cạnh tranh, lỗi notify rollback cả entitlement và appliedAt.
+- [x] Thực sự trả sau expiresAt: LATE_SUBSCRIPTION → hoàn 100% từ Admin, không cấp gói. Trả đúng hạn nhưng webhook chậm: kiểm tra creditedAt và entitlement hiện tại; không ghi đè một gói khác không tương thích, dùng refund INCOMPATIBLE_SUBSCRIPTION theo mặc định README.
+- [x] Lệch amount mua gói: receipt REVIEW_REQUIRED, không cấp gói hoặc giả lập đã hoàn. Payout từ Admin đi qua RefundService chung, không tự viết HTTP chi trong SubscriptionService.
+- [x] Test các biên validUntil==now, creditedAt==expiresAt, hai order/webhook cạnh tranh, lỗi notify rollback cả entitlement và appliedAt.
+
+**Bằng chứng:** Payment25/25; full clean verify 914/914, Chromium47/47. [Checkpoint riêng đợt2](phase-8-batch-2-handoff.md).
 
 ### Task P8.4 — Suất xe và khóa Owner
 

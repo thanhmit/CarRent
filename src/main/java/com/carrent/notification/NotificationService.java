@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationService {
     private static final Set<String> TYPES = Set.of("CAR_PENDING_APPROVAL", "CAR_APPROVED", "CAR_REJECTED",
             "BOOKING_CREATED", "BOOKING_CONFIRMED", "BOOKING_REJECTED", "BOOKING_CANCELLED", "BOOKING_COMPLETED", "BOOKING_EXPIRED",
-            "PAYMENT_PAID", "PAYMENT_FAILED", "REFUND_WAITING_RECIPIENT", "REFUND_SUCCEEDED", "REFUND_WAITING_FUNDS", "REFUND_OVERDUE",
+            "PAYMENT_PAID", "PAYMENT_FAILED", "SUBSCRIPTION_APPLIED", "REFUND_WAITING_RECIPIENT", "REFUND_SUCCEEDED", "REFUND_WAITING_FUNDS", "REFUND_OVERDUE",
             "BOOKING_OWNER_ACCEPTED", "INSPECTION_SUBMITTED", "INSPECTION_ADDENDUM", "INSPECTION_DISPUTED", "INSPECTION_PICKUP_CONFIRMED",
             "INSPECTION_AFTER_SUBMITTED", "INSPECTION_RETURN_CONFIRMED", "INSPECTION_RETURN_NOT_RECEIVED", "INSPECTION_AFTER_RETURN_OVERDUE", "BOOKING_BALANCE_OVERDUE");
 
@@ -36,7 +36,7 @@ public class NotificationService {
         }
         validateText(title, 150);
         validateText(message, 1000);
-        if (relatedEntityType != null && !Set.of("CAR", "BOOKING", "PAYMENT", "REFUND").contains(relatedEntityType)
+        if (relatedEntityType != null && !Set.of("CAR", "BOOKING", "PAYMENT", "REFUND", "SUBSCRIPTION_ORDER").contains(relatedEntityType)
                 || (relatedEntityType == null) != (relatedEntityId == null)
                 || relatedEntityId != null && relatedEntityId <= 0) {
             throw new BusinessException("Tham chiếu thông báo không hợp lệ.");
