@@ -1,8 +1,14 @@
 # CarRent — Phase 5: Admin và hoàn thiện — Implementation Plan
 
+**Checkpoint P5.4 — 2026-11-04:** hoàn thành **4/4 checklist local** Admin booking/biên bản/khoản còn nợ: list/detail chỉ đọc, nghĩa vụ30/70 và receipts/refunds đúng booking, BEFORE/AFTER private kể cả COMPLETED còn bất đồng; lọc nợ70% quá hạn1giờ và hoàn quá hạn theo Clock/deadline nghiệp vụ. Admin không ký/giao nhận thay Owner hoặc buộc resolve AFTER. Full isolated **clean verify 993/993 JUnit, 0 failure/error/skip**, JAR; Chrome **205/205**, 30 PNG ở1440/390/320. **79/86 task**, còn **7** (`ducbinhnguyen07ars`4, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A live vẫn pending. Tiếp theo **P5.5 + P5.6 của huy69332**. Bảo toàn dirty prerequisites/phase0/config/seed/uploads/DB ứng dụng/HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-3-handoff.md).
+
+**Checkpoint P5.3 — 2026-11-04:** hoàn thành **4/4 checklist** Admin quản lý tài khoản: q/role/status/page20, hồ sơ và số liệu scoped target, POST status ACTIVE/INACTIVE/BANNED dưới khóa và kiểm tra Admin hiện tại; chống self-change/role-email tamper/CSRF, banned login và stale request trong queue. Full isolated **clean verify 986/986 JUnit, 0 failure/error/skip**, JAR; Chrome **107/107**, 33 PNG. **78/86 task**, còn **8** (`ducbinhnguyen07ars`5, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A gate thật vẫn pending. Tiếp theo **P5.4 riêng**. Bảo toàn dirty P8/P5,phase0/config/seed/uploads,DB ứng dụng,HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. [Bàn giao](phase-5-batch-2-handoff.md).
+
+**Checkpoint P5.1 + P5.2 — 2026-11-04:** hoàn thành **5/5 + 5/5 checklist** về read model và dashboard/tài chính Admin. Phí gói từ order applied của đúng Admin; tiền thuê, tiền trùng/chờ đối soát và hoàn tiền tách riêng. Tháng theo giờ Việt Nam; filter/phân trang/sort whitelist, kiểm tra Admin ACTIVE hiện tại, tài khoản được che và GET chỉ đọc. Full isolated **clean verify 973/973 JUnit, 0 failure/error/skip**, JAR; Chrome **103/103**, 33 PNG. **77/86 task**, còn **9**: `ducbinhnguyen07ars` 6, `huy69332` 2, `thanhmit` 1. Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. Đây là đợt code độc lập được chuẩn bị theo roadmap khi P8.8 đã xong local; **P8.8 và P4.2-A vẫn pending gate migration/human/provider/live**. Đợt code tiếp theo **P5.3 riêng**. Bảo toàn P8 chưa commit/phase0/config/seed/uploads, DB ứng dụng, HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. [Bàn giao](phase-5-batch-1-handoff.md).
+
 > **For agentic workers:** Dùng superpowers:executing-plans theo đợt đã duyệt bên dưới, kiểm chứng/checkpoint riêng từng task; không tự stage/commit/push. Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối.
 
-**Ngày cập nhật:** 2026-11-01 (lịch đợt). **Trạng thái:** kế hoạch chưa triển khai; thực hiện cuối thứ tự 7 → 4 → 6 → 8 → 5.
+**Ngày cập nhật:** 2026-11-01 (lịch đợt). **Trạng thái:** P5.1–P5.4 đã hoàn tất local; P5.5–P5.9 chưa triển khai. Chuẩn bị code độc lập theo roadmap trong khi P8.8/P4.2-A còn gate thật, không coi là đã kích hoạt hệ thống.
 
 **Goal:** Hoàn thiện dashboard/profile/quản lý tài khoản và màn hình theo dõi thanh toán/hoàn tiền đúng mô hình trung gian.
 
@@ -91,10 +97,10 @@ Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash n
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-- [ ] AdminBookingController list/detail hiển thị tiến độ thuê, các nghĩa vụ 30/70, receipts/refunds và BEFORE/AFTER private qua cùng quyền truy cập Phase 6.
-- [ ] Bất đồng AFTER là ghi chú lưu lại, không bắt Admin resolve mới complete; không thêm nút Admin ký hợp đồng hoặc xác nhận nhận xe thay Owner.
-- [ ] Lọc nợ quá hạn 1 giờ và hoàn quá hạn; thông báo deadline theo Clock, không dùng QR expiresAt làm hạn nợ.
-- [ ] Test COMPLETED vẫn xem được bằng chứng/bất đồng, legacy có nhãn, người ngoài không stream ảnh bằng đoán URL.
+- [x] AdminBookingController list/detail hiển thị tiến độ thuê, các nghĩa vụ 30/70, receipts/refunds và BEFORE/AFTER private qua cùng quyền truy cập Phase 6.
+- [x] Bất đồng AFTER là ghi chú lưu lại, không bắt Admin resolve mới complete; không thêm nút Admin ký hợp đồng hoặc xác nhận nhận xe thay Owner.
+- [x] Lọc nợ quá hạn 1 giờ và hoàn quá hạn; thông báo deadline theo Clock, không dùng QR expiresAt làm hạn nợ.
+- [x] Test COMPLETED vẫn xem được bằng chứng/bất đồng, legacy có nhãn, người ngoài không stream ảnh bằng đoán URL.
 
 ### Task P5.5 — Profile xem/sửa
 

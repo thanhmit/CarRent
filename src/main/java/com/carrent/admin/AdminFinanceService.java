@@ -92,6 +92,42 @@ public class AdminFinanceService {
 
     public String statusMessage(Kind kind, String status) { return message(kind, status); }
 
+    public Map<Kind,List<Row>> booking(long bookingId, CustomUserPrincipal actor) {
+        admins.requireAdmin(actor);
+        var result=new EnumMap<Kind,List<Row>>(Kind.class);
+        var params=parameters(new Filter(Kind.OBLIGATIONS,"",false,null,null,null,Order.LATEST,0));
+        params.put("booking",bookingId);
+        for(var kind:Kind.values()) {
+            String id=switch(kind) { case OBLIGATIONS -> "o.id"; case RECEIPTS -> "pr.id"; case REFUNDS -> "rf.id"; };
+            result.put(kind,jdbc.query("SELECT q.* FROM ("+source(kind)+") q WHERE q.id IN (SELECT "
+                    +id+" "+bookingFrom(kind)+" WHERE b.id=:booking) ORDER BY q.id",params,mapper(kind)));
+        }
+        return result;
+    }
+
+    static String bookingFrom(Kind kind) {
+        String from="""
+                FROM bookings b JOIN cars car ON car.id=b.car_id
+                JOIN payment_obligations o ON o.subject_type='BOOKING' AND o.subject_id=b.id
+                AND o.payer_user_id=b.customer_id AND o.collector_user_id=car.owner_id
+                AND o.purpose IN ('ADVANCE','BALANCE') AND o.business_key=CONCAT('BOOKING:',b.id,':',o.purpose)
+                AND o.amount_due=CASE o.purpose WHEN 'ADVANCE' THEN b.advance_amount ELSE b.balance_amount END
+                AND b.workflow_version='VIETQR_V1'
+                """;
+        if(kind!=Kind.OBLIGATIONS) from+="""
+                JOIN payment_intents i ON i.obligation_id=o.id
+                JOIN payment_receipts pr ON pr.intent_id=i.id AND pr.channel_id=i.channel_id
+                JOIN payment_channels collect ON collect.id=pr.channel_id AND collect.user_id=o.collector_user_id
+                AND collect.owner_role='OWNER' AND collect.provider='SEPAY' AND collect.purpose='COLLECT'
+                """;
+        if(kind==Kind.REFUNDS) from+="""
+                JOIN refunds rf ON rf.receipt_id=pr.id AND rf.recipient_user_id=o.payer_user_id
+                JOIN payment_channels payout ON payout.id=rf.payout_channel_id AND payout.user_id=o.collector_user_id
+                AND payout.owner_role='OWNER' AND payout.provider='PAYOS' AND payout.purpose='PAYOUT'
+                """;
+        return from;
+    }
+
     private void validate(Filter f) {
         if (!f.status().isEmpty() && !statuses(f.kind()).contains(f.status())
                 || f.subjectId()!=null && f.subjectId()<=0 || f.collectorId()!=null && f.collectorId()<=0)

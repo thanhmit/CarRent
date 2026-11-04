@@ -87,7 +87,7 @@ class RentalTimelineTest {
     @Test void adminRouteRejectsOtherRolesAndBannedStalePrincipalAndHasNoMutation() throws Exception {
         f.mvc.perform(get("/admin/bookings/1").with(user(f.actor(4)))).andExpect(status().isForbidden());
         var admin=f.actor(1); f.jdbc.update("UPDATE users SET status='BANNED' WHERE id=1");
-        f.mvc.perform(get("/admin/bookings/1").with(user(admin))).andExpect(status().isNotFound());
+        f.mvc.perform(get("/admin/bookings/1").with(user(admin))).andExpect(status().isForbidden());
         f.jdbc.update("UPDATE users SET status='ACTIVE' WHERE id=1");
         f.mvc.perform(post("/admin/bookings/1/return").with(user(admin)).with(csrf())).andExpect(status().isNotFound());
         assertThat(f.count("refunds")).isZero();

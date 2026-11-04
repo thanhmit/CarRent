@@ -1,7 +1,7 @@
 # CarRent — Hồ sơ quyết định (Decisions)
 
 **Ngày chốt:** 2026-10-09
-**Liên quan:** `CarRent.md` §16 (10 câu hỏi mở), `docs/SDD.md` v2.43
+**Liên quan:** `CarRent.md` §16 (10 câu hỏi mở), `docs/SDD.md` v2.52
 **Trạng thái:** Quyết định gốc và lịch sử được giữ; D-25A đồng bộ hợp đồng VIETQR_V1 hiện hành từ roadmap ngày 2026-10-27, cập nhật 2026-11-02 cho P6.12/P6.13. Kiểm chứng offline không thay gate provider/live.
 
 Quy ước: **D-xx** là số quyết định. "Mặc định §16" = chấp nhận đề xuất mặc định trong CarRent.md v1.0.
@@ -152,6 +152,24 @@ Tổng hợp quyết định Phase 4–8 ngày 2026-10-27 đến 2026-10-30; kh�
 - Task chỉ đóng khi đủ yêu cầu đã duyệt và bằng chứng kiểm chứng; lỗi thuộc task phải sửa trước đóng, không tự chuyển sang task khác. Không suy ra human review từ test tự động.
 
 Interface, money states, khóa, transaction, sequence và cutover: [handoff P4.11](plans/phase-4-handoff.md).
+
+### Bổ sung triển khai P8.8 local — 2026-11-04
+
+Giới hạn demo một Owner đã nêu trong P8.8 được thực hiện bằng cặp ID Owner/Admin tại startup, mặc định chưa cấu hình thì từ chối mở/reuse QR. SUBSCRIPTION khớp Owner payer/Admin collector; rental khớp Owner collector. Không yêu cầu Owner mua gói liên kết dịch vụ nhận tiền. Cặp ID không thay channel/provider readiness hoặc human/live approval.
+
+Shared payment view ẩn QR ACTIVE ngoài scope; không xóa nghĩa vụ/intent hoặc đổi tiền đã nhận. Cancel, receipt/apply/refund/payout/reconcile tiếp tục vì QR đã sao chép không thể bị thu hồi. Không bật flags/provider/scheduler hoặc migrate DB ứng dụng trong phiên local. P8.8 chưa đóng; [runbook](plans/phase-8-pilot-runbook.md) và [bàn giao](plans/phase-8-batch-6-handoff.md) ghi gate thật còn thiếu. Đây là checkpoint triển khai theo plan đã duyệt, không phải phê duyệt vận hành/live mới.
+
+### Checkpoint read model Admin P5.1/P5.2 — 2026-11-04
+
+Doanh thu phí gói chỉ từ order đã applied của đúng Admin; tiền thuê thuộc Owner, receipt trùng/chưa khớp và refund giữ số liệu riêng. Tháng báo cáo dùng giờ Việt Nam; không SUM legacy payment PAID hoặc join receipts/refunds để cộng snapshot nhiều lần. Dashboard counts/quá hạn toàn hệ thống, các số tiền scoped ví Admin hiện tại; list/detail chỉ đọc, giữ nguồn role snapshot của channel, mask account và không trả payload/secret. P8.8/P4.2-A live vẫn pending; đợt này chuẩn bị code độc lập theo roadmap, không có quyết định bật provider/migrate mới. Xem [bàn giao](plans/phase-5-batch-1-handoff.md).
+
+### Checkpoint quản lý user P5.3 — 2026-11-04
+
+Admin chỉ đổi trạng thái ACTIVE/INACTIVE/BANNED của tài khoản khác; không sửa role/email qua status form. Kiểm tra Admin hiện tại dưới user rowlocks tăng dần, detach entity cũ trước current locking read. Banned session đang chờ queue bị service kiểm tra lại khi execution; không tự chặn vì nợ hoặc hoàn quá hạn. Read DTO không có password/provider data; counts scoped target. [Bàn giao](plans/phase-5-batch-2-handoff.md). Không có migration/activation/live approval mới.
+
+### Checkpoint Admin booking P5.4 — 2026-11-04
+
+Admin theo dõi booking/evidence/30–70/receipts/refunds bằng GET chỉ đọc; scope tài chính theo booking và quyền ảnh dùng Phase6. COMPLETED giữ bất đồng AFTER, không thêm Admin ký/giao nhận hoặc buộc resolve. Nợ70% theo hạn1giờ từ nhận lại xe/Clock; hoàn theo due_at, không lấy QR expiresAt làm hạn nợ. [Bàn giao](plans/phase-5-batch-3-handoff.md). Local4/4 không đóng gate live P8.8/P4.2-A hoặc thay human review.
 
 ---
 
