@@ -104,7 +104,7 @@ Khi còn hạn, loại gói phải trùng. Order.appliedAt và entitlement updat
 
 **Interface:** SubscriptionPolicy.requireCanReserveSlot(ownerId) dùng dưới khóa Owner; chỉ cho thêm một suất khi gói active và reservedCount < quota.
 
-- [ ] Chốt query suất dựa trên trạng thái ý định đăng:
+- [x] Chốt query suất dựa trên trạng thái ý định đăng:
 
 ```sql
 SELECT COUNT(*) FROM cars
@@ -113,11 +113,11 @@ WHERE owner_id = :ownerId
   AND approval_status IN ('PENDING', 'APPROVED');
 ```
 
-- [ ] Khóa hàng Owner trước create xe/gửi duyệt/bật lại, rồi lock entitlement/Car nếu đã có. Hai tác vụ khác carId vẫn tranh cùng khóa Owner; không chuyển sang queue toàn app.
-- [ ] Owner chưa có gói/gói hết hạn: chặn tạo/gửi duyệt/bật xe; vẫn xem/sửa hồ sơ sẵn có. Xe mới PENDING giữ một suất ngay khi gửi. APPROVED ACTIVE đã chiếm suất thì edit không cộng thêm suất.
-- [ ] Hide hoặc Admin reject giải phóng suất trong cùng transaction; Admin approve PENDING ACTIVE chuyển một suất đã giữ sang xe đăng, không cộng lần hai. Hidden car không tự bật chỉ vì Admin duyệt.
-- [ ] Bật lại APPROVED giữ approval; gửi lại PENDING chỉ khôi phục suất chờ duyệt, không tự approve. REJECTED muốn gửi lại phải qua chuyển về PENDING có kiểm tra quota và nội dung hợp lệ.
-- [ ] Test MySQL hai connection: Owner có 3/4 suất, đồng thời hai xe xin suất → chỉ một thành công; rollback không chiếm suất giả. Test Owner khác không tranh một hàng Owner.
+- [x] Khóa hàng Owner trước create xe/gửi duyệt/bật lại, rồi lock entitlement/Car nếu đã có. Hai tác vụ khác carId vẫn tranh cùng khóa Owner; không chuyển sang queue toàn app.
+- [x] Owner chưa có gói/gói hết hạn: chặn tạo/gửi duyệt/bật xe; vẫn xem/sửa hồ sơ sẵn có. Xe mới PENDING giữ một suất ngay khi gửi. APPROVED ACTIVE đã chiếm suất thì edit không cộng thêm suất.
+- [x] Hide hoặc Admin reject giải phóng suất trong cùng transaction; Admin approve PENDING ACTIVE chuyển một suất đã giữ sang xe đăng, không cộng lần hai. Hidden car không tự bật chỉ vì Admin duyệt.
+- [x] Bật lại APPROVED giữ approval; gửi lại PENDING chỉ khôi phục suất chờ duyệt, không tự approve. REJECTED muốn gửi lại phải qua chuyển về PENDING có kiểm tra quota và nội dung hợp lệ.
+- [x] Test MySQL hai connection: Owner có 3/4 suất, đồng thời hai xe xin suất → chỉ một thành công; rollback không chiếm suất giả. Test Owner khác không tranh một hàng Owner.
 
 ### Task P8.5 — Hết gói, public visibility và chặn đơn mới
 

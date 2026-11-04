@@ -1,6 +1,7 @@
 package com.carrent.car;
 
 import com.carrent.booking.BookingRepository;
+import com.carrent.subscription.SubscriptionPolicy;
 import com.carrent.common.exception.BusinessException;
 import com.carrent.common.exception.ForbiddenException;
 import com.carrent.common.exception.NotFoundException;
@@ -41,10 +42,11 @@ public class CarService {
     private final EntityManager entityManager;
     private final NotificationService notifications;
     private final BookingRepository bookings;
+    private final SubscriptionPolicy subscriptions;
 
     public CarService(CarRepository cars, CarImageRepository images, CarCategoryRepository categories,
                       UserRepository users, StorageService storage, Validator validator, EntityManager entityManager,
-                      NotificationService notifications, BookingRepository bookings) {
+                      NotificationService notifications, BookingRepository bookings, SubscriptionPolicy subscriptions) {
         this.cars = cars;
         this.images = images;
         this.categories = categories;
@@ -54,6 +56,7 @@ public class CarService {
         this.entityManager = entityManager;
         this.notifications = notifications;
         this.bookings = bookings;
+        this.subscriptions = subscriptions;
     }
 
     @Transactional(readOnly = true)
@@ -204,7 +207,7 @@ public class CarService {
 
     private Car pendingCarForAdmin(Long carId, CustomUserPrincipal principal) {
         requireAdmin(principal);
-        Car car = lockedCar(carId);
+        Car car = lockedCarWithOwner(carId);
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");
         }
@@ -217,6 +220,8 @@ public class CarService {
     @Transactional
     public Car createCar(CarForm form, List<MultipartFile> uploads, CustomUserPrincipal principal) {
         User owner = requireOwner(principal);
+        subscriptions.lockOwner(owner.getId());
+        subscriptions.requireCanReserveSlot(owner.getId());
         CarCategory category = validateAndResolveCategory(form);
         List<MultipartFile> validUploads = validateUploads(uploads);
         List<String> storedPaths = registerUploadCleanup();
@@ -329,7 +334,7 @@ public class CarService {
     @Transactional
     public void deactivateCarForAdmin(Long carId, CustomUserPrincipal principal) {
         requireAdmin(principal);
-        Car car = lockedCar(carId);
+        Car car = lockedCarWithOwner(carId);
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");
         }
@@ -339,19 +344,33 @@ public class CarService {
     @Transactional
     public void activateCarForAdmin(Long carId, CustomUserPrincipal principal) {
         requireAdmin(principal);
-        Car car = lockedCar(carId);
+        Car car = lockedCarWithOwner(carId);
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");
         }
         activateListing(car);
     }
 
-    private static void activateListing(Car car) {
-        if (car.getApprovalStatus() != ApprovalStatus.APPROVED) {
+    private void activateListing(Car car) {
+        if (!subscriptions.enabled() && car.getApprovalStatus() != ApprovalStatus.APPROVED) {
             throw new BusinessException("Xe chưa được duyệt, không thể đăng lại");
+        }
+        if (subscriptions.enabled()) {
+            subscriptions.requireActive(car.getOwner().getId());
+            boolean reserved = car.getListingStatus() == ListingStatus.ACTIVE
+                    && car.getApprovalStatus() != ApprovalStatus.REJECTED;
+            if (!reserved) subscriptions.requireCanReserveSlot(car.getOwner().getId());
+            if (car.getApprovalStatus() == ApprovalStatus.REJECTED) {
+                validateAndResolveCategory(CarForm.from(car));
+                car.setApprovalStatus(ApprovalStatus.PENDING);
+                car.setRejectionReason(null);
+                notifyAdminsNewCar(car);
+            }
         }
         car.setListingStatus(ListingStatus.ACTIVE);
     }
+
+    public boolean resubmissionEnabled() { return subscriptions.enabled(); }
 
     private User requireOwner(CustomUserPrincipal principal) {
         if (principal == null || principal.getRole() != Role.OWNER || principal.getId() == null) {
@@ -377,13 +396,20 @@ public class CarService {
     }
 
     private Car ownedCarForUpdate(Long carId, User owner) {
-        Car car = lockedCar(carId);
+        Car car = lockedCarWithOwner(carId);
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");
         }
         if (!car.getOwner().getId().equals(owner.getId())) {
             throw new ForbiddenException("Bạn không có quyền với xe này");
         }
+        return car;
+    }
+
+    private Car lockedCarWithOwner(Long carId) {
+        Long ownerId = subscriptions.lockCarOwner(carId);
+        Car car = lockedCar(carId);
+        if (car != null) subscriptions.requireSameOwner(car, ownerId);
         return car;
     }
 
