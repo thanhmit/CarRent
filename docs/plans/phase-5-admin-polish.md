@@ -54,8 +54,8 @@ Java tương đối `src/main/java/com/carrent/`:
 
 **Interface:** AdminService.getDashboardStats() trả DTO chứa counts, subscriptionRevenue, monthlySubscriptionRevenue, unmatchedReceipts, refundsPending/overdue và balanceDebtsOverdue. Không dùng DTO totalRevenue mơ hồ để gộp tiền thuê.
 
-- [ ] Viết AdminRevenueTest: một gói 5.000, một tiền thuê 600.000, một khoản trả trùng 5.000 → doanh thu phí gói **5.000**, không phải 610.000.
-- [ ] Query phí gói từ order đã applied; source collector đúng Admin:
+- [x] Viết AdminRevenueTest: một gói 5.000, một tiền thuê 600.000, một khoản trả trùng 5.000 → doanh thu phí gói **5.000**, không phải 610.000.
+- [x] Query phí gói từ order đã applied; source collector đúng Admin:
 
 ```sql
 SELECT COALESCE(SUM(price_snapshot), 0)
@@ -64,9 +64,9 @@ WHERE applied_at IS NOT NULL;
 ```
 
 Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash nhận và cash đã hoàn dùng read model riêng; không trừ refund của receipt trùng từ tổng phí gói hợp lệ đã tính.
-- [ ] Phân biệt tiền đã phân bổ, tiền chờ đối soát, nghĩa vụ hoàn và khoản đã hoàn thành công. Pending refund không được hiển thị đã trả cho người nhận.
-- [ ] Không dùng SUM(legacy payments PAID) cho doanh thu Admin. Legacy hiển thị lịch sử giả lập có nhãn riêng.
-- [ ] Chạy test với nhiều receipts/refunds một order để bắt lỗi join nhân dòng; SQL đọc trực tiếp phải khớp DTO.
+- [x] Phân biệt tiền đã phân bổ, tiền chờ đối soát, nghĩa vụ hoàn và khoản đã hoàn thành công. Pending refund không được hiển thị đã trả cho người nhận.
+- [x] Không dùng SUM(legacy payments PAID) cho doanh thu Admin. Legacy hiển thị lịch sử giả lập có nhãn riêng.
+- [x] Chạy test với nhiều receipts/refunds một order để bắt lỗi join nhân dòng; SQL đọc trực tiếp phải khớp DTO.
 
 ### Task P5.2 — Admin dashboard và tài chính
 
