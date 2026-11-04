@@ -132,6 +132,76 @@ public class SubscriptionService {
         catch (BusinessException invalid) { return false; }
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void applyPayment(Long receiptId) {
+        var receipt = em.find(PaymentReceipt.class, receiptId);
+        if (receipt == null || receipt.getIntent() == null) throw new BusinessException("Thiếu giao dịch mua gói.");
+        var intent = receipt.getIntent();
+        var obligation = intent.getObligation();
+        var order = find(obligation.getSubjectId());
+        requireLocks(order, obligation, intent);
+        validate(order, obligation);
+        if (!Objects.equals(order.getPriceSnapshot(), receipt.getAmount())
+                || !Objects.equals(intent.getAmount(), order.getPriceSnapshot())
+                || !intent.getChannel().getId().equals(receipt.getChannel().getId())
+                || !intent.getChannel().getUser().getId().equals(obligation.getCollector().getId())) {
+            throw new BusinessException("Giao dịch mua gói cần đối soát.");
+        }
+        if (order.getAppliedAt() != null) {
+            if (receipt.getAllocatedAmount() > 0 && receipt.getStatus() == PaymentReceiptStatus.APPLIED) return;
+            refund(order, receipt, RefundReason.DUPLICATE_PAYMENT);
+            return;
+        }
+        // lockSubject already loaded the current entitlement under the Owner mutex.
+        var current = em.find(OwnerSubscription.class, order.getOwner().getId());
+        RefundReason reason = order.getStatus() == SubscriptionOrderStatus.CANCELLED || obligation.getStatus() == PaymentObligationStatus.CANCELLED ? RefundReason.CANCELLED_SUBSCRIPTION
+                : !receipt.getCreditedAt().isBefore(order.getExpiresAt()) ? RefundReason.LATE_SUBSCRIPTION
+                : current != null && current.getValidUntil().isAfter(clock.instant()) && current.getPlanCode() != order.getPlanCode()
+                    ? RefundReason.INCOMPATIBLE_SUBSCRIPTION : null;
+        if (reason != null) { refund(order, receipt, reason); return; }
+        if (order.getStatus() != SubscriptionOrderStatus.PENDING && order.getStatus() != SubscriptionOrderStatus.EXPIRED
+                && order.getStatus() != SubscriptionOrderStatus.REFUND_PENDING) {
+            throw new BusinessException("Yêu cầu mua gói không còn được áp dụng.");
+        }
+        // A timely bank credit remains eligible after the expiry worker has committed.
+        receipt.setAllocatedAmount(receipt.getAmount());
+        receipt.setStatus(PaymentReceiptStatus.APPLIED);
+        obligation.setAmountSettled(receipt.getAmount());
+        obligation.setStatus(PaymentObligationStatus.SETTLED);
+        obligation.setUpdatedAt(clock.instant());
+        intent.setStatus(PaymentIntentStatus.RECEIVED);
+        order.setStatus(SubscriptionOrderStatus.APPLIED);
+        order.setAppliedAt(clock.instant());
+        order.setUpdatedAt(clock.instant());
+        var now = clock.instant();
+        var base = current != null && current.getValidUntil().isAfter(now) ? current.getValidUntil() : now;
+        if (current == null) current = OwnerSubscription.builder().ownerId(order.getOwner().getId()).createdAt(now).build();
+        current.setPlanCode(order.getPlanCode()); current.setQuota(order.getQuotaSnapshot());
+        if (current.getValidFrom() == null || !current.getValidUntil().isAfter(now)) current.setValidFrom(now);
+        current.setValidUntil(base.plus(Duration.ofDays(order.getDurationDays())));
+        current.setLastAppliedOrder(order); current.setUpdatedAt(now);
+        subscriptions.saveAndFlush(current);
+        notifications.notify(order.getOwner().getId(), "SUBSCRIPTION_APPLIED", "Đã kích hoạt gói Owner",
+                "Gói " + order.getPlanCode() + " đã được áp dụng thêm " + order.getDurationDays() + " ngày.", "SUBSCRIPTION_ORDER", order.getId());
+    }
+
+    private void refund(SubscriptionOrder order, PaymentReceipt receipt, RefundReason reason) {
+        var obligation = receipt.getIntent().getObligation();
+        if (receipt.getAllocatedAmount() > 0) {
+            obligation.setAmountSettled(Math.subtractExact(obligation.getAmountSettled(), receipt.getAllocatedAmount()));
+            receipt.setAllocatedAmount(0L);
+        }
+        receipt.setStatus(PaymentReceiptStatus.REFUND_REQUIRED);
+        if (order.getAppliedAt() == null) {
+            order.setStatus(SubscriptionOrderStatus.REFUND_PENDING);
+            order.setUpdatedAt(clock.instant());
+            if (obligation.getStatus() != PaymentObligationStatus.CANCELLED) obligation.setStatus(PaymentObligationStatus.EXPIRED);
+        }
+        em.flush();
+        refunds.request((reason == RefundReason.DUPLICATE_PAYMENT ? "DUPLICATE" : reason.name()) + ":" + receipt.getId(),
+                receipt.getId(), receipt.getAmount(), reason);
+    }
+
     private void end(SubscriptionOrder order, boolean cancel) {
         if (order.getStatus() != SubscriptionOrderStatus.PENDING) return;
         var obligation = current(PaymentObligation.class, order.getObligation().getId());
