@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"><body>
+<section th:fragment="overview" th:if="${subscription != null}" id="subscription-overview" class="bg-surface-container-lowest rounded-xl p-space-lg flex flex-col gap-space-sm break-words" aria-labelledby="subscription-heading">
+  <h2 id="subscription-heading" class="font-title-lg">Gói hiện tại</h2>
+  <p th:if="${subscription.plan == null}">Chưa có gói đăng xe. Mua gói để đăng và nhận yêu cầu thuê mới.</p>
+  <div th:if="${subscription.plan != null}">
+    <p><strong th:text="${subscription.plan}"></strong> — <span th:text="${subscription.active ? 'Còn hiệu lực' : 'Đã hết hạn'}"></span></p>
+    <p>Hạn gói: <time th:datetime="${subscription.validUntil}" th:text="${#temporals.format(subscription.validUntil.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time></p>
+  </div>
+  <p>Suất đang dùng: <strong th:text="${subscription.plan == null ? subscription.reserved + ' xe có ý định đăng; chưa có hạn mức' : subscription.reserved + ' / ' + subscription.quota}"></strong> (<span th:text="${subscription.pending + ' xe chờ duyệt'}"></span>).</p>
+  <p>Xe đã chọn đăng và được duyệt, tạm ẩn do chưa có gói còn hạn: <strong th:text="${subscription.temporarilyHidden}"></strong>.</p>
+  <p th:if="${!subscription.active}">Hồ sơ xe và đơn thuê cũ được giữ nguyên. Gia hạn cùng gói phục hồi xe đủ điều kiện; xe bạn chủ động ẩn vẫn ẩn.</p>
+  <p>Sau khi mua gói thấp hơn, các xe cũ được giữ ở trạng thái ẩn. Hãy tự chọn bật xe trong quản lý xe theo hạn mức; xe đã duyệt không cần duyệt lại.</p>
+  <div class="flex flex-wrap gap-space-md">
+    <a th:href="@{/owner/subscriptions}" class="text-secondary underline" th:text="${subscription.active ? 'Gia hạn gói' : 'Mua hoặc gia hạn gói'}"></a>
+    <a th:href="@{/owner/cars}" class="text-secondary underline">Chọn xe trong quản lý xe</a>
+    <a th:href="@{/payment/finances(view='refunds')}" class="text-secondary underline">Khoản tôi nhận hoàn</a>
+  </div>
+</section>
+</body></html>

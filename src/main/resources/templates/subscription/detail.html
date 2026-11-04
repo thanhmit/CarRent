@@ -22,10 +22,14 @@
       <p th:case="*">Yêu cầu cần được kiểm tra.</p>
     </div>
     <a th:if="${order.intent != null}" th:href="@{/payment/intents/{id}(id=${order.intent.id})}" class="text-secondary underline">Xem thanh toán và trạng thái QR</a>
+    <div th:replace="~{payment/refund-links :: links}"></div>
+    <p>Gói không hoàn phí sau khi kích hoạt. Nếu có khoản chuyển trùng hoặc đến muộn cần hoàn, chỉ bổ sung tài khoản nhận khi hệ thống yêu cầu; bạn không cần liên kết dịch vụ nhận tiền.</p>
+    <a th:if="${order.status == 'APPLIED'}" th:href="@{/owner/cars}" class="text-secondary underline">Chọn xe đăng theo hạn mức của gói</a>
     <form th:if="${order.status == 'PENDING'}" method="post" th:action="@{/owner/subscriptions/orders/{id}/cancel(id=${order.orderId})}">
       <button type="submit" class="w-full p-space-sm rounded-lg bg-error-container text-on-error-container">Hủy yêu cầu mua gói</button>
     </form>
     <a th:href="@{/owner/subscriptions}" class="text-secondary underline">Xem các gói đăng xe</a>
+    <a th:href="@{/owner/subscriptions/orders/{id}(id=${order.orderId})}" class="text-secondary underline">Tải lại yêu cầu và các khoản hoàn</a>
     <a th:href="@{/payment/finances}" class="text-secondary underline">Theo dõi thanh toán và hoàn tiền</a>
   </section>
 </main>

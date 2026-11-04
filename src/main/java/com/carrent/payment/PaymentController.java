@@ -19,7 +19,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 public class PaymentController {
     private final PaymentObligationService payments;
-    public PaymentController(PaymentObligationService payments) { this.payments = payments; }
+    private final FinancialViews finances;
+    public PaymentController(PaymentObligationService payments, FinancialViews finances) { this.payments = payments; this.finances = finances; }
 
     @ModelAttribute
     void preventCaching(HttpServletResponse response) { response.setHeader("Cache-Control", "no-store"); }
@@ -39,12 +40,14 @@ public class PaymentController {
     public String checkout(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal actor, Model model) {
         var view = payments.status(id, actor);
         model.addAttribute("payment", view);
+        model.addAttribute("intentRefunds", finances.refundsForIntent(id, actor));
         return "ACTIVE".equals(view.status()) ? "payment/checkout" : "payment/result";
     }
 
     @GetMapping("/payment/intents/{id}/result")
     public String result(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal actor, Model model) {
         model.addAttribute("payment", payments.status(id, actor));
+        model.addAttribute("intentRefunds", finances.refundsForIntent(id, actor));
         return "payment/result";
     }
 

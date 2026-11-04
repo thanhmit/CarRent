@@ -45,6 +45,7 @@
           <div class="absolute right-0 bottom-0 translate-x-2 translate-y-2 opacity-5 pointer-events-none"><span class="material-symbols-outlined text-[72px]">hourglass_top</span></div>
         </div>
       </div>
+      <div th:if="${subscription != null}" th:replace="~{subscription/overview :: overview}"></div>
       <div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
         <div class="p-space-md border-b border-outline-variant/40"><h2 class="font-headline-sm text-headline-sm text-primary">Danh sách xe</h2></div>
         <div th:if="${page.totalElements == 0}" class="p-space-xl text-center"><p class="mb-space-md">Bạn chưa đăng xe nào</p><a class="text-secondary underline" th:href="@{/owner/cars/new}">Đăng xe đầu tiên</a></div>

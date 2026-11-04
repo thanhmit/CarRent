@@ -13,13 +13,16 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/owner/subscriptions")
 public class SubscriptionController {
     private final SubscriptionService service;
-    public SubscriptionController(SubscriptionService service) { this.service = service; }
+    private final com.carrent.payment.FinancialViews finances;
+    public SubscriptionController(SubscriptionService service, com.carrent.payment.FinancialViews finances) {
+        this.service = service; this.finances = finances;
+    }
 
     @ModelAttribute void noCache(HttpServletResponse response) { response.setHeader("Cache-Control", "no-store"); }
 
     @GetMapping
     public String plans(@AuthenticationPrincipal CustomUserPrincipal actor, Model model) {
-        service.requireOwner(actor);
+        model.addAttribute("subscription", service.overview(actor));
         model.addAttribute("plans", SubscriptionPlan.values());
         return "subscription/plans";
     }
@@ -38,6 +41,7 @@ public class SubscriptionController {
     public String detail(@PathVariable Long id, @AuthenticationPrincipal CustomUserPrincipal actor, Model model) {
         var order = service.detail(id, actor);
         model.addAttribute("order", order);
+        model.addAttribute("intentRefunds", finances.refundsForIntent(order.intent().id(), actor));
         return "subscription/detail";
     }
 
