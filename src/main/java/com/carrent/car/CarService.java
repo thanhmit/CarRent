@@ -193,19 +193,27 @@ public class CarService {
     }
 
     private User requireAdmin(CustomUserPrincipal principal) {
+        return requireAdmin(principal, false);
+    }
+
+    private User requireAdmin(CustomUserPrincipal principal, boolean mutation) {
         if (principal == null || principal.getRole() != Role.ADMIN || principal.getId() == null) {
             throw new ForbiddenException("Bạn không có quyền quản trị.");
         }
         User admin = users.findById(principal.getId())
                 .orElseThrow(() -> new ForbiddenException("Bạn không có quyền quản trị."));
-        if (admin.getRole() != Role.ADMIN || admin.getStatus() != UserStatus.ACTIVE) {
+        if (mutation) {
+            entityManager.detach(admin);
+            admin = entityManager.find(User.class, principal.getId(), jakarta.persistence.LockModeType.PESSIMISTIC_READ);
+        }
+        if (admin == null || admin.getRole() != Role.ADMIN || admin.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("Bạn không có quyền quản trị.");
         }
         return admin;
     }
 
     private Car pendingCarForAdmin(Long carId, CustomUserPrincipal principal) {
-        requireAdmin(principal);
+        requireAdmin(principal, true);
         Car car = lockedCarWithOwner(carId);
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");
@@ -218,7 +226,7 @@ public class CarService {
 
     @Transactional
     public Car createCar(CarForm form, List<MultipartFile> uploads, CustomUserPrincipal principal) {
-        User owner = requireOwner(principal);
+        User owner = requireOwner(principal, true);
         subscriptions.lockOwner(owner.getId());
         subscriptions.requireCanReserveSlot(owner.getId());
         CarCategory category = validateAndResolveCategory(form);
@@ -258,7 +266,7 @@ public class CarService {
 
     @Transactional
     public Car updateCar(Long carId, CarForm form, List<MultipartFile> uploads, CustomUserPrincipal principal) {
-        User owner = requireOwner(principal);
+        User owner = requireOwner(principal, true);
         Car car = ownedCarForUpdate(carId, owner);
         CarCategory category = validateAndResolveCategory(form);
         List<MultipartFile> validUploads = validateUploads(uploads);
@@ -277,7 +285,7 @@ public class CarService {
 
     @Transactional
     public void deleteImage(Long carId, Long imageId, CustomUserPrincipal principal) {
-        User owner = requireOwner(principal);
+        User owner = requireOwner(principal, true);
         Car car = ownedCarForUpdate(carId, owner);
         CarImage image = imageId == null ? null : images.findByIdAndCarId(imageId, car.getId()).orElse(null);
         if (image == null) {
@@ -290,7 +298,7 @@ public class CarService {
 
     @Transactional
     public void deleteCar(Long carId, CustomUserPrincipal principal) {
-        Car car = ownedCarForUpdate(carId, requireOwner(principal));
+        Car car = ownedCarForUpdate(carId, requireOwner(principal, true));
         if (!bookings.findHistoryForUpdate(car.getId()).isEmpty()) {
             throw new BusinessException("Xe đã có đơn thuê, không thể xóa — hãy ngừng đăng tin.");
         }
@@ -320,19 +328,19 @@ public class CarService {
 
     @Transactional
     public void deactivateCar(Long carId, CustomUserPrincipal principal) {
-        Car car = ownedCarForUpdate(carId, requireOwner(principal));
+        Car car = ownedCarForUpdate(carId, requireOwner(principal, true));
         car.setListingStatus(ListingStatus.INACTIVE);
     }
 
     @Transactional
     public void activateCar(Long carId, CustomUserPrincipal principal) {
-        Car car = ownedCarForUpdate(carId, requireOwner(principal));
+        Car car = ownedCarForUpdate(carId, requireOwner(principal, true));
         activateListing(car);
     }
 
     @Transactional
     public void deactivateCarForAdmin(Long carId, CustomUserPrincipal principal) {
-        requireAdmin(principal);
+        requireAdmin(principal, true);
         Car car = lockedCarWithOwner(carId);
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");
@@ -342,7 +350,7 @@ public class CarService {
 
     @Transactional
     public void activateCarForAdmin(Long carId, CustomUserPrincipal principal) {
-        requireAdmin(principal);
+        requireAdmin(principal, true);
         Car car = lockedCarWithOwner(carId);
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");
@@ -377,12 +385,21 @@ public class CarService {
     }
 
     private User requireOwner(CustomUserPrincipal principal) {
+        return requireOwner(principal, false);
+    }
+
+    private User requireOwner(CustomUserPrincipal principal, boolean mutation) {
         if (principal == null || principal.getRole() != Role.OWNER || principal.getId() == null) {
             throw new ForbiddenException("Bạn không có quyền đăng xe.");
         }
         User owner = users.findById(principal.getId())
                 .orElseThrow(() -> new ForbiddenException("Bạn không có quyền đăng xe."));
-        if (owner.getRole() != Role.OWNER || owner.getStatus() != UserStatus.ACTIVE) {
+        if (mutation) {
+            // Take the actor lock before Car; Owner needs WRITE to avoid a later mutex upgrade.
+            entityManager.detach(owner);
+            owner = entityManager.find(User.class, principal.getId(), jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        }
+        if (owner == null || owner.getRole() != Role.OWNER || owner.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("Bạn không có quyền đăng xe.");
         }
         return owner;
@@ -400,6 +417,7 @@ public class CarService {
     }
 
     private Car ownedCarForUpdate(Long carId, User owner) {
+        ownedCar(carId, owner);
         Car car = lockedCarWithOwner(carId);
         if (car == null) {
             throw new NotFoundException("Xe không tồn tại.");

@@ -1,5 +1,7 @@
 # CarRent — Phase 5: Admin và hoàn thiện — Implementation Plan
 
+**Git scope P5.8 — 2026-11-05:** nhánh `feat/p58-audit` tích hợp audit quyền/CSRF/HMAC, current actor locks và HTTP405 sau P5.7; profile P5.5/P5.6 và workflow P5.9 tiếp tục ngoài phạm vi commit. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).
+
 **Git scope P5.7 — 2026-11-05:** đưa riêng P5.7 của `ducbinhnguyen07ars` vào nhánh `feat/p57-owner`; P5.5/P5.6 và P5.9 vẫn ở workspace local. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).
 
 **Checkpoint P5.4 — 2026-11-04:** hoàn thành **4/4 checklist local** Admin booking/biên bản/khoản còn nợ: list/detail chỉ đọc, nghĩa vụ30/70 và receipts/refunds đúng booking, BEFORE/AFTER private kể cả COMPLETED còn bất đồng; lọc nợ70% quá hạn1giờ và hoàn quá hạn theo Clock/deadline nghiệp vụ. Admin không ký/giao nhận thay Owner hoặc buộc resolve AFTER. Full isolated **clean verify 993/993 JUnit, 0 failure/error/skip**, JAR; Chrome **205/205**, 30 PNG ở1440/390/320. **79/86 task**, còn **7** (`ducbinhnguyen07ars`4, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A live vẫn pending. Tiếp theo **P5.5 + P5.6 của huy69332**. Bảo toàn dirty prerequisites/phase0/config/seed/uploads/DB ứng dụng/HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-3-handoff.md).
@@ -137,11 +139,11 @@ Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash n
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-- [ ] Lập route matrix Admin/Owner/Customer/anonymous cho webhook, checkout/status, refund recipient, subscription, ảnh private, profile và admin; ghi mã HTTP đúng quyền.
-- [ ] Kiểm chứng tất cả POST người dùng có CSRF; chỉ webhook cụ thể được exempt và có verifier provider.
-- [ ] Kiểm chứng time boundaries: 15 phút, 1 giờ, 3 ngày lịch, 30 ngày; user không điều khiển amount/timestamp/status/channel.
-- [ ] Rà reads không enqueue, job không giữ queue/transaction trong HTTP provider, quota hai carId không vượt, app restart không mất inbox/attempt.
-- [ ] Review tài liệu không còn mệnh lệnh triển khai mock mới, pickup unpaid, Customer final pickup, 72 giờ hay bắt resolve AFTER trước complete trong các plan hiện hành.
+- [x] Lập route matrix Admin/Owner/Customer/anonymous cho webhook, checkout/status, refund recipient, subscription, ảnh private, profile và admin; ghi mã HTTP đúng quyền.
+- [x] Kiểm chứng tất cả POST người dùng có CSRF; chỉ webhook cụ thể được exempt và có verifier provider.
+- [x] Kiểm chứng time boundaries: 15 phút, 1 giờ, 3 ngày lịch, 30 ngày; user không điều khiển amount/timestamp/status/channel.
+- [x] Rà reads không enqueue, job không giữ queue/transaction trong HTTP provider, quota hai carId không vượt, app restart không mất inbox/attempt.
+- [x] Review tài liệu không còn mệnh lệnh triển khai mock mới, pickup unpaid, Customer final pickup, 72 giờ hay bắt resolve AFTER trước complete trong các plan hiện hành.
 
 ### Task P5.9 — E2E cuối, gate tiền thật và đồng bộ tài liệu
 

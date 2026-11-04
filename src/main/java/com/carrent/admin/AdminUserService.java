@@ -78,8 +78,8 @@ public class AdminUserService {
     public void changeStatus(long id, UserStatus status, CustomUserPrincipal actor) {
         if (actor == null || actor.getRole() != Role.ADMIN) throw forbidden();
         // Use one lock order so two Admins changing each other cannot deadlock.
-        User first = lock(Math.min(actor.getId(), id));
-        User second = actor.getId() == id ? first : lock(Math.max(actor.getId(), id));
+        User first = lock(Math.min(actor.getId(), id), actor.getId());
+        User second = actor.getId() == id ? first : lock(Math.max(actor.getId(), id), actor.getId());
         User admin = actor.getId() <= id ? first : second;
         User target = actor.getId() <= id ? second : first;
         if (admin == null || admin.getRole() != Role.ADMIN || admin.getStatus() != UserStatus.ACTIVE) throw forbidden();
@@ -89,10 +89,11 @@ public class AdminUserService {
         target.setStatus(status);
     }
 
-    private User lock(long id) {
+    private User lock(long id, long actorId) {
         // A cached entity must not supply the state checked after waiting for a row lock.
         em.detach(em.getReference(User.class, id));
-        return em.find(User.class, id, LockModeType.PESSIMISTIC_WRITE);
+        // Actor authorization shares notification FK locks; only the status target needs WRITE.
+        return em.find(User.class, id, id == actorId ? LockModeType.PESSIMISTIC_READ : LockModeType.PESSIMISTIC_WRITE);
     }
     private static ForbiddenException forbidden() { return new ForbiddenException("Bạn không có quyền quản lý người dùng."); }
     private static NotFoundException missing() { return new NotFoundException("Không tìm thấy người dùng."); }

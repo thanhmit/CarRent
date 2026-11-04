@@ -65,6 +65,16 @@ public class CommonExceptionHandler {
         return "error/404";
     }
 
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public String unsupportedMethod(org.springframework.web.HttpRequestMethodNotSupportedException ex,
+            Model model, jakarta.servlet.http.HttpServletResponse response) {
+        String allow = ex.getHeaders().getFirst(org.springframework.http.HttpHeaders.ALLOW);
+        if (allow != null) response.setHeader(org.springframework.http.HttpHeaders.ALLOW, allow);
+        model.addAttribute("errorMessage", "Phương thức gửi yêu cầu không được hỗ trợ cho trang này.");
+        return "error/405";
+    }
+
     @ExceptionHandler({org.springframework.dao.PessimisticLockingFailureException.class,
             org.springframework.dao.QueryTimeoutException.class})
     @ResponseStatus(HttpStatus.CONFLICT)

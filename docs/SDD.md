@@ -1,5 +1,7 @@
 # CarRent — Software Design Document (SDD)
 
+**Git scope P5.8 — 2026-11-05:** nhánh `feat/p58-audit` tích hợp audit quyền/CSRF/HMAC, current actor locks và HTTP405 sau P5.7; profile P5.5/P5.6 và workflow P5.9 tiếp tục ngoài phạm vi commit. Xem [bàn giao Git](plans/phase-5-p57-p58-git-handoff.md).
+
 **Git scope P5.7 — 2026-11-05:** đưa riêng P5.7 của `ducbinhnguyen07ars` vào nhánh `feat/p57-owner`; P5.5/P5.6 và P5.9 vẫn ở workspace local. Xem [bàn giao Git](plans/phase-5-p57-p58-git-handoff.md).
 
 **Checkpoint P5.4 — 2026-11-04:** hoàn thành **4/4 checklist local** Admin booking/biên bản/khoản còn nợ: list/detail chỉ đọc, nghĩa vụ30/70 và receipts/refunds đúng booking, BEFORE/AFTER private kể cả COMPLETED còn bất đồng; lọc nợ70% quá hạn1giờ và hoàn quá hạn theo Clock/deadline nghiệp vụ. Admin không ký/giao nhận thay Owner hoặc buộc resolve AFTER. Full isolated **clean verify 993/993 JUnit, 0 failure/error/skip**, JAR; Chrome **205/205**, 30 PNG ở1440/390/320. **79/86 task**, còn **7** (`ducbinhnguyen07ars`4, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A live vẫn pending. Tiếp theo **P5.5 + P5.6 của huy69332**. Bảo toàn dirty prerequisites/phase0/config/seed/uploads/DB ứng dụng/HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](plans/phase-5-batch-3-handoff.md).
@@ -413,7 +415,7 @@ Thống kê: tổng User, số Customer, số Owner; tổng Car, Car chờ duy�
 - Bộ lọc sai kiểu/giá âm/category không dương/số chỗ ngoài 2–15/chuỗi quá dài trả 400 tiếng Việt; minPrice > maxPrice hợp lệ trả 200 empty. Giá dùng Long, biên inclusive; province khớp toàn bộ chuỗi đã trim.
 - `/cars/{id}`: gallery theo ID ảnh tăng dần, thông số, giá, địa điểm, thông tin Owner (chỉ tên + SĐT). Xe `APPROVED+ACTIVE` công khai; xe khác chỉ Owner sở hữu hoặc Admin có role/status ACTIVE còn đúng trong DB được xem. Người khác hoặc principal cũ không hợp lệ nhận 404; ID sai kiểu nhận 400.
 - Trang chi tiết xe chưa công khai có banner xem trước và không có CTA đặt thuê. CTA xe công khai đã trỏ tới form `/bookings/new?carId=` cho anonymous/Customer; Owner/Admin thấy thông báo chỉ Customer được đặt. Không dựng đánh giá, lịch trống, phí cọc hoặc tiện ích không có dữ liệu.
-- Chi tiết xe không còn form/nút/badge kiểm tra khả dụng riêng của P3.6. Nhận `startDate/endDate` để chuyển tiếp sang đặt thuê; nút quay lại Tìm xe giữ khoảng ngày. Kết quả lọc không giữ chỗ, submit vẫn kiểm tra lại dưới khóa. `ACTIVE` chỉ biểu thị đăng tin, không bảo đảm trống lịch. Form tìm xe trang chủ dùng province/q/maxPrice; xe nổi bật trang chủ vẫn thuộc P5.8.
+- Chi tiết xe không còn form/nút/badge kiểm tra khả dụng riêng của P3.6. Nhận `startDate/endDate` để chuyển tiếp sang đặt thuê; nút quay lại Tìm xe giữ khoảng ngày. Kết quả lọc không giữ chỗ, submit vẫn kiểm tra lại dưới khóa. `ACTIVE` chỉ biểu thị đăng tin, không bảo đảm trống lịch. Form tìm xe trang chủ dùng province/q/maxPrice; xe nổi bật trang chủ được kiểm chứng tại P5.7.
 
 ### FR-10. Booking
 
@@ -1602,6 +1604,8 @@ Lệnh chạy nền app + tắt app: dùng job/`Stop-Process` theo PID của app
 
 ### 14.9. Kết quả Phase 2 — đợt cuối (P2.11–P2.14, 2026-10-11)
 
+Checkpoint lịch sử ngày2026-10-11; các ghi nhận chưa có trang hoặc phân công featured P5.8 bên dưới giữ bối cảnh lúc đó. Trang chủ hiện được kiểm chứng ở P5.7; P5.8 hiện hành là audit theo kế hoạch Phase5.
+
 - P2.11: `CarSearchCriteria`, các Specification và search service dùng lại clause Admin; public luôn APPROVED+ACTIVE, lọc thực tại DB, giá Long, sort whitelist kèm ID tie-breaker. Self-check Spring/MySQL 39 assertions đạt, review Approved.
 - P2.12: `/cars` với dữ liệu/thumbnail thật, bộ lọc, sort và pager giới hạn an toàn; giữ query encoded/lặp, lỗi typed/âm trả 400 tiếng Việt, minPrice > maxPrice trả empty 200. Self-check 65 assertions và HTTP thật đạt, review Approved. Form tìm xe trang chủ dùng `q`/province/maxPrice; chưa quảng cáo lọc lịch.
 - P2.13: `/cars/{id}` có gallery theo ID ảnh, thông số/giá/địa điểm/Owner thật, empty state và preview banner. Xe không public chỉ Owner sở hữu hoặc Admin còn ACTIVE trong DB được xem, người khác 404; preview không có thao tác đặt thuê. Self-check 67 assertions và ma trận HTTP thật đạt, review Approved.
@@ -2047,3 +2051,8 @@ Schema tại §7.12. Bằng chứng `.scratch/phase8/p81/verification-summary.js
 - COMPLETED vẫn xem BEFORE/AFTER và lịch sử bất đồng; không thêm quyền Admin ký hợp đồng/giao nhận hoặc bắt resolve AFTER. Chỉ Owner thực hiện hành vi giao/nhận theo service hiện hành.
 - Hạn nợ là1giờ sau nhận lại xe, xác định bằng Clock và nghĩa vụ nghiệp vụ; QR expiresAt không quyết định quá hạn. Refund pending/quá hạn khác SUCCEEDED. GET không sửa dữ liệu/enqueue hoặc gọi provider.
 - Kiểm chứng focused/full, role matrix/current Admin/stale session, IDOR/XSS và stream ảnh; browser1440/390/320, SQL invariants/cleanup trên schema/port tạm. Evidence `.scratch/phase5/p54`, [bàn giao](plans/phase-5-batch-3-handoff.md). Provider/live và human review chưa có bằng chứng mới.
+
+
+### Git integration P5.8 — 2026-11-05
+
+Mutation xe kiểm tra actor ACTIVE/role hiện tại dưới khóa trước aggregate; Owner WRITE cùng mutex quota, Admin READ tương thích notification FK. Admin status giữ User-ID order, actor READ/target WRITE. HTTP method không hỗ trợ trả405 và giữ Allow. GET chỉ đọc. [Audit và phạm vi profile chưa tích hợp](plans/phase-5-p58-audit.md); [bàn giao Git](plans/phase-5-p57-p58-git-handoff.md). P5.9/P8.8/P4.2-A chưa đóng.
