@@ -6,18 +6,21 @@
 <main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
   <section class="max-w-4xl mx-auto my-space-xl flex flex-col gap-space-lg" id="subscription-plans">
     <h1 class="font-headline-md text-headline-md">Gói đăng xe</h1>
+    <div th:replace="~{subscription/overview :: overview}"></div>
     <p>Mỗi lần mua có thời hạn 30 ngày. Khi gói còn hạn, chỉ có thể gia hạn cùng loại; thời gian được cộng vào hạn hiện tại.</p>
     <p>Thanh toán vào tài khoản Admin. Gói chỉ được kích hoạt sau khi hệ thống xác nhận khoản chuyển hợp lệ.</p>
+    <p>Gói không hoàn phí sau khi kích hoạt. Không tự động thu phí gia hạn.</p>
     <p th:if="${errorMessage}" th:text="${errorMessage}" role="alert" class="text-error"></p>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
       <article th:each="plan : ${plans}" class="bg-surface-container-lowest rounded-xl p-space-lg flex flex-col gap-space-md">
         <h2 class="font-title-lg" th:text="${plan.name()}"></h2>
         <p th:text="${plan.quota + ' xe / ' + plan.durationDays + ' ngày'}"></p>
         <p class="font-bold" th:text="${#numbers.formatInteger(plan.price, 0, 'POINT') + ' VNĐ'}"></p>
-        <form method="post" th:action="@{/owner/subscriptions/orders}">
+        <form th:if="${!subscription.active or subscription.plan == plan}" method="post" th:action="@{/owner/subscriptions/orders}">
           <input type="hidden" name="plan" th:value="${plan.name()}"/>
-          <button type="submit" class="w-full p-space-sm rounded-lg bg-primary text-on-primary" th:text="${'Chọn gói ' + plan.name()}"></button>
+          <button type="submit" class="w-full p-space-sm rounded-lg bg-primary text-on-primary" th:text="${subscription.active ? 'Gia hạn ' + plan.name() : 'Chọn gói ' + plan.name()}"></button>
         </form>
+        <p th:if="${subscription.active and subscription.plan != plan}">Chỉ có thể chọn loại gói này sau khi gói hiện tại hết hạn.</p>
       </article>
     </div>
     <a th:href="@{/owner/cars}" class="text-secondary underline">Xe của tôi</a>

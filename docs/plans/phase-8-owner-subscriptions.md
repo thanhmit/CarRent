@@ -146,11 +146,11 @@ WHERE owner_id = :ownerId
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-- [ ] Trang chọn gói hiển thị quota, giá, 30 ngày và không hoàn phí sau kích hoạt; còn hạn chỉ cho gia hạn cùng loại, backend vẫn kiểm tra lại.
-- [ ] Owner xem hạn hiện tại, suất đang dùng gồm pending, xe tạm ẩn do hết gói và nút thanh toán/gia hạn. Khi gói thấp hơn, hướng dẫn chọn bật xe trong quản lý xe.
-- [ ] Checkout/phản hồi dựa trạng thái Phase 4; receipt trùng hoặc late dẫn tới refund page của đúng Owner. Nếu cần tài khoản nhận thì yêu cầu khi phát sinh, không bắt liên kết dịch vụ nhận.
-- [ ] Admin wallet thiếu tiền: WAITING_FUNDS và nhắc Admin, không lấy kênh Owner thay thế. Hoàn quá hạn dùng cơ chế cảnh báo chung, không giả lập SUCCEEDED.
-- [ ] IDOR: Owner A không đọc order/refund/bank recipient Owner B; không show credential hoặc số tài khoản đầy đủ trên list. Form POST có CSRF.
+- [x] Trang chọn gói hiển thị quota, giá, 30 ngày và không hoàn phí sau kích hoạt; còn hạn chỉ cho gia hạn cùng loại, backend vẫn kiểm tra lại.
+- [x] Owner xem hạn hiện tại, suất đang dùng gồm pending, xe tạm ẩn do hết gói và nút thanh toán/gia hạn. Khi gói thấp hơn, hướng dẫn chọn bật xe trong quản lý xe.
+- [x] Checkout/phản hồi dựa trạng thái Phase 4; receipt trùng hoặc late dẫn tới refund page của đúng Owner. Nếu cần tài khoản nhận thì yêu cầu khi phát sinh, không bắt liên kết dịch vụ nhận.
+- [x] Admin wallet thiếu tiền: WAITING_FUNDS và nhắc Admin, không lấy kênh Owner thay thế. Hoàn quá hạn dùng cơ chế cảnh báo chung, không giả lập SUCCEEDED.
+- [x] IDOR: Owner A không đọc order/refund/bank recipient Owner B; không show credential hoặc số tài khoản đầy đủ trên list. Form POST có CSRF.
 
 ### Task P8.8 — Gate tích hợp gói và kích hoạt demo một Owner
 

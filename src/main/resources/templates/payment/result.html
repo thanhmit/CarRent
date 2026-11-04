@@ -32,6 +32,7 @@
       </form>
     </div>
     <p id="polling-message" role="status" aria-live="polite"></p>
+    <div th:replace="~{payment/refund-links :: links}"></div>
     <a th:href="@{/payment/finances(view='refunds')}" class="text-secondary underline">Xem khoản tôi nhận hoàn</a>
     <a th:href="@{/payment/intents/{id}(id=${payment.id})}" class="text-secondary underline">Tải lại trạng thái</a>
     <a th:href="@{/}" class="text-secondary underline">Về trang chủ</a>

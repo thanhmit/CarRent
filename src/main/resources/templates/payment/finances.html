@@ -6,6 +6,7 @@
 <main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
   <section class="max-w-5xl mx-auto my-space-xl flex flex-col gap-space-lg">
     <h1 class="font-headline-md text-headline-md">Tài chính</h1>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/finance}" class="text-secondary underline">Tra cứu tài chính toàn hệ thống</a>
     <nav aria-label="Phạm vi tài chính" class="flex flex-wrap gap-space-md">
       <a th:href="@{/payment/finances(view='paid')}" th:attr="aria-current=${view == 'paid' ? 'page' : null}" class="text-secondary underline">Khoản tôi thanh toán</a>
       <a sec:authorize="hasAnyRole('OWNER','ADMIN')" th:href="@{/payment/finances(view='collected')}" th:attr="aria-current=${view == 'collected' ? 'page' : null}" class="text-secondary underline">Khoản tôi thu</a>

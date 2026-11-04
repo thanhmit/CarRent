@@ -40,6 +40,24 @@ public class SubscriptionService {
     @Transactional(readOnly = true)
     public void requireOwner(CustomUserPrincipal actor) { owner(actor, false); }
 
+    public record Overview(SubscriptionPlan plan, Instant validUntil, boolean active, long reserved,
+                           long pending, long temporarilyHidden, int quota) { }
+
+    @Transactional(readOnly = true)
+    public Overview overview(CustomUserPrincipal actor) {
+        var user = owner(actor, false);
+        var current = em.find(OwnerSubscription.class, user.getId());
+        boolean active = current != null && current.getValidUntil().isAfter(clock.instant());
+        long reserved = em.createQuery("select count(c) from Car c where c.owner.id=:id and c.listingStatus=com.carrent.car.ListingStatus.ACTIVE and c.approvalStatus in (com.carrent.car.ApprovalStatus.PENDING,com.carrent.car.ApprovalStatus.APPROVED)", Long.class)
+                .setParameter("id", user.getId()).getSingleResult();
+        long pending = em.createQuery("select count(c) from Car c where c.owner.id=:id and c.listingStatus=com.carrent.car.ListingStatus.ACTIVE and c.approvalStatus=com.carrent.car.ApprovalStatus.PENDING", Long.class)
+                .setParameter("id", user.getId()).getSingleResult();
+        long hidden = active ? 0 : em.createQuery("select count(c) from Car c where c.owner.id=:id and c.listingStatus=com.carrent.car.ListingStatus.ACTIVE and c.approvalStatus=com.carrent.car.ApprovalStatus.APPROVED", Long.class)
+                .setParameter("id", user.getId()).getSingleResult();
+        return new Overview(current == null ? null : current.getPlanCode(), current == null ? null : current.getValidUntil(),
+                active, reserved, pending, hidden, current == null ? 0 : current.getQuota());
+    }
+
     @Transactional
     public SubscriptionOrderView createOrder(SubscriptionPlan plan, CustomUserPrincipal actor) {
         if (plan == null) throw new BusinessException("Vui lòng chọn gói hợp lệ.");

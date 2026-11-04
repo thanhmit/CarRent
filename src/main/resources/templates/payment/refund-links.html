@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"><body>
+<section th:fragment="links" th:if="${intentRefunds != null and !intentRefunds.isEmpty()}" id="intent-refunds" class="flex flex-col gap-space-sm break-words" aria-labelledby="intent-refunds-heading">
+  <h2 id="intent-refunds-heading" class="font-title-md">Các khoản hoàn của lần thanh toán này</h2>
+  <p>Khoản hoàn được theo dõi riêng với việc kích hoạt gói hoặc hoàn tất đơn thuê. Chỉ trạng thái đã hoàn thành mới xác nhận tiền đã được chuyển.</p>
+  <article th:each="r : ${intentRefunds}" class="border rounded-lg p-space-sm flex flex-col gap-space-xs">
+    <a th:href="@{/payment/finances/refunds/{id}(id=${r.id})}" class="text-secondary underline" th:text="${'Khoản hoàn #' + r.id + ' — ' + #numbers.formatInteger(r.amount, 0, 'POINT') + ' VNĐ'}"></a>
+    <p th:text="${r.status.message()}"></p>
+    <p th:switch="${r.reason.name()}">
+      <span th:case="'DUPLICATE_PAYMENT'">Lý do: chuyển khoản trùng.</span>
+      <span th:case="'LATE_SUBSCRIPTION'">Lý do: tiền mua gói đến sau hạn thanh toán.</span>
+      <span th:case="'CANCELLED_SUBSCRIPTION'">Lý do: yêu cầu mua gói đã hủy.</span>
+      <span th:case="'INCOMPATIBLE_SUBSCRIPTION'">Lý do: khoản mua không tương thích với gói đang còn hạn.</span>
+      <span th:case="*">Khoản hoàn theo giao dịch thanh toán.</span>
+    </p>
+    <p th:if="${r.overdue}" class="text-error">Quá thời hạn xử lý; hệ thống tiếp tục đối soát.</p>
+    <a th:if="${r.status.name() == 'WAITING_RECIPIENT'}" th:href="@{/payment/refunds/{id}(id=${r.id})}" class="text-secondary underline">Bổ sung tài khoản nhận hoàn tiền</a>
+  </article>
+</section>
+</body></html>

@@ -120,6 +120,14 @@ public class FinancialViews {
         return new RefundStatusView(r.id(), r.status(), r.dueAt(), r.overdue());
     }
 
+    public List<RefundRow> refundsForIntent(Long intentId, CustomUserPrincipal actor) {
+        var user = active(actor);
+        intents.status(intentId, actor); // Apply the same current payer/role checks as checkout before querying links.
+        return em.createQuery("select r from Refund r where r.receipt.intent.id=:id and r.recipient.id=:user order by r.id", Refund.class)
+                .setParameter("id", intentId).setParameter("user", user.getId()).getResultList().stream()
+                .map(r -> row(r, user)).toList();
+    }
+
     private RefundRow row(Refund r, User user) {
         String account = r.getAccountNumber();
         return new RefundRow(r.getId(), r.getAmount(), r.getReason(), r.getStatus(),

@@ -35,14 +35,17 @@ public class OwnerCarController {
     private final CarCategoryRepository categories;
     private final BookingRepository bookings;
     private final CarCommandExecutor commands;
+    private final org.springframework.beans.factory.ObjectProvider<com.carrent.subscription.SubscriptionService> subscriptions;
 
     public OwnerCarController(CarService cars, CarImageRepository images, CarCategoryRepository categories,
-                              BookingRepository bookings, CarCommandExecutor commands) {
+                              BookingRepository bookings, CarCommandExecutor commands,
+                              org.springframework.beans.factory.ObjectProvider<com.carrent.subscription.SubscriptionService> subscriptions) {
         this.cars = cars;
         this.images = images;
         this.categories = categories;
         this.bookings = bookings;
         this.commands = commands;
+        this.subscriptions = subscriptions;
     }
 
     @GetMapping("/new")
@@ -187,6 +190,7 @@ public class OwnerCarController {
         model.addAttribute("resubmissionEnabled", cars.resubmissionEnabled());
         model.addAttribute("pendingCount", cars.countPendingCars(owner.getId()));
         model.addAttribute("ownerName", owner.getFullName());
+        subscriptions.ifAvailable(service -> model.addAttribute("subscription", service.overview(owner)));
         model.addAttribute("paginationBaseUrl", UriComponentsBuilder.fromPath(request.getRequestURI())
                 .query(request.getQueryString()).replaceQueryParam("page")
                 .replaceQueryParam("size", pageSize).build(true).toUriString());
