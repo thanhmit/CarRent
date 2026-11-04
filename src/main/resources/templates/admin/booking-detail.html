@@ -6,7 +6,9 @@
 <main class="pt-20 px-gutter-mobile sm:px-gutter min-h-screen">
   <div class="max-w-4xl mx-auto flex flex-col gap-space-md py-space-lg min-w-0 break-words [overflow-wrap:anywhere]">
     <h1 class="font-headline-md" th:text="${'Theo dõi đơn thuê #CR-' + booking.id}"></h1>
+    <a th:href="@{/admin/bookings}" class="text-secondary underline">Danh sách đơn thuê</a>
     <p>Chế độ quản trị chỉ đọc. Mốc giao nhận xe và trạng thái tiền được ghi nhận riêng.</p>
+    <p>Hợp đồng, giao xe và nhận lại xe do chủ xe xác nhận. Bất đồng AFTER được lưu làm bằng chứng và không chặn hoàn thành đơn khi tiền đã đủ.</p>
     <span th:replace="~{booking/fragments :: progressBadge(${booking})}"></span>
     <p th:text="${'Khách hàng: ' + booking.customer.fullName + ' · Chủ xe: ' + booking.car.owner.fullName}"></p>
     <th:block th:if="${timeline != null}">
@@ -14,9 +16,21 @@
       <section th:replace="~{booking/fragments :: timeline}"></section>
       <a th:if="${timeline.beforeSubmitted}" th:href="@{/bookings/{id}/inspections/BEFORE(id=${booking.id})}" class="text-secondary underline">Xem BEFORE và bằng chứng</a>
       <a th:if="${timeline.afterSubmitted}" th:href="@{/bookings/{id}/inspections/AFTER(id=${booking.id})}" class="text-secondary underline">Xem AFTER và bằng chứng</a>
+      <section class="flex flex-col gap-4" th:each="entry : ${finance}">
+        <h2 class="font-title-md" th:text="${entry.key.name() == 'OBLIGATIONS' ? 'Nghĩa vụ thanh toán 30/70' : (entry.key.name() == 'RECEIPTS' ? 'Tiền đã nhận' : 'Hoàn tiền')}"></h2>
+        <p th:if="${entry.value.empty}">Chưa có khoản được ghi nhận cho đơn thuê này.</p>
+        <article th:each="r : ${entry.value}" class="bg-surface-container-lowest p-5 rounded-xl flex flex-col gap-3 min-w-0" th:attr="data-finance-kind=${entry.key}">
+          <h3 class="font-title-sm" th:text="${'Khoản #' + r.id}"></h3>
+          <dl th:replace="~{admin/finance-row :: fields(${r})}"></dl>
+          <p th:if="${entry.key.name() != 'REFUNDS'}" th:text="${'Đã phân bổ: ' + #numbers.formatInteger(r.allocated,0,'POINT') + ' VNĐ'}"></p>
+          <a class="text-secondary underline" th:href="@{/admin/finance/{kind}/{id}(kind=${entry.key},id=${r.id})}">Xem chi tiết tài chính</a>
+        </article>
+      </section>
+      <p>Hạn nợ 70% là 1 giờ từ lúc chủ xe nhận lại xe thực tế. Trạng thái quá hạn được tính theo thời điểm hiện tại; thời hạn mã QR không thay đổi hạn nợ.</p>
+      <p>Khoản hoàn đang chờ người nhận, chờ số dư hoặc đang xử lý chưa phải tiền đã hoàn thành công.</p>
     </th:block>
     <p th:if="${timeline == null}">Đơn thuê legacy: không áp dụng timeline VietQR 30/70.</p>
-    <a th:href="@{/payment/finances(view='managed')}" class="text-secondary underline">Quản trị tài chính và khoản hoàn</a>
+    <a th:href="@{/admin/finance(subjectType='BOOKING',subjectId=${booking.id})}" class="text-secondary underline">Tra cứu tài chính của đơn thuê</a>
   </div>
 </main>
 </body></html>
