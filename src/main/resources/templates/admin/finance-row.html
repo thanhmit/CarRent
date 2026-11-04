@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<dl th:fragment="fields(r)" class="grid sm:grid-cols-2 gap-3 break-words">
+  <div><dt class="text-on-surface-variant">Số tiền</dt><dd class="font-bold" th:text="${#numbers.formatInteger(r.amount,0,'POINT') + ' VNĐ'}"></dd></div>
+  <div><dt class="text-on-surface-variant">Trạng thái</dt><dd th:text="${r.message}"></dd></div>
+  <div><dt class="text-on-surface-variant">Nguồn thu / chi</dt><dd th:text="${(r.collectorRole == 'ADMIN' ? 'Admin #' : (r.collectorRole == 'OWNER' ? 'Chủ xe #' : 'Tài khoản #')) + r.collectorId}"></dd></div>
+  <div><dt class="text-on-surface-variant">Người trả / nhận hoàn</dt><dd th:text="${r.payerId == null ? 'Chưa xác định' : 'Tài khoản #' + r.payerId}"></dd></div>
+  <div><dt class="text-on-surface-variant">Nghiệp vụ</dt><dd th:text="${r.purpose == null ? 'Chưa khớp nghĩa vụ' : r.purpose.message()}"></dd></div>
+  <div><dt class="text-on-surface-variant">Tham chiếu</dt><dd th:text="${r.subjectId == null ? 'Chưa xác định' : (r.subjectType.name() == 'BOOKING' ? 'Đơn thuê #' : 'Đơn mua gói #') + r.subjectId}"></dd></div>
+  <div><dt class="text-on-surface-variant">Thời điểm · giờ Việt Nam</dt><dd><time th:datetime="${r.occurredAt}" th:text="${#temporals.format(r.occurredAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')),'dd/MM/yyyy HH:mm:ss')}"></time></dd></div>
+  <div th:if="${r.dueAt != null}"><dt class="text-on-surface-variant">Hạn xử lý · giờ Việt Nam</dt><dd><time th:datetime="${r.dueAt}" th:text="${#temporals.format(r.dueAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')),'dd/MM/yyyy HH:mm:ss')}"></time></dd></div>
+  <div th:if="${r.account != null}"><dt class="text-on-surface-variant">Tài khoản nhận hoàn</dt><dd th:text="${r.account}"></dd></div>
+  <div th:if="${r.overdue}" class="text-error">Quá hạn · tiếp tục theo dõi và đối soát</div>
+</dl>
+</body></html>

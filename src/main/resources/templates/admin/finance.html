@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Tra cứu tài chính')}"></head>
+<body class="bg-surface font-body-md text-on-surface"><div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-20 pb-10 px-4 sm:px-8 min-h-screen"><div class="max-w-6xl mx-auto flex flex-col gap-6">
+  <header><a class="text-secondary underline" th:href="@{/admin/dashboard}">Tổng quan quản trị</a><h1 class="font-headline-md text-headline-md">Tra cứu tài chính</h1><p>Nguồn thu/chi Admin và chủ xe được hiển thị riêng. Khoản hoàn đang chờ chưa phải tiền đã trả.</p></header>
+  <nav class="flex flex-wrap gap-4" aria-label="Loại khoản tài chính">
+    <a class="text-secondary underline" th:href="@{/admin/finance}" th:attr="aria-current=${filter.kind.name() == 'OBLIGATIONS' ? 'page' : null}">Nghĩa vụ thanh toán</a>
+    <a class="text-secondary underline" th:href="@{/admin/finance(kind='RECEIPTS')}" th:attr="aria-current=${filter.kind.name() == 'RECEIPTS' ? 'page' : null}">Tiền đã nhận</a>
+    <a class="text-secondary underline" th:href="@{/admin/finance(kind='REFUNDS')}" th:attr="aria-current=${filter.kind.name() == 'REFUNDS' ? 'page' : null}">Hoàn tiền</a>
+  </nav>
+  <form method="get" th:action="@{/admin/finance}" class="bg-surface-container-low rounded-xl p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <input type="hidden" name="kind" th:value="${filter.kind}"/>
+    <label class="flex flex-col gap-1 min-w-0">Trạng thái<select name="status" class="rounded-lg border border-outline p-2 bg-surface-container-lowest min-w-0 w-full"><option value="">Tất cả</option><option th:each="s : ${statuses}" th:value="${s}" th:selected="${s == filter.status}" th:text="${@adminFinanceService.statusMessage(filter.kind,s)}"></option></select></label>
+    <label class="flex flex-col gap-1 min-w-0">Loại tham chiếu<select name="subjectType" class="rounded-lg border border-outline p-2 bg-surface-container-lowest min-w-0 w-full"><option value="">Tất cả</option><option value="BOOKING" th:selected="${filter.subjectType != null and filter.subjectType.name() == 'BOOKING'}">Đơn thuê</option><option value="SUBSCRIPTION_ORDER" th:selected="${filter.subjectType != null and filter.subjectType.name() == 'SUBSCRIPTION_ORDER'}">Đơn mua gói</option></select></label>
+    <label class="flex flex-col gap-1 min-w-0">Mã tham chiếu<input type="number" min="1" name="subjectId" th:value="${filter.subjectId}" class="rounded-lg border border-outline p-2 w-full"/></label>
+    <label class="flex flex-col gap-1 min-w-0">Mã bên thu / chi<input type="number" min="1" name="collectorId" th:value="${filter.collectorId}" class="rounded-lg border border-outline p-2 w-full"/></label>
+    <label class="flex flex-col gap-1 min-w-0">Sắp xếp<select name="sort" class="rounded-lg border border-outline p-2 bg-surface-container-lowest min-w-0 w-full"><option value="LATEST" th:selected="${filter.sort.name() == 'LATEST'}">Mới nhất</option><option value="OLDEST" th:selected="${filter.sort.name() == 'OLDEST'}">Cũ nhất</option><option value="AMOUNT" th:selected="${filter.sort.name() == 'AMOUNT'}">Số tiền giảm dần</option></select></label>
+    <div class="flex flex-wrap items-center gap-3"><label><input type="checkbox" name="overdue" value="true" th:checked="${filter.overdue}"/> Chỉ quá hạn</label><button class="px-5 py-2 bg-primary text-on-primary rounded-lg" type="submit">Lọc</button><a class="text-secondary underline" th:href="@{/admin/finance(kind=${filter.kind})}">Xóa bộ lọc</a></div>
+  </form>
+  <p class="text-on-surface-variant" th:text="${'Tìm thấy ' + rows.totalElements + ' khoản'}"></p>
+  <p th:if="${rows.empty}">Không có khoản tài chính phù hợp bộ lọc.</p>
+  <section aria-label="Kết quả tài chính" class="grid lg:grid-cols-2 gap-4">
+    <article th:each="r : ${rows}" class="bg-surface-container-lowest p-5 rounded-xl flex flex-col gap-4 min-w-0">
+      <h2 class="font-title-md text-title-md" th:text="${'Khoản #' + r.id}"></h2><dl th:replace="~{admin/finance-row :: fields(${r})}"></dl>
+      <a class="text-secondary underline" th:href="@{/admin/finance/{kind}/{id}(kind=${filter.kind},id=${r.id})}">Xem chi tiết</a>
+    </article>
+  </section>
+  <nav class="flex flex-wrap gap-4" aria-label="Trang tài chính">
+    <a class="text-secondary underline" th:if="${rows.hasPrevious()}" th:href="@{/admin/finance(kind=${filter.kind},status=${filter.status},overdue=${filter.overdue},subjectType=${filter.subjectType},subjectId=${filter.subjectId},collectorId=${filter.collectorId},sort=${filter.sort},page=${rows.number - 1})}">Trang trước</a>
+    <span th:text="${'Trang ' + (rows.number + 1)}"></span>
+    <a class="text-secondary underline" th:if="${rows.hasNext()}" th:href="@{/admin/finance(kind=${filter.kind},status=${filter.status},overdue=${filter.overdue},subjectType=${filter.subjectType},subjectId=${filter.subjectId},collectorId=${filter.collectorId},sort=${filter.sort},page=${rows.number + 1})}">Trang sau</a>
+  </nav>
+  <p class="text-on-surface-variant">Dữ liệu chỉ đọc từ lịch sử thu và hoàn tiền. Không xác nhận hoặc gửi tiền từ trang này. Thanh toán giả lập cũ được tách khỏi doanh thu phí gói.</p>
+</div></main></body></html>

@@ -72,11 +72,11 @@ Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash n
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-- [ ] Dashboard counts user/car/booking từ DB, phí gói theo P5.1, tháng không có dữ liệu hiển thị 0; không hardcode baseline seed.
-- [ ] AdminFinanceController GET danh sách nghĩa vụ/receipt/refund với filter trạng thái/quá hạn/chủ thể, phân trang và sort whitelist.
-- [ ] Phân biệt ví Owner/Admin, waiting recipient/funds, processing, succeeded, review required; mask bank account trên list, chi tiết chỉ người có quyền.
-- [ ] GET không gọi API chi hoặc gán paid. Chỉ hiển thị trạng thái/config health, không xây editor secret hay nút “đánh dấu đã nhận tiền” thủ công.
-- [ ] Test Admin/Owner/Customer/anonymous, IDOR và XSS note/payload; error không lộ SQL/token/provider body nhạy cảm.
+- [x] Dashboard counts user/car/booking từ DB, phí gói theo P5.1, tháng không có dữ liệu hiển thị 0; không hardcode baseline seed.
+- [x] AdminFinanceController GET danh sách nghĩa vụ/receipt/refund với filter trạng thái/quá hạn/chủ thể, phân trang và sort whitelist.
+- [x] Phân biệt ví Owner/Admin, waiting recipient/funds, processing, succeeded, review required; mask bank account trên list, chi tiết chỉ người có quyền.
+- [x] GET không gọi API chi hoặc gán paid. Chỉ hiển thị trạng thái/config health, không xây editor secret hay nút “đánh dấu đã nhận tiền” thủ công.
+- [x] Test Admin/Owner/Customer/anonymous, IDOR và XSS note/payload; error không lộ SQL/token/provider body nhạy cảm.
 
 ### Task P5.3 — Admin quản lý user
 
