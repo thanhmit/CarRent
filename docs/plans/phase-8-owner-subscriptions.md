@@ -157,9 +157,11 @@ WHERE owner_id = :ownerId
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
 - [ ] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify` bằng PowerShell; so baseline seed/schema theo migration đã duyệt.
-- [ ] E2E: Owner mua Small → SePay receipt → đăng 4 suất (có pending) → suất thứ 5 fail → hết hạn public ẩn → gia hạn cùng gói phục hồi đúng lựa chọn → đổi gói thấp hơn sau expiry tự chọn xe.
+- [x] E2E: Owner mua Small → SePay receipt → đăng 4 suất (có pending) → suất thứ 5 fail → hết hạn public ẩn → gia hạn cùng gói phục hồi đúng lựa chọn → đổi gói thấp hơn sau expiry tự chọn xe.
 - [ ] E2E hai lần chuyển thật cùng order → chỉ một lần gia hạn + một refund từ Admin; late order → không cấp gói + hoàn đủ. Phân biệt fixture với live và không tự chuyển tiền trong test.
 - [ ] Một Owner thử nghiệm và Admin có đủ kênh được duyệt; các Owner khác chưa cấu hình không được mở checkout tiền thật. Chỉ bật flags sau review migration, provider gate và các luồng Phase 6/8 đã pass.
-- [ ] Đồng bộ SDD/decisions và quyền danh sách public trước bật entitlement gate; không sửa seed lịch sử để “có gói” cho mọi Owner.
+- [x] Đồng bộ SDD/decisions và quyền danh sách public trước bật entitlement gate; không sửa seed lịch sử để “có gói” cho mọi Owner.
+
+**Bằng chứng local P8.8:** full957/957/JAR và browser110/110 trên schema tạm. Hai mục E2E nghiệp vụ và đồng bộ tài liệu đã đạt local; task vẫn pending. Mục clean verify đã đạt phần test/baseline trên schema kiểm chứng nhưng còn review migration vận hành. Hai mục giao dịch thật và Owner/Admin/kích hoạt chưa đạt. Xem [bàn giao](phase-8-batch-6-handoff.md), [runbook](phase-8-pilot-runbook.md).
 
 **Hoàn thành khi:** quyền gói và quota không vượt khi race, mọi mặt public thống nhất, gia hạn không cộng hai lần, hết hạn/đổi gói không phá đơn đang chạy và tiền gói sai vòng đời được ghi nhận/hoàn đúng nguồn đã chốt.
