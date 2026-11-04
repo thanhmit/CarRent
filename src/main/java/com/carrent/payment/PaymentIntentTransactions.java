@@ -29,13 +29,15 @@ public class PaymentIntentTransactions {
     private final RefundRepository refunds;
     private final Clock clock;
     private final ProviderPaymentProperties providers;
+    private final PaymentPilot pilot;
 
     public PaymentIntentTransactions(EntityManager em, PaymentLocks locks, PaymentRoutes routes,
             PaymentIntentRepository intents, PaymentChannelRepository channels, PaymentReceiptRepository receipts,
-            RefundRepository refunds, Clock clock, ProviderPaymentProperties providers) {
+            RefundRepository refunds, Clock clock, ProviderPaymentProperties providers, PaymentPilot pilot) {
         this.em = em; this.locks = locks; this.routes = routes; this.intents = intents;
         this.channels = channels; this.receipts = receipts; this.refunds = refunds; this.clock = clock;
         this.providers = providers;
+        this.pilot = pilot;
     }
 
     @Transactional
@@ -63,6 +65,7 @@ public class PaymentIntentTransactions {
         var obligation = lockedObligation(route);
         requirePayer(obligation, actor);
         if (!routes.matchesParties(obligation)) throw new BusinessException("Chủ thể thanh toán không khớp đơn thuê.");
+        if (!pilot.allows(obligation)) throw new BusinessException("Thanh toán chưa được mở cho tài khoản thử nghiệm này.");
         Instant now = clock.instant();
         if (obligation.getStatus() != PaymentObligationStatus.OPEN
                 || obligation.getAmountSettled() >= obligation.getAmountDue()
@@ -176,6 +179,7 @@ public class PaymentIntentTransactions {
         em.refresh(intent.getChannel());
         var configured = providers.sepay().get(intent.getChannel().getCredentialReference());
         if ("ACTIVE".equals(status) && (!routes.available(PaymentSubject.of(intent.getObligation()))
+                || !pilot.allows(intent.getObligation())
                 || !intent.getChannel().isEnabled() || configured == null || !configured.enabled())) {
             status = "UNAVAILABLE";
         }

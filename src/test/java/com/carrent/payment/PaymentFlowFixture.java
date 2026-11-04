@@ -79,6 +79,8 @@ final class PaymentFlowFixture implements AutoCloseable {
                             "--fixture.payment-handlers.enabled=" + handlersEnabled,
                             "--fixture.refund-verifier.enabled=" + verifierEnabled,
                             "--carrent.payment.maintenance.enabled=" + maintenanceEnabled,
+                            "--carrent.payment.pilot.owner-id=" + System.getProperty("fixture.payment-pilot.owner-id", "2"),
+                            "--carrent.payment.pilot.admin-id=" + System.getProperty("fixture.payment-pilot.admin-id", "1"),
                             "--carrent.payment.providers.payos.owner-payout-fixture.enabled=true",
                             "--carrent.payment.providers.payos.owner-payout-fixture.client-id=fixture-owner",
                             "--carrent.payment.providers.payos.owner-payout-fixture.api-key=fixture-owner-api-key",
