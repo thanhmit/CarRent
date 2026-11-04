@@ -6,7 +6,7 @@
 
 **Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. P6.11 đã hoàn thành trong working tree; tiếp theo P6.12→P6.13.
 
-**Phiên bản:** 2.43
+**Phiên bản:** 2.44
 **Checkpoint lịch sử P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git phía trên. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
 **Tích hợp Git 2026-11-01:** P6.4–P6.7 đã commit `4a6af85` và merge main `66c2d8b`, author `huy69332`; clean verify mới683/683, post-merge handover45/45. Agent review không thấy blocker; chưa có human contributor review/provider-live mới. Xem §14.33 (snapshot trước đợt P6.8/P6.9); trạng thái hiện hành ở §14.36.
 **Lịch hiện hành:** P6.1–P6.13 đã đóng; tiếp theo **P8.1 riêng** theo [roadmap](plans/README.md). Handoff nghiệm thu tại [đợt4](plans/phase-6-batch-4-handoff.md).
@@ -939,6 +939,21 @@ Migration [refund accounts v1](migrations/2026-10-30-01-refund-accounts.sql) ch�
 Lưu opt-in cùng transaction xác nhận READY. Bảng này chỉ điền sẵn; mỗi refund vẫn preview/xác minh/xác nhận. Thay default không sửa beneficiary snapshot của refund/attempt trước đó. DB ứng dụng chưa áp dụng migration này hoặc payment-core v1.
 
 ---
+
+### 7.12. Schema gói Owner — P8.1
+
+Catalog backend bất biến `SubscriptionPlan`: SMALL 4 xe/5.000 VND, STANDARD 8/10.000, BUSINESS 16/15.000; mỗi lần mua 30 ngày. Không có bảng giá Admin CRUD hoặc giá nhận từ client.
+
+| Bảng | Contract |
+|---|---|
+| `subscription_orders` | ID tự tăng, owner FK RESTRICT; `plan_code`, `quota_snapshot` INT dương, `price_snapshot` BIGINT VND dương, `duration_days=30`; `obligation_id` nullable UNIQUE FK RESTRICT; status PENDING/APPLIED/EXPIRED/CANCELLED/REFUND_PENDING; created/updated/expires/applied UTC DATETIME(6), applied nullable. |
+| `owner_subscriptions` | `owner_id` PK/FK RESTRICT (một entitlement/Owner); plan_code, quota dương; valid_from/valid_until UTC với end>start; last_applied_order_id UNIQUE FK RESTRICT; created/updated UTC. |
+
+Order có expires_at>created_at. APPLIED bắt buộc applied_at>=created_at và obligation; trạng thái khác giữ applied_at NULL. Snapshot không khóa cứng quota/giá theo catalog để giữ lịch sử khi giá thay đổi sau này. Java map `planCode/quotaSnapshot/priceSnapshot/durationDays`, enum STRING, thời gian `Instant`/TIMESTAMP_UTC. Entitlement lấy ownerId làm ID, association Owner chỉ đọc theo cột ID này.
+
+Obligation nullable phục vụ insert order lấy ID trước khi liên kết nghĩa vụ `SUBSCRIPTION:orderId`, purpose SUBSCRIPTION, subject_type SUBSCRIPTION_ORDER; không dùng booking giả. P8.2/P8.3 sẽ tạo order/obligation/intent trong một transaction, kiểm tra role Owner/collector Admin/payer và áp dụng receipt; P8.1 chỉ cung cấp schema/mapping.
+
+Migration [owner subscriptions](migrations/2026-10-27-03-owner-subscriptions.sql) chạy sau payment-core, có backup marker, guard MySQL/strict/InnoDB/source PK và từ chối partial/rerun. Bootstrap mới có 20 bảng; hai bảng mới rỗng, seed/xe cũ giữ nguyên. DB ứng dụng vẫn chưa migrate. Quy trình tại [migration README](migrations/README.md).
 
 ## 8. Thiết kế giao diện
 
@@ -1913,3 +1928,9 @@ POM/output/schema fixture riêng; source/resources thật. Evidence `.scratch/ph
 **RED/lỗi và sửa:** stale RR cho phép tài khoản vừa ban/đổi role vẫn nhận đơn/gửi/đồng ý BEFORE, sửa draft/ảnh/event, handover hoặc mở/hủy ADVANCE; shared current actor read đã được kiểm chứng xanh. Browser no-JS320 phát hiện ảnh nội tại640px tràn trang; CSS scoped inspection đã sửa và rerun source cuối. Hai lỗi fixture UI dùng provider transaction ID không numeric được sửa trong test, không sửa constraint/schema. Các log fail giữ riêng; không dùng kết quả rerun cục bộ thay full clean gate.
 
 **Review:** agent timeline review độc lập domain/tests trước bản sửa ADVANCE cuối; primary kiểm tra call sites, tích hợp bản sửa và chạy full gate mới. Agent khác gián đoạn do quota/service; không có xác nhận review human `thanhmit` và không tuyên bố provider live đạt.
+
+### 14.39. P8.1 — catalog/schema/mapping gói Owner, 2026-11-02
+
+**Checkpoint P8.1 — 2026-11-02:** hoàn thành **4/4 checklist** catalog/schema/mapping; SMALL 4/5.000, STANDARD 8/10.000, BUSINESS 16/15.000 VND, mỗi gói30ngày. Hai bảng mới, snapshot và obligation UNIQUE; không booking giả/tự cấp gói. Full isolated **clean verify 879/879 JUnit, 0 failure/error/skip**, JAR; schema21/21, catalog/JPA2/2. Browser không chạy lại vì đợt này không đổi UI; P6 có bằng chứng109/109 trước đó. **69/86 task**, còn17 (45task mới xong28). Phụ trách `ducbinhnguyen07ars`, reviewer được giao `thanhmit`; có agent review, chưa có human review mới. Bảo toàn thay đổi P6 chưa commit và phase0/config/seed/uploads; DB ứng dụng vẫn7bảng. Không migrate/bật workflow/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. Tiếp theo **P8.2 + P8.3**; gate live vẫn chờ. [Bàn giao](plans/phase-8-batch-1-handoff.md).
+
+Schema tại §7.12. Bằng chứng `.scratch/phase8/p81/verification-summary.json`, RED/GREEN và full-clean-verify.log. P8.1 chỉ tạo nền dữ liệu, không triển khai checkout/receipt/quota hoặc entitlement gate.

@@ -407,6 +407,53 @@ CREATE TABLE IF NOT EXISTS refund_recipient_accounts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- DDL auto-commits in MySQL; the seed itself is one transaction.
+-- Phase 8 schema only: owners receive no automatic entitlement.
+CREATE TABLE IF NOT EXISTS subscription_orders (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    owner_id BIGINT NOT NULL,
+    plan_code VARCHAR(20) NOT NULL,
+    quota_snapshot INT NOT NULL,
+    price_snapshot BIGINT NOT NULL,
+    duration_days INT NOT NULL,
+    obligation_id BIGINT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    expires_at DATETIME(6) NOT NULL,
+    applied_at DATETIME(6) NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_subscription_orders_obligation (obligation_id),
+    KEY idx_subscription_orders_owner_status (owner_id, status),
+    KEY idx_subscription_orders_expiry (status, expires_at),
+    CONSTRAINT fk_subscription_orders_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_subscription_orders_obligation FOREIGN KEY (obligation_id) REFERENCES payment_obligations(id) ON DELETE RESTRICT,
+    CONSTRAINT chk_subscription_orders_plan CHECK (plan_code IN ('SMALL','STANDARD','BUSINESS')),
+    CONSTRAINT chk_subscription_orders_snapshot CHECK (quota_snapshot > 0 AND price_snapshot > 0 AND duration_days = 30),
+    CONSTRAINT chk_subscription_orders_status CHECK (status IN ('PENDING','APPLIED','EXPIRED','CANCELLED','REFUND_PENDING')),
+    CONSTRAINT chk_subscription_orders_expiry CHECK (expires_at > created_at),
+    CONSTRAINT chk_subscription_orders_applied CHECK (
+        (status = 'APPLIED' AND applied_at IS NOT NULL AND obligation_id IS NOT NULL AND applied_at >= created_at)
+        OR (status <> 'APPLIED' AND applied_at IS NULL))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS owner_subscriptions (
+    owner_id BIGINT NOT NULL,
+    plan_code VARCHAR(20) NOT NULL,
+    quota INT NOT NULL,
+    valid_from DATETIME(6) NOT NULL,
+    valid_until DATETIME(6) NOT NULL,
+    last_applied_order_id BIGINT NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (owner_id),
+    UNIQUE KEY uk_owner_subscriptions_last_order (last_applied_order_id),
+    CONSTRAINT fk_owner_subscriptions_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_owner_subscriptions_order FOREIGN KEY (last_applied_order_id) REFERENCES subscription_orders(id) ON DELETE RESTRICT,
+    CONSTRAINT chk_owner_subscriptions_plan CHECK (plan_code IN ('SMALL','STANDARD','BUSINESS')),
+    CONSTRAINT chk_owner_subscriptions_quota CHECK (quota > 0),
+    CONSTRAINT chk_owner_subscriptions_period CHECK (valid_until > valid_from)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 START TRANSACTION;
 SET @seed_today = CURRENT_DATE();
 SET @admin_hash = '$2a$10$774dawIQIq8licat60zD6.mRCSWKUc4g6TE1GiT0yZ7a75NbG9sam';
