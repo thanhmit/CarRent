@@ -44,6 +44,10 @@ public class BookingService {
     private final PaymentIntentRepository intents;
     private final RefundService refunds;
     private final SubscriptionPolicy subscriptions;
+    private final PaymentPilot pilot;
+    private final boolean rentalWorkflowEnabled;
+    private final boolean advanceEnabled;
+    private final boolean balanceEnabled;
 
     /** Payment-core owns aggregate and financial locks and commits receipt/booking atomically. */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
@@ -176,7 +180,11 @@ public class BookingService {
                           NotificationService notifications, Validator validator, EntityManager entityManager,
                           PaymentRepository payments, Clock clock, PaymentObligationRepository obligations,
                           PaymentIntentTransactions intentTransactions, InspectionService inspections,
-                          PaymentIntentRepository intents, RefundService refunds, SubscriptionPolicy subscriptions) {
+                          PaymentIntentRepository intents, RefundService refunds, SubscriptionPolicy subscriptions,
+                          PaymentPilot pilot,
+                          @org.springframework.beans.factory.annotation.Value("${carrent.rental.workflow.enabled:false}") boolean rentalWorkflowEnabled,
+                          @org.springframework.beans.factory.annotation.Value("${carrent.rental.advance.enabled:false}") boolean advanceEnabled,
+                          @org.springframework.beans.factory.annotation.Value("${carrent.rental.balance.enabled:false}") boolean balanceEnabled) {
         this.bookings = bookings;
         this.cars = cars;
         this.users = users;
@@ -191,6 +199,10 @@ public class BookingService {
         this.intents = intents;
         this.refunds = refunds;
         this.subscriptions = subscriptions;
+        this.pilot = pilot;
+        this.rentalWorkflowEnabled = rentalWorkflowEnabled;
+        this.advanceEnabled = advanceEnabled;
+        this.balanceEnabled = balanceEnabled;
     }
 
     @Transactional
@@ -249,8 +261,27 @@ public class BookingService {
         LocalDate end = form.getEndDate();
         validateDates(start, end);
         Long ownerId = subscriptions.lockCarOwner(form.getCarId());
+        if (rentalWorkflowEnabled && ownerId == null) {
+            ownerId = cars.findById(form.getCarId()).orElseThrow(() -> new NotFoundException("Xe không tồn tại.")).getOwner().getId();
+        }
+        boolean rentalWorkflow = rentalWorkflowEnabled && pilot.allowsRentalOwner(ownerId);
+        if (rentalWorkflow) {
+            if (!advanceEnabled || !balanceEnabled) throw new BusinessException("Luồng thanh toán thuê xe chưa sẵn sàng.");
+            // Current authorization precedes Car even when subscriptions are disabled.
+            if (entityManager.createNativeQuery("SELECT id FROM users WHERE id=:id AND role='OWNER' AND status='ACTIVE' FOR SHARE")
+                    .setParameter("id", ownerId).getResultList().isEmpty()) {
+                throw new BusinessException("Chủ xe hiện không thể nhận đơn thuê mới.");
+            }
+        }
         Car car = lockedCar(form.getCarId());
         subscriptions.requireSameOwner(car, ownerId);
+        if (rentalWorkflowEnabled && !car.getOwner().getId().equals(ownerId)) {
+            throw new BusinessException("Chủ xe đã thay đổi. Vui lòng thử lại.");
+        }
+        if (rentalWorkflow && entityManager.createNativeQuery("SELECT id FROM users WHERE id=:id AND role='ADMIN' AND status='ACTIVE' FOR SHARE")
+                .setParameter("id", pilot.adminId()).getResultList().isEmpty()) {
+            throw new BusinessException("Tài khoản Admin thí điểm chưa sẵn sàng.");
+        }
         subscriptions.requireActive(car.getOwner().getId());
         if (car.getApprovalStatus() != ApprovalStatus.APPROVED || car.getListingStatus() != ListingStatus.ACTIVE) {
             throw new BusinessException("Xe hiện không nhận đơn.");
@@ -258,6 +289,7 @@ public class BookingService {
         if (!bookings.findConflictsForUpdate(car.getId(), start, end).isEmpty()) {
             throw new BusinessException("Xe đã có đơn trùng thời gian thuê.");
         }
+        requireCurrentActor(customer, Role.CUSTOMER);
         long total;
         try {
             total = Math.multiplyExact(car.getPricePerDay(), ChronoUnit.DAYS.between(start, end));
@@ -271,6 +303,7 @@ public class BookingService {
         }
         Booking booking = bookings.save(Booking.builder().customer(customer).car(car)
                 .startDate(start).endDate(end).pricePerDaySnapshot(car.getPricePerDay()).totalAmount(total)
+                .workflowVersion(rentalWorkflow ? "VIETQR_V1" : "LEGACY").inspectionRequired(rentalWorkflow)
                 .pickupAddress(address).status(BookingStatus.PENDING).customerNote(form.getCustomerNote()).build());
         notifications.notify(car.getOwner().getId(), "BOOKING_CREATED", "Có đơn thuê xe mới",
                 car.getBrand() + " " + car.getModel() + " được đặt từ " + start + " đến " + end + ".",

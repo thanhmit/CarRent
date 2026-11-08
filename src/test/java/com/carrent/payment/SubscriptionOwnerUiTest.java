@@ -26,6 +26,8 @@ class SubscriptionOwnerUiTest {
         f.jdbc.update("DELETE FROM subscription_orders");
         f.jdbc.update("DELETE FROM notifications");
         f.reset();
+        f.jdbc.update("DELETE FROM car_images WHERE car_id>6");
+        f.jdbc.update("DELETE FROM cars WHERE id>6");
         f.jdbc.update("UPDATE cars SET approval_status='APPROVED' WHERE id=2");
         f.app.getBean(PayoutWorkerTest.FakePayouts.class).reset();
     }
@@ -41,6 +43,45 @@ class SubscriptionOwnerUiTest {
         f.mvc.perform(post("/owner/subscriptions/orders").with(user(f.actor(2))).with(csrf()).param("plan","BUSINESS"))
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/owner/subscriptions"));
         assertThat(f.count("subscription_orders")).isOne();
+    }
+    @Test void fractionalClockPurchaseWebhookCarApprovalAndHideJourney() throws Exception {
+        f.clock.at.set(PaymentFlowFixture.NOW.plusNanos(123456789));
+        String path = f.mvc.perform(post("/owner/subscriptions/orders").with(user(f.actor(2))).with(csrf())
+                        .param("plan", "SMALL"))
+                .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        assertThat(path).startsWith("/owner/subscriptions/orders/");
+        long orderId = Long.parseLong(path.substring(path.lastIndexOf('/') + 1));
+        var order = f.app.getBean(SubscriptionService.class).detail(orderId, f.actor(2));
+        assertThat(page("/payment/intents/" + order.intent().id())).contains("img.vietqr.io", order.intent().code());
+        f.mvc.perform(post("/owner/cars/new").with(user(f.actor(2))).with(csrf())
+                        .param("brand", "Journey").param("model", "Tier E2E").param("manufactureYear", "2024")
+                        .param("seatCount", "5").param("transmission", "AUTOMATIC").param("fuelType", "GASOLINE")
+                        .param("pricePerDay", "500000").param("categoryId", "1").param("province", "Ha Noi"))
+                .andExpect(status().isOk()).andExpect(model().attributeExists("errorMessage"));
+        assertThat(f.jdbc.queryForObject("SELECT COUNT(*) FROM cars WHERE brand='Journey'", Long.class)).isZero();
+        f.clock.at.set(f.clock.instant().plusSeconds(1));
+        pay(order);
+        assertThat(page(path)).contains("data-status=\"APPLIED\"");
+        assertThat(f.app.getBean(SubscriptionService.class).overview(f.actor(2)).quota()).isEqualTo(4);
+        f.mvc.perform(post("/owner/cars/new").with(user(f.actor(2))).with(csrf())
+                        .param("brand", "Journey").param("model", "Tier E2E").param("manufactureYear", "2024")
+                        .param("seatCount", "5").param("transmission", "AUTOMATIC").param("fuelType", "GASOLINE")
+                        .param("pricePerDay", "500000").param("categoryId", "1").param("province", "Ha Noi"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/owner/cars"));
+        long carId = f.jdbc.queryForObject("SELECT id FROM cars WHERE brand='Journey'", Long.class);
+        f.mvc.perform(get("/cars/" + carId)).andExpect(status().isNotFound());
+        f.mvc.perform(post("/admin/cars/" + carId + "/approve").with(user(f.actor(1))).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        f.mvc.perform(get("/cars/" + carId)).andExpect(status().isOk());
+        long used = f.app.getBean(SubscriptionService.class).overview(f.actor(2)).reserved();
+        f.mvc.perform(post("/owner/cars/" + carId + "/deactivate").with(user(f.actor(2))).with(csrf()))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/owner/cars"));
+        f.mvc.perform(get("/cars/" + carId)).andExpect(status().isNotFound());
+        assertThat(page("/cars")).doesNotContain("Tier E2E");
+        assertThat(page("/owner/cars")).contains("Tier E2E");
+        assertThat(f.app.getBean(SubscriptionService.class).overview(f.actor(2)).reserved()).isEqualTo(used - 1);
+        assertThat(f.jdbc.queryForMap("SELECT approval_status,listing_status FROM cars WHERE id=?", carId))
+                .containsEntry("approval_status", "APPROVED").containsEntry("listing_status", "INACTIVE");
     }
     @Test void expiredPlanShowsTemporarilyHiddenApprovedIntentAndAllPurchaseChoicesWithoutMutatingCars() throws Exception {
         pay(create(SubscriptionPlan.SMALL));

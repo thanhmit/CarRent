@@ -1,5 +1,7 @@
 # CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
 
+**Git scope P5.9 local — 2026-11-08:** phần admission/pilot, E2E HTTP và sửa độ chính xác thời gian order gói của `ducbinhnguyen07ars` được tách trên `feat/p59-local-integration`, giữ nhánh sau merge. [Bàn giao và evidence của tree Git riêng](phase-5-p59-publication-2026-11-08.md). Profile, provider setup và UI mới tiếp tục ngoài phạm vi; chưa đóng P4.2-A/P8.8/P5.9 live.
+
 **Git scope P5.8 — 2026-11-05:** nhánh `feat/p58-audit` tích hợp audit quyền/CSRF/HMAC, current actor locks và HTTP405 sau P5.7; profile P5.5/P5.6 và workflow P5.9 tiếp tục ngoài phạm vi commit. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).
 
 **Git scope P5.7 — 2026-11-05:** đưa riêng P5.7 của `ducbinhnguyen07ars` vào nhánh `feat/p57-owner`; P5.5/P5.6 và P5.9 vẫn ở workspace local. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).

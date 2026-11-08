@@ -16,9 +16,14 @@ public class PaymentPilot {
     }
 
     public boolean allows(PaymentObligation obligation) {
-        if (ownerId <= 0 || adminId <= 0 || ownerId == adminId) return false;
         return obligation.getPurpose() == PaymentPurpose.SUBSCRIPTION
-                ? obligation.getPayer().getId().equals(ownerId) && obligation.getCollector().getId().equals(adminId)
-                : obligation.getCollector().getId().equals(ownerId);
+                ? allowsRentalOwner(obligation.getPayer().getId()) && obligation.getCollector().getId().equals(adminId)
+                : allowsRentalOwner(obligation.getCollector().getId());
     }
+
+    public boolean allowsRentalOwner(Long candidateId) {
+        return ownerId > 0 && adminId > 0 && ownerId != adminId && Long.valueOf(ownerId).equals(candidateId);
+    }
+
+    public long adminId() { return adminId; }
 }

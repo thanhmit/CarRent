@@ -1,5 +1,7 @@
 # CarRent — Phân công ba thành viên
 
+**Git scope 2026-11-08:** credential được xác minh là `ducbinhnguyen07ars`; chỉ đưa phần P5.9 local và sửa thời gian order gói của thành viên này lên nhánh `feat/p59-local-integration`, giữ nhánh. Thao tác do Codex theo ủy quyền, không thay human contributor review. P5.5/P5.6 của `huy69332`, provider setup của `thanhmit` và UI chưa giao đích danh giữ riêng. Xem [bàn giao Git](phase-5-p59-publication-2026-11-08.md); chưa đóng ba gate live.
+
 **Git scope P5.8 — 2026-11-05:** nhánh `feat/p58-audit` tích hợp audit quyền/CSRF/HMAC, current actor locks và HTTP405 sau P5.7; profile P5.5/P5.6 và workflow P5.9 tiếp tục ngoài phạm vi commit. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).
 
 **Git scope P5.7 — 2026-11-05:** đưa riêng P5.7 của `ducbinhnguyen07ars` vào nhánh `feat/p57-owner`; P5.5/P5.6 và P5.9 vẫn ở workspace local. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).
