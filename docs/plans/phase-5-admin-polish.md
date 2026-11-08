@@ -149,6 +149,8 @@ Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash n
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
+**Git scope 2026-11-08:** admission/pilot và E2E HTTP local được tách để publication trên `feat/p59-local-integration`, kèm sửa DATETIME(6) của order gói; giữ nhánh. Evidence của tree riêng và giới hạn nghiệm thu ở [bàn giao Git](phase-5-p59-publication-2026-11-08.md). Không gộp profile/provider setup/UI đang làm và không đóng gate live từ publication này.
+
 - [ ] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`. Ghi kết quả và hạn chế thật, không suy runtime pass từ build hoặc tài liệu.
 - [ ] E2E fixture/stub: Owner mua gói → đăng/gửi duyệt xe → Customer đặt → BEFORE agreed → 30% → Owner contract/handover → AFTER có bất đồng → Owner return → 70% → COMPLETED.
 - [ ] Nhánh lỗi: Customer/Owner cancel trước giao, advance hết hạn/late webhook và B giữ lịch, thiếu recipient/funds, payout response mất, repeated webhook, khoản gói trùng/đến muộn, nợ 70% quá hạn, gói hết hạn/gia hạn/hạ gói.

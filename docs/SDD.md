@@ -1,5 +1,7 @@
 # CarRent — Software Design Document (SDD)
 
+**Git scope P5.9 local — 2026-11-08:** nhánh `feat/p59-local-integration` đưa admission/pilot và hành trình HTTP P5.9, giữ hardening Customer sau khóa Car cho cả LEGACY, cùng sửa độ chính xác thời gian order gói. Phụ trách `ducbinhnguyen07ars`; không gồm profile P5.5/P5.6, provider setup hoặc UI mới. Xem [bàn giao Git P5.9](plans/phase-5-p59-publication-2026-11-08.md). **P4.2-A/P8.8/P5.9 live vẫn mở**; các checkpoint bên dưới là lịch sử.
+
 **Git scope P5.8 — 2026-11-05:** nhánh `feat/p58-audit` tích hợp audit quyền/CSRF/HMAC, current actor locks và HTTP405 sau P5.7; profile P5.5/P5.6 và workflow P5.9 tiếp tục ngoài phạm vi commit. Xem [bàn giao Git](plans/phase-5-p57-p58-git-handoff.md).
 
 **Git scope P5.7 — 2026-11-05:** đưa riêng P5.7 của `ducbinhnguyen07ars` vào nhánh `feat/p57-owner`; P5.5/P5.6 và P5.9 vẫn ở workspace local. Xem [bàn giao Git](plans/phase-5-p57-p58-git-handoff.md).

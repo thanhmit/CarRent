@@ -268,7 +268,8 @@ class SubscriptionPaymentTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"payer_user_id=3", "collector_user_id=3", "amount_due=6000"})
+    @ValueSource(strings = {"payer_user_id=3", "collector_user_id=3", "amount_due=6000",
+            "due_at=DATE_ADD(due_at, INTERVAL 1 MICROSECOND)"})
     void alteredObligationCannotGrantEntitlement(String change) throws Exception {
         var order = service.createOrder(SubscriptionPlan.SMALL, f.actor(2));
         f.jdbc.update("UPDATE payment_obligations SET " + change + " WHERE purpose='SUBSCRIPTION'");

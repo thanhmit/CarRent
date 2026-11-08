@@ -24,6 +24,18 @@ class SubscriptionOrderTest {
         f.reset();
     }
     SubscriptionService service() { return f.app.getBean(SubscriptionService.class); }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(SubscriptionPlan.class)
+    void allPlansCreateAndCancelWithSubMicrosecondClock(SubscriptionPlan plan) {
+        f.clock.at.set(PaymentFlowFixture.NOW.plusNanos(123456789));
+        var order = service().createOrder(plan, f.actor(2));
+        assertThat(order.intent().status()).isEqualTo("ACTIVE");
+        assertThat(order.intent().amount()).isEqualTo(plan.getPrice());
+        assertThat(f.count("owner_subscriptions")).isZero();
+        assertThat(service().detail(order.orderId(), f.actor(2)).status()).isEqualTo("PENDING");
+        service().cancelOrder(order.orderId(), f.actor(2));
+        assertThat(service().detail(order.orderId(), f.actor(2)).status()).isEqualTo("CANCELLED");
+    }
     @Test void createsServerSnapshotsAndOneAdminQrWithoutBooking() {
         var oldBookings = f.count("bookings");
         var a = service().createOrder(SubscriptionPlan.SMALL, f.actor(2));

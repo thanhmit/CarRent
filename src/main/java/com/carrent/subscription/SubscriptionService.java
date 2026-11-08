@@ -76,7 +76,8 @@ public class SubscriptionService {
             }
             end(order, false);
         }
-        var now = clock.instant();
+        // DATETIME(6) round-trips microseconds; both linked deadlines must remain exactly equal after locking reloads.
+        var now = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         var collectors = em.createQuery("select u from User u where u.role=:role and u.status=:status order by u.id", User.class)
                 .setParameter("role", Role.ADMIN).setParameter("status", UserStatus.ACTIVE).getResultList();
         var configured = collectors.stream().filter(u -> em.createQuery(
