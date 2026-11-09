@@ -82,7 +82,7 @@ class PaymentAccessAuditTest {
                 routes.addAll(info.getPatternValues());
         });
         assertThat(routes).contains("/webhooks/sepay/{channelId}", "/owner/subscriptions/orders",
-                "/bookings/{bookingId}/inspections/{phase}/submit");
+                "/profile/change-password", "/bookings/{bookingId}/inspections/{phase}/submit");
         routes.remove("/webhooks/sepay/{channelId}");
         routes.addAll(List.of("/login", "/logout")); // Security filters own these POST routes.
         for (String route : routes) {
@@ -180,8 +180,13 @@ class PaymentAccessAuditTest {
         try (var files = Files.list(images)) { assertThat(files.count()).isOne(); }
     }
 
-    @Test void adminReadsAndMutationsRequireAdmin() throws Exception {
+    @Test void profileAndPasswordFormsAreSelfScopedButAdminReadsRequireAdmin() throws Exception {
         for (long actor : ACTORS) {
+            for (String path : List.of("/profile", "/profile/edit", "/profile/change-password"))
+                unchanged(get(path), actor, actor == 0 ? 302 : 200);
+            unchanged(post("/profile/edit").with(csrf()).param("fullName", "").param("phone", "bad"), actor,
+                    actor == 0 ? 302 : 200);
+            unchanged(post("/profile/change-password").with(csrf()), actor, actor == 0 ? 302 : 200);
             for (String path : List.of("/admin/dashboard", "/admin/users", "/admin/users/4", "/admin/cars",
                     "/admin/cars/1", "/admin/bookings", "/admin/bookings/1", "/admin/finance"))
                 unchanged(get(path), actor, actor == 0 ? 302 : actor == 1 ? 200 : 403);
@@ -261,7 +266,7 @@ class PaymentAccessAuditTest {
                     for (String suffix : List.of("", "/status", "/result"))
                         requestAs(get("/payment/intents/" + intent.id() + suffix), 4, 200);
                     requestAs(get("/admin/bookings/1"), 1, 200);
-                    requestAs(get("/owner/dashboard"), 2, 200);
+                    requestAs(get("/profile"), 4, 200);
                     requestAs(get("/owner/subscriptions/orders/" + order.orderId()), 2, 200);
                     requestAs(get("/bookings/1/inspections/BEFORE/draft"), 2, 200);
                 } catch (Exception ex) { throw new java.util.concurrent.CompletionException(ex); }

@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Đơn thuê của tôi')}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-<div th:replace="~{fragments/header :: header}"></div>
+<div th:with="publicNavSection='bookings'"><th:block th:replace="~{fragments/header :: header}"></th:block></div>
 <main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
   <div class="max-w-7xl mx-auto px-gutter py-space-xl">
     <div class="mb-space-lg flex flex-col md:flex-row md:items-end justify-between gap-space-md">

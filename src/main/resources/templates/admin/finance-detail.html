@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Chi tiết tài chính')}"></head>
-<body class="bg-surface font-body-md text-on-surface"><div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-20 pb-10 px-4 sm:px-8 max-w-4xl mx-auto flex flex-col gap-6">
-  <h1 class="font-headline-md text-headline-md" th:text="${'Chi tiết khoản #' + row.id}"></h1>
-  <section class="bg-surface-container-lowest p-5 rounded-xl"><dl th:replace="~{admin/finance-row :: fields(${row})}"></dl>
-    <p th:if="${kind.name() == 'RECEIPTS'}" th:text="${'Đã phân bổ: ' + #numbers.formatInteger(row.allocated,0,'POINT') + ' VNĐ'}"></p>
-    <p th:if="${kind.name() == 'OBLIGATIONS'}" th:text="${'Đã thanh toán: ' + #numbers.formatInteger(row.allocated,0,'POINT') + ' VNĐ'}"></p>
+<body class="bg-surface font-body-md text-on-surface"><th:block th:replace="~{fragments/workspace :: sidebar('finances', 'managed')}"></th:block>
+<div class="lg:pl-64 min-w-0">
+  <header th:replace="~{fragments/workspace :: topbar('Chi tiết tài chính')}"></header>
+<main id="admin-finance-detail" class="p-4 sm:p-6 lg:p-8 min-w-0"><div class="max-w-5xl mx-auto flex flex-col gap-6 [overflow-wrap:anywhere]">
+  <header class="flex flex-col gap-2"><p class="text-on-surface-variant">Tra cứu tài chính · chế độ chỉ đọc</p><h1 class="font-headline-md text-headline-md" th:text="${'Chi tiết khoản #' + row.id}"></h1></header>
+  <section class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-5 sm:p-6 flex flex-col gap-5" aria-label="Thông tin khoản tài chính"><dl th:replace="~{admin/finance-row :: fields(${row})}"></dl>
+    <p class="rounded-xl bg-surface-container-low p-4 font-label-md text-label-md" th:if="${kind.name() == 'RECEIPTS'}" th:text="${'Đã phân bổ: ' + #numbers.formatInteger(row.allocated,0,'POINT') + ' VNĐ'}"></p>
+    <p class="rounded-xl bg-surface-container-low p-4 font-label-md text-label-md" th:if="${kind.name() == 'OBLIGATIONS'}" th:text="${'Đã thanh toán: ' + #numbers.formatInteger(row.allocated,0,'POINT') + ' VNĐ'}"></p>
   </section>
-  <p>Trang tra cứu chỉ hiển thị kết quả ghi nhận và đối soát. Khoản hoàn đang chờ xử lý chưa phải tiền đã trả cho người nhận.</p>
-  <a class="text-secondary underline" th:href="@{/admin/finance(kind=${kind})}">Về danh sách tài chính</a>
-</main></body></html>
+  <p class="rounded-xl bg-surface-container p-4 text-on-surface-variant">Trang tra cứu chỉ hiển thị kết quả ghi nhận và đối soát. Khoản hoàn đang chờ xử lý chưa phải tiền đã trả cho người nhận.</p>
+  <a class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary self-start" th:href="@{/admin/finance(kind=${kind})}">Về danh sách tài chính</a>
+</div></main>
+</div></body></html>

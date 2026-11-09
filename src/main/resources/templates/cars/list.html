@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Tìm xe')}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-<div th:replace="~{fragments/header :: header}"></div>
+<div th:with="publicNavSection='cars'"><th:block th:replace="~{fragments/header :: header}"></th:block></div>
 <div th:replace="~{fragments/messages :: messages}"></div>
 <main th:object="${criteria}" class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
   <div class="w-full bg-surface-container-lowest shadow-sm">

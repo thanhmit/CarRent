@@ -97,14 +97,17 @@ public class PaymentIntentTransactions {
                 || provider == null || !provider.enabled()
                 || channel.getOwnerRole() != obligation.getCollector().getRole()
                 || channel.getBankBin() == null || !channel.getBankBin().matches("[0-9]{6}")
-                || channel.getAccountNumber() == null || !channel.getAccountNumber().matches("[0-9]{1,50}")) {
+                || channel.getAccountNumber() == null || !channel.getAccountNumber().matches("[0-9]{1,19}")) {
             throw new BusinessException("Kênh nhận tiền chưa hợp lệ.");
+        }
+        if (obligation.getAmountDue() - obligation.getAmountSettled() > 9_999_999_999_999L) {
+            throw new BusinessException("Số tiền vượt giới hạn VietQR.");
         }
         Instant expiry = now.plusSeconds(900);
         if (obligation.getPurpose() != PaymentPurpose.BALANCE
                 && obligation.getDueAt() != null && obligation.getDueAt().isBefore(expiry)) expiry = obligation.getDueAt();
         var intent = intents.saveAndFlush(PaymentIntent.builder().obligation(obligation).channel(channel)
-                .code("CR" + UUID.randomUUID().toString().replace("-", "").toUpperCase(java.util.Locale.ROOT))
+                .code("CR" + UUID.randomUUID().toString().replace("-", "").substring(0, 30).toUpperCase(java.util.Locale.ROOT))
                 .amount(obligation.getAmountDue() - obligation.getAmountSettled())
                 .createdAt(now).expiresAt(expiry).build());
         return view(intent);

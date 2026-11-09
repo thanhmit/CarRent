@@ -44,7 +44,13 @@ public class CarController {
         Car car = cars.getPublicCar(id, principal);
         model.addAttribute("car", car);
         model.addAttribute("carImages", images.findByCarIdOrderByIdAsc(car.getId()));
-        model.addAttribute("publicListing", cars.isPublicListing(car));
+        boolean publicListing = cars.isPublicListing(car);
+        model.addAttribute("publicListing", publicListing);
+        if (publicListing) {
+            LocalDate today = LocalDate.now();
+            model.addAttribute("today", today);
+            model.addAttribute("busyDateRanges", cars.busyDateRanges(car.getId(), today));
+        }
         return "cars/detail";
     }
 

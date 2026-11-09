@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Sửa hồ sơ')}"></head>
+<body class="bg-surface font-body-md text-on-surface min-h-screen"><div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-24 pb-10 px-4 sm:px-8"><div class="max-w-2xl mx-auto space-y-6">
+  <header><a th:href="@{/profile}" class="text-secondary underline">Hồ sơ của tôi</a><h1 class="font-headline-md text-headline-md mt-2">Sửa hồ sơ</h1><p class="text-on-surface-variant mt-2">Cập nhật họ tên và số điện thoại liên hệ.</p></header>
+  <form method="post" th:action="@{/profile/edit}" th:object="${form}" novalidate class="bg-surface-container-lowest p-5 sm:p-6 rounded-xl shadow-sm space-y-5">
+    <div><label for="fullName" class="block font-semibold mb-2">Họ và tên <span class="text-error">*</span></label>
+      <input id="fullName" th:field="*{fullName}" type="text" autocomplete="name" required maxlength="100" class="w-full min-w-0 border border-outline rounded-lg px-3 py-3 focus:outline-secondary" aria-describedby="fullName-error" th:attr="aria-invalid=${#fields.hasErrors('fullName')}">
+      <p id="fullName-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}" class="mt-2 text-error" role="alert"></p></div>
+    <div><label for="phone" class="block font-semibold mb-2">Số điện thoại</label>
+      <input id="phone" th:field="*{phone}" type="tel" autocomplete="tel" maxlength="20" class="w-full min-w-0 border border-outline rounded-lg px-3 py-3 focus:outline-secondary" aria-describedby="phone-error" th:attr="aria-invalid=${#fields.hasErrors('phone')}">
+      <p id="phone-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}" class="mt-2 text-error" role="alert"></p></div>
+    <p class="text-on-surface-variant">Email và vai trò được giữ theo tài khoản đã đăng ký.</p>
+    <div class="flex flex-wrap gap-3 items-center"><button type="submit" class="bg-primary text-on-primary rounded-lg px-5 py-3">Lưu hồ sơ</button><a th:href="@{/profile}" class="text-secondary underline px-3 py-3">Hủy</a></div>
+  </form>
+</div></main></body></html>

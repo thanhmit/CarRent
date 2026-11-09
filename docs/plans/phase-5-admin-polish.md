@@ -1,8 +1,10 @@
 # CarRent — Phase 5: Admin và hoàn thiện — Implementation Plan
 
-**Git scope P5.8 — 2026-11-05:** nhánh `feat/p58-audit` tích hợp audit quyền/CSRF/HMAC, current actor locks và HTTP405 sau P5.7; profile P5.5/P5.6 và workflow P5.9 tiếp tục ngoài phạm vi commit. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).
+**Checkpoint P5.8 + P5.9 local — 2026-11-04:** P5.8 hoàn thành **5/5**: ma trận quyền/CSRF/HMAC, biên thời gian, GET chỉ đọc, queue/quota/restart và tài liệu hiện hành. Sửa stale Owner/Admin khi mutation xe, vòng khóa notification/Admin status và HTTP405; regression RED/GREEN được giữ. P5.9 hoàn thành **5/6 checklist local**, còn **gate live**: hành trình HTTP mua gói → tạo/duyệt xe → booking mới → BEFORE →30%→Owner hợp đồng/giao→AFTER bất đồng→nhận lại→70%→COMPLETED; lối vào VIETQR_V1 mặc định tắt, giới hạn pilot và quyền Customer hiện tại. Full isolated **clean verify 1053/1053 JUnit, 0 failure/error/skip**, JAR; Node polling **6/6**; Chrome **256/256**, 108PNG tại1440/390/320. **83/86 task**, còn3 (`ducbinhnguyen07ars`2: P5.9/P8.8; `thanhmit`1: P4.2-A). **P5.9/P8.8/P4.2-A chưa đóng**, chưa có bằng chứng giao dịch/provider/human/migration live. Bảo toàn DB ứng dụng/config/seed/uploads/phase0/dirty prerequisites/refs/index; không kích hoạt hoặc Git publication. Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. [Bàn giao](phase-5-batch-6-handoff.md).
 
-**Git scope P5.7 — 2026-11-05:** đưa riêng P5.7 của `ducbinhnguyen07ars` vào nhánh `feat/p57-owner`; P5.5/P5.6 và P5.9 vẫn ở workspace local. Xem [bàn giao Git](phase-5-p57-p58-git-handoff.md).
+**Checkpoint P5.7 — 2026-11-04:** hoàn thành **4/4 checklist local** dashboard Owner và trang chủ: gói/hạn/quota, xe/booking scoped principal, tiền thuê đã phân bổ và hoàn/nợ riêng; hoàn một phần giữ receipt, pending chưa tính đã hoàn, deadline theo Clock. Home tối đa8 xe mới nhất dùng public policy Phase8 hiện có; quyền preview riêng được giữ. Current ACTIVE OWNER/stale session/IDOR/XSS và GET chỉ đọc đã kiểm chứng. Focused **33/33**, full isolated **clean verify 1016/1016 JUnit, 0 failure/error/skip**, JAR; Chrome **152/152**, 36PNG ở1440/390/320; SQL invariants/provider0/cleanup đã xác nhận. **82/86 task**, còn **4** (`ducbinhnguyen07ars`3, `thanhmit`1; `huy69332`0). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. **P8.8/P4.2-A live vẫn pending**. Tiếp theo **P5.8 → P5.9**, không đóng P5.9 khi gate thật chưa đạt. Bảo toàn P5.5/P5.6 chưa commit, phase0/config/seed/uploads/DB ứng dụng/refs/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-5-handoff.md).
+
+**Checkpoint P5.5 + P5.6 — 2026-11-04:** hoàn thành **3/3 + 3/3 checklist local**: profile của tài khoản hiện tại, chỉ sửa tên/điện thoại; đổi mật khẩu kiểm tra BCrypt hash DB mới nhất, tối thiểu6ký tự/tối đa72byte UTF-8, form lỗi không giữ mật khẩu. Kiểm tra ACTIVE/role hiện tại dưới khóa User; chống IDOR/mass assignment/CSRF/XSS và ghi đè hash khi đồng thời. Navbar tên cache được thông báo đăng nhập lại; giữ policy session/logout hiện hành. Focused **12/12**, full isolated **clean verify 1005/1005 JUnit, 0 failure/error/skip**, JAR; Chrome **113/113**, 24PNG ở1440/390/320; SQL 15khoảng/20bảng, provider0, cleanup đã xác nhận. **81/86 task**, còn **5** (`ducbinhnguyen07ars`4, `thanhmit`1; `huy69332`0). Phụ trách `huy69332`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A live vẫn pending. Dừng sau đợt này; tiếp theo **P5.7 riêng của ducbinhnguyen07ars**. Bảo toàn phase0/config/seed/uploads/DB ứng dụng; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-4-handoff.md).
 
 **Checkpoint P5.4 — 2026-11-04:** hoàn thành **4/4 checklist local** Admin booking/biên bản/khoản còn nợ: list/detail chỉ đọc, nghĩa vụ30/70 và receipts/refunds đúng booking, BEFORE/AFTER private kể cả COMPLETED còn bất đồng; lọc nợ70% quá hạn1giờ và hoàn quá hạn theo Clock/deadline nghiệp vụ. Admin không ký/giao nhận thay Owner hoặc buộc resolve AFTER. Full isolated **clean verify 993/993 JUnit, 0 failure/error/skip**, JAR; Chrome **205/205**, 30 PNG ở1440/390/320. **79/86 task**, còn **7** (`ducbinhnguyen07ars`4, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A live vẫn pending. Tiếp theo **P5.5 + P5.6 của huy69332**. Bảo toàn dirty prerequisites/phase0/config/seed/uploads/DB ứng dụng/HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-3-handoff.md).
 
@@ -12,7 +14,7 @@
 
 > **For agentic workers:** Dùng superpowers:executing-plans theo đợt đã duyệt bên dưới, kiểm chứng/checkpoint riêng từng task; không tự stage/commit/push. Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối.
 
-**Ngày cập nhật:** 2026-11-01 (lịch đợt). **Trạng thái:** P5.1–P5.4 đã hoàn tất local; P5.5–P5.9 chưa triển khai. Chuẩn bị code độc lập theo roadmap trong khi P8.8/P4.2-A còn gate thật, không coi là đã kích hoạt hệ thống.
+**Ngày cập nhật:** 2026-11-01 (lịch đợt). **Trạng thái:** P5.1–P5.8 đã hoàn tất local; P5.9 đạt5/6 checklist, còn gate live nên chưa đóng. Chuẩn bị code độc lập theo roadmap trong khi P8.8/P4.2-A còn gate thật, không coi là đã kích hoạt hệ thống.
 
 **Goal:** Hoàn thiện dashboard/profile/quản lý tài khoản và màn hình theo dõi thanh toán/hoàn tiền đúng mô hình trung gian.
 
@@ -56,7 +58,7 @@ Java tương đối `src/main/java/com/carrent/`:
 - Create `owner/OwnerDashboardController.java`, `user/ProfileController.java`, `ProfileForm.java`, `ChangePasswordForm.java`; modify UserRepository và service user theo cấu trúc thực tế.
 - Modify repositories payment/subscription/booking để có query có scope; không join nhiều bảng một-nhiều rồi SUM trùng.
 - Create templates `admin/dashboard.html`, `admin/users.html`, `admin/user-detail.html`, `admin/bookings.html`, `admin/booking-detail.html`, `admin/finance.html`, `owner/dashboard.html`, `profile/view.html`, `profile/edit.html`, `profile/change-password.html`.
-- Tests `src/test/java/com/carrent/admin/AdminRevenueTest.java`, `AdminPermissionsTest.java`; `user/ProfileSecurityTest.java`; `owner/OwnerRevenueTest.java`.
+- Tests `src/test/java/com/carrent/admin/AdminRevenueTest.java`, `AdminPermissionsTest.java`; `payment/ProfileSecurityTest.java`, `payment/ProfilePasswordTest.java`; `owner/OwnerRevenueTest.java`.
 
 ### Task P5.1 — Read model doanh thu và số liệu có scope
 
@@ -110,21 +112,21 @@ Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash n
 
 **Phụ trách:** `@huy69332` · **Review:** `@thanhmit`.
 
-**Interfaces:** ProfileForm(fullName, phone); POST /profile/edit → updateProfile(userId, form). UserService nếu chưa có thì tạo `user/UserService.java` theo pattern hiện tại.
+**Interfaces:** ProfileForm(fullName, phone); POST /profile/edit → updateProfile(actor, form), ID lấy từ principal. UserService nếu chưa có thì tạo `user/UserService.java` theo pattern hiện tại.
 
-- [ ] GET profile đọc user hiện tại; update chỉ fullName 1–100 ký tự và phone tối đa 20 ký tự. Email/role/status/userId server quyết định.
-- [ ] Form lỗi giữ input hợp lệ, escape nội dung; navbar/name lấy đúng trạng thái sau cập nhật hoặc ghi rõ cần đăng nhập lại nếu principal cache chưa làm mới.
-- [ ] ProfileSecurityTest: user A không sửa B, gửi role/email/status không đổi DB, CSRF sai không mutate.
+- [x] GET profile đọc user hiện tại; update chỉ fullName 1–100 ký tự và phone tối đa 20 ký tự. Email/role/status/userId server quyết định.
+- [x] Form lỗi giữ input hợp lệ, escape nội dung; navbar/name lấy đúng trạng thái sau cập nhật hoặc ghi rõ cần đăng nhập lại nếu principal cache chưa làm mới.
+- [x] ProfileSecurityTest: user A không sửa B, gửi role/email/status không đổi DB, CSRF sai không mutate.
 
 ### Task P5.6 — Đổi mật khẩu
 
 **Phụ trách:** `@huy69332` · **Review:** `@thanhmit`.
 
-**Interface:** ChangePasswordForm(currentPassword, newPassword, confirmPassword); UserService.changePassword(userId, form).
+**Interface:** ChangePasswordForm(currentPassword, newPassword, confirmPassword); UserService.changePassword(actor, form), ID lấy từ principal.
 
-- [ ] Kiểm tra mật khẩu cũ bằng BCrypt.matches, newPassword/confirm trùng, tối thiểu 6 ký tự và không vượt giới hạn BCrypt 72 byte UTF-8 theo auth hiện có.
-- [ ] Chỉ lưu hash, không log form/password, lỗi không render lại mật khẩu. Session/logout giữ theo chính sách auth hiện hành, không chuyển logout GET thành mutation.
-- [ ] Test wrong current/mismatch/UTF-8 overflow giữ hash cũ; đổi đúng rồi logout/login mới thành công, mật khẩu cũ thất bại. Fixture riêng, không sửa mật khẩu seed.
+- [x] Kiểm tra mật khẩu cũ bằng BCrypt.matches, newPassword/confirm trùng, tối thiểu 6 ký tự và không vượt giới hạn BCrypt 72 byte UTF-8 theo auth hiện có.
+- [x] Chỉ lưu hash, không log form/password, lỗi không render lại mật khẩu. Session/logout giữ theo chính sách auth hiện hành, không chuyển logout GET thành mutation.
+- [x] Test wrong current/mismatch/UTF-8 overflow giữ hash cũ; đổi đúng rồi logout/login mới thành công, mật khẩu cũ thất bại. Fixture riêng, không sửa mật khẩu seed.
 
 ### Task P5.7 — Dashboard Owner và trang chủ
 
@@ -149,13 +151,13 @@ Query tháng theo applied_at trong múi giờ báo cáo Việt Nam. Gross cash n
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
-**Git scope 2026-11-08:** admission/pilot và E2E HTTP local được tách để publication trên `feat/p59-local-integration`, kèm sửa DATETIME(6) của order gói; giữ nhánh. Evidence của tree riêng và giới hạn nghiệm thu ở [bàn giao Git](phase-5-p59-publication-2026-11-08.md). Không gộp profile/provider setup/UI đang làm và không đóng gate live từ publication này.
+**Trạng thái bàn giao 2026-11-04:** đạt **5/6 checklist**, chưa hoàn thành 100%. **P4.2-A pending chặn gate live**; sau đó còn review/migration/kích hoạt pilot P8.8 và giao dịch thật có đối soát để nghiệm thu P5.9. Khi tiếp tục implement, đọc [phần thiếu, đầu vào và trình tự tiếp tục](phase-5-p59-verification.md#tiếp-tục-p59-từ-trạng-thái-hiện-tại). Giữ checkbox live bên dưới chưa tick cho đến khi đủ bằng chứng.
 
-- [ ] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`. Ghi kết quả và hạn chế thật, không suy runtime pass từ build hoặc tài liệu.
-- [ ] E2E fixture/stub: Owner mua gói → đăng/gửi duyệt xe → Customer đặt → BEFORE agreed → 30% → Owner contract/handover → AFTER có bất đồng → Owner return → 70% → COMPLETED.
-- [ ] Nhánh lỗi: Customer/Owner cancel trước giao, advance hết hạn/late webhook và B giữ lịch, thiếu recipient/funds, payout response mất, repeated webhook, khoản gói trùng/đến muộn, nợ 70% quá hạn, gói hết hạn/gia hạn/hạ gói.
-- [ ] Browser 1440/390/320px: QR ẩn khi hết hạn, polling điều hướng đúng, form không mất dữ liệu, các trạng thái chờ không bị gọi là thành công.
+- [x] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify`. Ghi kết quả và hạn chế thật, không suy runtime pass từ build hoặc tài liệu.
+- [x] E2E fixture/stub: Owner mua gói → đăng/gửi duyệt xe → Customer đặt → BEFORE agreed → 30% → Owner contract/handover → AFTER có bất đồng → Owner return → 70% → COMPLETED.
+- [x] Nhánh lỗi: Customer/Owner cancel trước giao, advance hết hạn/late webhook và B giữ lịch, thiếu recipient/funds, payout response mất, repeated webhook, khoản gói trùng/đến muộn, nợ 70% quá hạn, gói hết hạn/gia hạn/hạ gói.
+- [x] Browser 1440/390/320px: QR ẩn khi hết hạn, polling điều hướng đúng, form không mất dữ liệu, các trạng thái chờ không bị gọi là thành công.
 - [ ] Gate live riêng: một Owner + Admin đã có kênh được phép, callback public cho local webhook, secret cấu hình đúng; người dùng chủ động thực hiện giao dịch kiểm chứng. Chưa chạy live phải ghi rõ, không dùng fixture pass thay bằng chứng nhận/chuyển thật.
-- [ ] Đồng bộ SDD/decisions/task checkpoints với kết quả; giữ baseline seed/dữ liệu legacy. Chỉ đánh dấu toàn bộ phase hoàn thành sau khi từng gate thực sự đạt.
+- [x] Đồng bộ SDD/decisions/task checkpoints với kết quả; giữ baseline seed/dữ liệu legacy. Chỉ đánh dấu toàn bộ phase hoàn thành sau khi từng gate thực sự đạt.
 
 **Hoàn thành khi:** dashboard phản ánh đúng chủ thể và tiền, quyền riêng tư/profile an toàn, luồng đã chốt được kiểm chứng end-to-end, tài liệu phân biệt thiết kế/fixture/live. Phần thiếu/thừa advance vẫn nằm backlog, không tự mở rộng trong đợt này.

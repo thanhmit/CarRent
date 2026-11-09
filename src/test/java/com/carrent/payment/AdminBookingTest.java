@@ -205,6 +205,15 @@ class AdminBookingTest {
         assertThat(f.jdbc.queryForList("SELECT * FROM bookings ORDER BY id")).isEqualTo(before);
     }
 
+    @Test void bookingPagesUseAdminNavigationAndKeepRentalActionsReadOnly() throws Exception {
+        for(String path:new String[]{"/admin/bookings","/admin/bookings/1"}) {
+            String page=html(path,1);
+            assertThat(page).contains("Điều hướng quản trị");
+            assertThat(java.util.regex.Pattern.compile("<a\\b(?=[^>]*href=\"/admin/bookings\")(?=[^>]*aria-current=\"page\")[^>]*>").matcher(page).find()).isTrue();
+            assertThat(page).doesNotContain("/admin/bookings/1/return", "/admin/bookings/1/handover", "/admin/bookings/1/resolve");
+        }
+    }
+
     private String html(String url,long actor) throws Exception {
         return f.mvc.perform(get(url).with(user(f.actor(actor)))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);

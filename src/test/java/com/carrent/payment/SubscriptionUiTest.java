@@ -12,9 +12,12 @@ class SubscriptionUiTest {
     @BeforeAll static void start() throws Exception {
         System.setProperty("carrent.subscription.enabled", "true");
         try { f = new PaymentFlowFixture(false, false); }
+        catch (Exception ex) { System.clearProperty("carrent.subscription.enabled"); throw ex; }
+    }
+    @AfterAll static void stop() throws Exception {
+        try { if (f != null) f.close(); }
         finally { System.clearProperty("carrent.subscription.enabled"); }
     }
-    @AfterAll static void stop() throws Exception { if (f != null) f.close(); }
     @BeforeEach void reset() {
         f.jdbc.update("DELETE FROM owner_subscriptions");
         f.jdbc.update("DELETE FROM subscription_orders");
@@ -41,6 +44,13 @@ class SubscriptionUiTest {
         assertThat(f.count("subscription_orders")).isZero();
     }
 
+    @Test void catalogKeepsOwnerNavigationOnTheSubscriptionsSection() throws Exception {
+        assertThat(page("/owner/subscriptions"))
+                .contains("aria-label=\"Điều hướng chủ xe\"")
+                .containsPattern("<a(?=[^>]*href=\"/owner/subscriptions\")(?=[^>]*aria-current=\"page\")[^>]*>");
+        assertThat(f.count("subscription_orders")).isZero();
+    }
+
     @Test void createIgnoresClientFinancialFieldsAndRefreshReusesIntent() throws Exception {
         long id = create();
         String path = "/owner/subscriptions/orders/" + id;
@@ -54,6 +64,18 @@ class SubscriptionUiTest {
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(path));
         assertThat(page(path)).contains("data-status=\"CANCELLED\"").doesNotContain("Hủy yêu cầu mua gói</button>");
         assertThat(f.count("owner_subscriptions")).isZero();
+    }
+
+    @Test void pendingOrderShowsTheExistingPaymentDeadlineWithoutExtendingIt() throws Exception {
+        long id = create();
+        String path = "/owner/subscriptions/orders/" + id;
+        String first = page(path);
+        assertThat(first).contains("Hạn thanh toán", "datetime=\"2026-10-30T03:15:00Z\"");
+        assertThat(page(path)).contains("datetime=\"2026-10-30T03:15:00Z\"");
+        var order = f.app.getBean(com.carrent.subscription.SubscriptionService.class).detail(id, f.actor(2));
+        assertThat(order.intent().expiresAt()).isEqualTo(java.time.Instant.parse("2026-10-30T03:15:00Z"));
+        assertThat(order.status()).isEqualTo("PENDING");
+        assertThat(f.count("payment_intents")).isOne();
     }
 
     @Test void invalidPlanAndMissingCsrfCannotCreateOrders() throws Exception {

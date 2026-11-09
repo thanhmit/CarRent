@@ -20,6 +20,13 @@ class AdminUserPermissionsTest {
         f.jdbc.update("UPDATE users SET status='ACTIVE' WHERE id=3");
     }
 
+    @Test void listAndProfileKeepTheAdminUsersNavigationCurrent() throws Exception {
+        for (String path : new String[]{"/admin/users", "/admin/users/2"}) {
+            assertThat(html(path, 1)).contains("aria-label=\"Điều hướng quản trị\"")
+                    .containsPattern("<a(?=[^>]*href=\"/admin/users\")(?=[^>]*aria-current=\"page\")[^>]*>");
+        }
+    }
+
     @Test void adminListsProfilesAndNativeStatusFormWithoutPasswordOrUnsafeMarkup() throws Exception {
         String page=html("/admin/users",1);
         assertThat(page).contains("Quản lý tài khoản", "/admin/users/2", "name=\"q\"")

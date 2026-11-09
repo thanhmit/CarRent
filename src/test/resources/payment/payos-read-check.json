@@ -1,0 +1,157 @@
+{
+  "EMPTY_LIST": {
+    "body": {
+      "code": "00",
+      "data": {
+        "payouts": [],
+        "pagination": {
+          "hasMore": false
+        }
+      }
+    },
+    "signature": "7b1c5b31b76f7d09f3e8bb93b68b298672f3bda8e3f3107afb640735614c9528"
+  },
+  "ZERO": {
+    "body": {
+      "code": "00",
+      "data": {
+        "currency": "VND",
+        "balance": "0"
+      }
+    },
+    "signature": "2725d47e8bf370f666880a5a3be1bff8eca2e3c95c840056d98b44977beb5a04"
+  },
+  "FUNDED": {
+    "body": {
+      "code": "00",
+      "data": {
+        "currency": "VND",
+        "balance": "5000.00"
+      }
+    },
+    "signature": "06b944b5aa6408ac474397319fc7adbc79f5d735c9812ac5b87facf139917978"
+  },
+  "FRACTION": {
+    "body": {
+      "code": "00",
+      "data": {
+        "currency": "VND",
+        "balance": "0.01"
+      }
+    },
+    "signature": "1a41f71d31b6f1ef5798ac4a383ea877a58767fc0bd0f4c237249d3424c7692a"
+  },
+  "NEGATIVE": {
+    "body": {
+      "code": "00",
+      "data": {
+        "currency": "VND",
+        "balance": "-1"
+      }
+    },
+    "signature": "043f87572168e42b0bb41126fa25935b00a0504c9c36c0e384f4c0bae7a2cf35"
+  },
+  "OVERFLOW": {
+    "body": {
+      "code": "00",
+      "data": {
+        "currency": "VND",
+        "balance": "9223372036854775808"
+      }
+    },
+    "signature": "1e9cb74c47d091e0fd69944f50ceb753ca1660c19a15aaede1963549ec387c94"
+  },
+  "WRONG_CURRENCY": {
+    "body": {
+      "code": "00",
+      "data": {
+        "currency": "USD",
+        "balance": "5000"
+      }
+    },
+    "signature": "e731949212d14dc46a0e660ad63397fa729ac5203ff48e1f7bef73afc146dfb7"
+  },
+  "MISSING_PAGINATION": {
+    "body": {
+      "code": "00",
+      "data": {
+        "payouts": []
+      }
+    },
+    "signature": "e0ed9841436650181f57677ccbf5fc364e11cf4b8749c36d491c9b6372985946"
+  },
+  "STRING_HAS_MORE": {
+    "body": {
+      "code": "00",
+      "data": {
+        "payouts": [],
+        "pagination": {
+          "hasMore": "false"
+        }
+      }
+    },
+    "signature": "049876816d5b11e45c5d252902b3bc82eea7f5fbe77cf419952fc8bf507816ed"
+  },
+  "FIND_MISSING_PAGINATION": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "payouts": [
+          {
+            "id": "payout_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "transactions": [
+              {
+                "id": "tx_fixture_1",
+                "referenceId": "refund-1-attempt-1",
+                "amount": 5000,
+                "description": "Hoàn tiền & cọc / 100%",
+                "toBin": "970422",
+                "toAccountNumber": "0000000123",
+                "state": "SUCCEEDED"
+              }
+            ],
+            "approvalState": "APPROVED",
+            "createdAt": "2026-10-27T03:00:00.000Z",
+            "category": []
+          }
+        ],
+        "pagination": {}
+      }
+    },
+    "signature": "42bba87d19f6ec2a6ae2fe3ad08ad79c1f0e8c2f76d03a8008134895b2932fe4"
+  },
+  "FIND_STRING_HAS_MORE": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "payouts": [
+          {
+            "id": "payout_fixture_1",
+            "referenceId": "refund-1-attempt-1",
+            "transactions": [
+              {
+                "id": "tx_fixture_1",
+                "referenceId": "refund-1-attempt-1",
+                "amount": 5000,
+                "description": "Hoàn tiền & cọc / 100%",
+                "toBin": "970422",
+                "toAccountNumber": "0000000123",
+                "state": "SUCCEEDED"
+              }
+            ],
+            "approvalState": "APPROVED",
+            "createdAt": "2026-10-27T03:00:00.000Z",
+            "category": []
+          }
+        ],
+        "pagination": {
+          "hasMore": "false"
+        }
+      }
+    },
+    "signature": "bc141c5d4eda4ec89f7b02752eae42faa903d66f799abc274c98d1607c4cdac6"
+  }
+}

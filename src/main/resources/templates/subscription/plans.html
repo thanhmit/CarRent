@@ -2,29 +2,34 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Gói đăng xe')}"></head>
 <body class="bg-surface font-body-md text-on-surface">
-<div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
-  <section class="max-w-4xl mx-auto my-space-xl flex flex-col gap-space-lg" id="subscription-plans">
-    <h1 class="font-headline-md text-headline-md">Gói đăng xe</h1>
+<th:block th:replace="~{fragments/workspace :: sidebar('subscriptions', null)}"></th:block>
+<div class="lg:pl-64 min-w-0">
+  <header th:replace="~{fragments/workspace :: topbar('Gói đăng xe')}"></header>
+<main class="p-4 sm:p-6 lg:p-8 min-w-0">
+  <section class="max-w-6xl mx-auto flex flex-col gap-6 [overflow-wrap:anywhere]" id="subscription-plans">
+    <header class="flex flex-col gap-2"><h1 class="font-headline-md text-headline-md">Gói đăng xe</h1><p class="text-on-surface-variant">Chọn hạn mức phù hợp để đăng xe và nhận yêu cầu thuê mới.</p></header>
     <div th:replace="~{subscription/overview :: overview}"></div>
-    <p>Mỗi lần mua có thời hạn 30 ngày. Khi gói còn hạn, chỉ có thể gia hạn cùng loại; thời gian được cộng vào hạn hiện tại.</p>
-    <p>Thanh toán vào tài khoản Admin. Gói chỉ được kích hoạt sau khi hệ thống xác nhận khoản chuyển hợp lệ.</p>
-    <p>Gói không hoàn phí sau khi kích hoạt. Không tự động thu phí gia hạn.</p>
-    <p th:if="${errorMessage}" th:text="${errorMessage}" role="alert" class="text-error"></p>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
-      <article th:each="plan : ${plans}" class="bg-surface-container-lowest rounded-xl p-space-lg flex flex-col gap-space-md">
-        <h2 class="font-title-lg" th:text="${plan.name()}"></h2>
-        <p th:text="${plan.quota + ' xe / ' + plan.durationDays + ' ngày'}"></p>
-        <p class="font-bold" th:text="${#numbers.formatInteger(plan.price, 0, 'POINT') + ' VNĐ'}"></p>
-        <form th:if="${!subscription.active or subscription.plan == plan}" method="post" th:action="@{/owner/subscriptions/orders}">
+    <p th:if="${errorMessage}" th:text="${errorMessage}" role="alert" class="rounded-xl border border-error/30 bg-error-container p-4 text-on-error-container"></p>
+    <section class="flex flex-col gap-4" aria-labelledby="catalog-heading">
+      <div class="flex flex-col gap-2"><h2 id="catalog-heading" class="font-title-lg text-title-lg">Các gói đăng xe</h2><p class="text-on-surface-variant">Mỗi lần mua có thời hạn 30 ngày. Khi gói còn hạn, chỉ có thể gia hạn cùng loại; thời gian được cộng vào hạn hiện tại.</p></div>
+    <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
+      <article th:each="plan : ${plans}" class="bg-surface-container-lowest rounded-xl border border-outline-variant/50 p-5 sm:p-6 flex flex-col gap-4 min-w-0" th:classappend="${subscription.active and subscription.plan == plan ? 'border-secondary' : ''}">
+        <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-title-lg text-title-lg" th:text="${plan.name()}"></h3><span th:if="${subscription.active and subscription.plan == plan}" class="rounded-full bg-secondary-container text-on-secondary-container px-3 py-1 font-label-md text-label-md">Gói hiện tại</span></div>
+        <p class="font-headline-md text-headline-md tabular-nums" th:text="${#numbers.formatInteger(plan.price, 0, 'POINT') + ' VNĐ'}"></p>
+        <p class="text-on-surface-variant" th:text="${plan.quota + ' xe / ' + plan.durationDays + ' ngày'}"></p>
+        <p class="text-on-surface-variant">Hạn mức gồm cả xe đã chọn đăng đang chờ duyệt.</p>
+        <form class="mt-auto" th:if="${!subscription.active or subscription.plan == plan}" method="post" th:action="@{/owner/subscriptions/orders}">
           <input type="hidden" name="plan" th:value="${plan.name()}"/>
-          <button type="submit" class="w-full p-space-sm rounded-lg bg-primary text-on-primary" th:text="${subscription.active ? 'Gia hạn ' + plan.name() : 'Chọn gói ' + plan.name()}"></button>
+          <button type="submit" class="min-h-11 w-full rounded-xl bg-secondary text-on-secondary px-4 py-3 font-label-md text-label-md hover:bg-secondary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary" th:text="${subscription.active ? 'Gia hạn ' + plan.name() : 'Chọn gói ' + plan.name()}"></button>
         </form>
-        <p th:if="${subscription.active and subscription.plan != plan}">Chỉ có thể chọn loại gói này sau khi gói hiện tại hết hạn.</p>
+        <p th:if="${subscription.active and subscription.plan != plan}" class="mt-auto rounded-xl bg-surface-container-low p-4 text-on-surface-variant">Chỉ có thể chọn loại gói này sau khi gói hiện tại hết hạn.</p>
       </article>
     </div>
-    <a th:href="@{/owner/cars}" class="text-secondary underline">Xe của tôi</a>
+    </section>
+    <aside class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-3" aria-labelledby="purchase-heading"><h2 id="purchase-heading" class="font-title-md text-title-md">Trước khi mua hoặc gia hạn</h2><p>Thanh toán vào tài khoản Admin. Gói chỉ được kích hoạt sau khi hệ thống xác nhận khoản chuyển hợp lệ.</p><p>Gói không hoàn phí sau khi kích hoạt. Không tự động thu phí gia hạn.</p><p class="text-on-surface-variant">Nếu đã có yêu cầu cùng gói đang chờ, nút mua hoặc gia hạn sẽ mở lại yêu cầu đó; hạn thanh toán không bắt đầu lại.</p></aside>
+    <a th:href="@{/owner/cars}" class="min-h-11 inline-flex items-center justify-center self-start rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Xe của tôi</a>
   </section>
 </main>
+</div>
 </body>
 </html>

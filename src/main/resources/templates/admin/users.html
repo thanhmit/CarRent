@@ -1,27 +1,39 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Quản lý tài khoản')}"></head>
-<body class="bg-surface font-body-md text-on-surface"><div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-20 pb-10 px-4 sm:px-8"><div class="max-w-6xl mx-auto flex flex-col gap-6">
-  <header><a th:href="@{/admin/dashboard}" class="text-secondary underline">Tổng quan quản trị</a><h1 class="font-headline-md text-headline-md">Quản lý tài khoản</h1><p>Tra cứu hồ sơ và quản lý trạng thái. Khoản nợ hoặc hoàn tiền quá hạn không tự động chặn tài khoản.</p></header>
-  <form method="get" th:action="@{/admin/users}" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface-container-low p-4 rounded-xl">
-    <label class="flex flex-col gap-1 min-w-0">Tìm tên hoặc email<input type="search" name="q" maxlength="150" th:value="${q}" class="min-w-0 w-full rounded-lg border border-outline p-2"/></label>
-    <label class="flex flex-col gap-1 min-w-0">Vai trò<select name="role" class="min-w-0 w-full rounded-lg border border-outline p-2 bg-surface-container-lowest"><option value="">Tất cả</option><option th:each="r : ${roleLabels}" th:value="${r.key}" th:selected="${r.key == role}" th:text="${r.value}"></option></select></label>
-    <label class="flex flex-col gap-1 min-w-0">Trạng thái<select name="status" class="min-w-0 w-full rounded-lg border border-outline p-2 bg-surface-container-lowest"><option value="">Tất cả</option><option th:each="s : ${statusLabels}" th:value="${s.key}" th:selected="${s.key == status}" th:text="${s.value}"></option></select></label>
-    <div class="flex flex-wrap items-end gap-3"><button type="submit" class="bg-primary text-on-primary rounded-lg px-5 py-2">Lọc</button><a th:href="@{/admin/users}" class="text-secondary underline py-2">Xóa bộ lọc</a></div>
+<body class="bg-surface font-body-md text-on-surface">
+<th:block th:replace="~{fragments/workspace :: sidebar('users', null)}"></th:block>
+<div class="lg:pl-64 min-w-0">
+<header th:replace="~{fragments/workspace :: topbar('Quản lý tài khoản')}"></header>
+<main id="admin-users" class="p-4 sm:p-6 lg:p-8 min-w-0"><div class="max-w-6xl mx-auto flex flex-col gap-6 [overflow-wrap:anywhere]">
+  <header class="flex flex-col items-start gap-3"><a th:href="@{/admin/dashboard}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Tổng quan quản trị</a><h1 class="font-headline-md text-headline-md">Quản lý tài khoản</h1><p class="text-on-surface-variant">Tra cứu hồ sơ và quản lý trạng thái. Khoản nợ hoặc hoàn tiền quá hạn không tự động chặn tài khoản.</p></header>
+  <form method="get" th:action="@{/admin/users}" class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 bg-surface-container-lowest border border-outline-variant/50 p-5 sm:p-6 rounded-xl" aria-label="Bộ lọc tài khoản">
+    <label class="flex flex-col gap-1 min-w-0">Tìm tên, email hoặc điện thoại<input type="search" name="q" maxlength="150" th:value="${q}" class="min-h-11 min-w-0 w-full rounded-xl border border-outline px-3 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"/></label>
+    <label class="flex flex-col gap-1 min-w-0">Vai trò<select name="role" class="min-h-11 min-w-0 w-full rounded-xl border border-outline px-3 py-3 bg-surface-container-lowest focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"><option value="">Tất cả</option><option th:each="r : ${roleLabels}" th:value="${r.key}" th:selected="${r.key == role}" th:text="${r.value}"></option></select></label>
+    <label class="flex flex-col gap-1 min-w-0">Trạng thái<select name="status" class="min-h-11 min-w-0 w-full rounded-xl border border-outline px-3 py-3 bg-surface-container-lowest focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"><option value="">Tất cả</option><option th:each="s : ${statusLabels}" th:value="${s.key}" th:selected="${s.key == status}" th:text="${s.value}"></option></select></label>
+    <div class="flex flex-wrap items-end gap-3"><button type="submit" class="min-h-11 bg-secondary text-on-secondary rounded-xl px-5 py-3 font-label-md text-label-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary">Lọc</button><a th:href="@{/admin/users}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Xóa bộ lọc</a></div>
   </form>
   <p th:text="${'Tìm thấy ' + users.totalElements + ' tài khoản'}"></p>
-  <p th:if="${users.empty}">Không tìm thấy tài khoản phù hợp.</p>
-  <section aria-label="Danh sách tài khoản" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    <article th:each="u : ${users}" class="min-w-0 break-words bg-surface-container-lowest rounded-xl p-5 flex flex-col gap-3">
-      <h2 class="font-title-md text-title-md" th:text="${u.fullName}"></h2><p th:text="${u.email}"></p>
-      <p th:text="${roleLabels[u.role] + ' · ' + statusLabels[u.status]}"></p>
-      <a class="text-secondary underline" th:href="@{/admin/users/{id}(id=${u.id})}" th:aria-label="${'Xem tài khoản #' + u.id}">Xem hồ sơ</a>
-    </article>
+  <p th:if="${users.empty}" class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-6 text-on-surface-variant" role="status">Không tìm thấy tài khoản phù hợp.</p>
+  <section aria-label="Danh sách tài khoản" class="min-w-0 flex flex-col gap-2">
+    <p id="users-scroll-help" class="xl:hidden font-caption text-caption text-on-surface-variant">Cuộn ngang để xem đủ thông tin tài khoản.</p>
+    <div id="users-table-region" class="min-w-0 overflow-x-auto rounded-xl border border-outline-variant/50 bg-surface-container-lowest focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" role="region" aria-label="Bảng tài khoản" aria-describedby="users-scroll-help" tabindex="0">
+    <table class="w-full min-w-[900px] text-left table-fixed"><caption class="sr-only">Thông tin tài khoản và liên kết xem hồ sơ</caption>
+      <thead class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md"><tr><th scope="col" class="p-4 w-[28%]">Người dùng</th><th scope="col" class="p-4 w-[15%]">Điện thoại</th><th scope="col" class="p-4 w-[14%]">Vai trò</th><th scope="col" class="p-4 w-[14%]">Ngày tham gia</th><th scope="col" class="p-4 w-[15%]">Trạng thái</th><th scope="col" class="p-4 w-[14%]">Thao tác</th></tr></thead>
+      <tbody><tr th:each="u : ${users}" class="border-t border-outline-variant/40 hover:bg-surface-container-low/50 align-top">
+        <th scope="row" class="p-4 font-normal"><span class="block font-title-md text-title-md" th:text="${u.fullName}"></span><span class="block text-on-surface-variant mt-1" th:text="${u.email}"></span></th>
+        <td class="p-4" th:text="${u.phone ?: 'Chưa cung cấp'}"></td>
+        <td class="p-4"><span class="inline-flex rounded-full bg-surface-container px-3 py-1 font-label-md text-label-md" th:text="${roleLabels[u.role]}"></span></td>
+        <td class="p-4"><time th:datetime="${u.createdAt}" th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy')}"></time></td>
+        <td class="p-4"><span class="inline-flex rounded-full px-3 py-1 font-label-md text-label-md" th:classappend="${u.status.name() == 'ACTIVE' ? 'bg-tertiary-fixed text-on-tertiary-fixed' : (u.status.name() == 'BANNED' ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-on-surface-variant')}" th:text="${statusLabels[u.status]}"></span></td>
+        <td class="p-4"><a class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant px-3 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:href="@{/admin/users/{id}(id=${u.id})}" th:aria-label="${'Xem tài khoản #' + u.id}">Xem hồ sơ</a></td>
+      </tr></tbody>
+    </table>
+    </div>
   </section>
   <nav aria-label="Trang tài khoản" class="flex flex-wrap gap-4">
-    <a th:if="${users.hasPrevious()}" class="text-secondary underline" th:href="@{/admin/users(q=${q},role=${role},status=${status},page=${users.number - 1})}">Trang trước</a>
-    <span th:text="${'Trang ' + (users.number + 1)}"></span>
-    <a th:if="${users.hasNext()}" class="text-secondary underline" th:href="@{/admin/users(q=${q},role=${role},status=${status},page=${users.number + 1})}">Trang sau</a>
+    <a th:if="${users.hasPrevious()}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:href="@{/admin/users(q=${q},role=${role},status=${status},page=${users.number - 1})}">Trang trước</a>
+    <span class="min-h-11 inline-flex items-center px-3" th:text="${'Trang ' + (users.number + 1)}"></span>
+    <a th:if="${users.hasNext()}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:href="@{/admin/users(q=${q},role=${role},status=${status},page=${users.number + 1})}">Trang sau</a>
   </nav>
-</div></main></body></html>
+</div></main></div></body></html>

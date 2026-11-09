@@ -43,7 +43,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 /** Real MySQL/MVC; read fixtures roll back, queued HTTP fixtures commit and are deleted by exact IDs. */
-@SpringBootTest(properties = {"debug=false", "logging.level.root=WARN", "logging.level.org.springframework=WARN",
+@SpringBootTest(properties = {"carrent.rental.workflow.enabled=false", "debug=false", "logging.level.root=WARN", "logging.level.org.springframework=WARN",
         "logging.level.org.hibernate=WARN", "logging.level.org.hibernate.SQL=OFF", "spring.main.banner-mode=off"})
 @Transactional
 @Tag("integration")
@@ -234,6 +234,24 @@ class CarDateSearchIntegrationTest {
     }
 
     @ParameterizedTest
+    @CsvSource({"PENDING,1", "CONFIRMED,1", "CANCELLED,0", "REJECTED,0", "COMPLETED,0", "EXPIRED,0"})
+    void detailCalendarOnlyExposesActiveFutureRangesForSelectedCar(BookingStatus status, int count) throws Exception {
+        Car selected = car("Calendar");
+        booking(selected, status, start.plusDays(1), start.plusDays(3));
+        booking(selected, BookingStatus.CONFIRMED, LocalDate.now().minusDays(3), LocalDate.now().minusDays(1));
+        booking(car("Other calendar"), BookingStatus.CONFIRMED, start.plusDays(5), start.plusDays(8));
+        var result = mvc.perform(get("/cars/" + selected.getId())).andReturn();
+        assertThat(result.getResponse().getStatus()).isEqualTo(200);
+        assertThat(result.getModelAndView().getModel()).containsKey("busyDateRanges");
+        var ranges = (java.util.List<?>) result.getModelAndView().getModel().get("busyDateRanges");
+        assertThat(ranges).hasSize(count);
+        String body = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(body).contains("data-car-availability", "car-availability.js");
+        assertThat(body).doesNotContain("data-customer", "data-booking-id");
+        if (count == 1) assertThat(body).contains("data-start=\"" + start.plusDays(1) + "\"", "data-end=\"" + start.plusDays(3) + "\"");
+    }
+
+    @ParameterizedTest
     @CsvSource({"PENDING,1,3,false", "CONFIRMED,1,3,false", "CANCELLED,1,3,true",
             "REJECTED,1,3,true", "COMPLETED,1,3,true", "PENDING,-4,0,true",
             "CONFIRMED,4,8,true", "CONFIRMED,-2,2,false", "PENDING,2,6,false",
@@ -374,13 +392,13 @@ class CarDateSearchIntegrationTest {
     }
 
     @Test
-    void directDetailAndOwnerPreviewHaveNoAvailabilityForm() throws Exception {
+    void publicDetailHasCalendarButOwnerPreviewCannotBook() throws Exception {
         Car car = car("Direct detail");
         em.flush();
         var direct = mvc.perform(get("/cars/" + car.getId())).andReturn();
         assertThat(direct.getResponse().getStatus()).isEqualTo(200);
         assertThat(direct.getResponse().getContentAsString(StandardCharsets.UTF_8))
-                .contains("Đặt thuê xe").doesNotContain("Kiểm tra khả dụng", "type=\"date\"");
+                .contains("Đặt thuê xe", "data-car-availability", "type=\"date\"");
         car.setListingStatus(ListingStatus.INACTIVE);
         em.flush();
         assertThat(mvc.perform(get("/cars/" + car.getId()).session(session(customer))).andReturn()
@@ -388,6 +406,6 @@ class CarDateSearchIntegrationTest {
         var preview = mvc.perform(get("/cars/" + car.getId()).session(session(owner))).andReturn();
         assertThat(preview.getResponse().getStatus()).isEqualTo(200);
         assertThat(preview.getResponse().getContentAsString(StandardCharsets.UTF_8))
-                .contains("Bản xem trước").doesNotContain("Đặt thuê xe", "Kiểm tra khả dụng");
+                .contains("Bản xem trước").doesNotContain("Đặt thuê xe", "data-car-availability", "data-busy-range");
     }
 }

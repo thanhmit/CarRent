@@ -185,7 +185,7 @@ class FinalRentalJourneyTest {
         assertThat(f.jdbc.queryForObject("SELECT COUNT(*) FROM payment_obligations WHERE subject_type='BOOKING'", Long.class)).isZero();
     }
 
-    @Test void admissionIsExplicitScopedAndFailsClosedWhenAHandlerIsMissing() throws Exception {
+    @Test void inspectionAdmissionIsIndependentOfPaymentPilotAndFailsClosedWhenAHandlerIsMissing() throws Exception {
         // Each restart reads real configuration; posted workflow/inspection fields are never admission controls.
         int day = 1;
         for (String mode : new String[]{"default-off", "no-pair", "invalid-pair", "nonpilot", "valid-no-subscription", "no-advance", "no-balance",
@@ -195,7 +195,6 @@ class FinalRentalJourneyTest {
                     "carrent.rental.balance.enabled", Boolean.toString(!mode.equals("no-balance")),
                     "fixture.payment-pilot.owner-id", mode.equals("no-pair") ? "0" : "2",
                     "fixture.payment-pilot.admin-id", mode.equals("no-pair") ? "0" : mode.equals("invalid-pair") ? "2" : mode.equals("missing-admin") ? "9999" : "1"));
-            if (mode.equals("default-off")) settings.put("carrent.rental.workflow.enabled", null);
             configure(settings, true);
             f.jdbc.update("DELETE FROM notifications");
             f.reset();
@@ -213,7 +212,7 @@ class FinalRentalJourneyTest {
                     .param("startDate", date).param("endDate", java.time.LocalDate.parse(date).plusDays(1).toString())
                     .param("workflowVersion", "VIETQR_V1").param("inspectionRequired", "true")
                     .param("status", "COMPLETED").param("advancePaidAt", START.toString())).andReturn();
-            if (mode.equals("no-advance") || mode.equals("no-balance") || mode.endsWith("admin") || mode.endsWith("owner")) {
+            if (mode.equals("no-advance") || mode.equals("no-balance") || mode.endsWith("owner")) {
                 assertThat(response.getResponse().getStatus()).as(mode).isEqualTo(200);
                 assertThat(response.getModelAndView().getViewName()).isEqualTo("booking/create");
                 assertThat(f.count("bookings")).isEqualTo(before);
@@ -221,8 +220,8 @@ class FinalRentalJourneyTest {
                 assertThat(response.getResponse().getStatus()).as(mode).isEqualTo(302);
                 long id = lastId(response.getResponse().getRedirectedUrl());
                 var booking = bookings().getBookingForView(id, f.actor(4));
-                assertThat(booking.getWorkflowVersion()).as(mode).isEqualTo(mode.equals("valid-no-subscription") ? "VIETQR_V1" : "LEGACY");
-                assertThat(booking.isInspectionRequired()).isEqualTo(mode.equals("valid-no-subscription"));
+                assertThat(booking.getWorkflowVersion()).as(mode).isEqualTo(mode.equals("default-off") ? "LEGACY" : "VIETQR_V1");
+                assertThat(booking.isInspectionRequired()).isEqualTo(!mode.equals("default-off"));
                 assertThat(booking.getStatus()).isEqualTo(BookingStatus.PENDING);
                 assertThat(booking.getAdvancePaidAt()).isNull();
                 assertThat(booking.getVehicleReceivedAt()).isNull();

@@ -116,11 +116,11 @@ Mỗi public type ở file tương ứng trong map file. payoutChannelId do serv
 
 **Hoàn thành theo phạm vi mới:** contract kỹ thuật + verifier/client/records/configuration + test offline có bằng chứng tại checkpoint đợt 1. Những kết luận 45/85 và P4.2 chưa hoàn tất trong checkpoint trước lần tách là lịch sử, không bị viết lại thành live pass.
 
-### Task P4.2-A — Tích hợp tài khoản thực tế và kiểm chứng provider/live — hoãn
+### Task P4.2-A — Tích hợp tài khoản thực tế và kiểm chứng provider/live — đang hoàn thiện
 
 **Phụ trách:** `@thanhmit` · **Review:** `@huy69332`.
 
-**Trạng thái:** task mới theo yêu cầu chủ dự án, **chưa triển khai**. Chỉ bắt đầu sau khi chủ dự án báo đã đăng ký/kích hoạt đủ tài khoản; nhận định hạng mục có vẻ đủ không phải bằng chứng activation, credential hoặc live pass. Không chặn P4.3–P4.10 phát triển offline.
+**Trạng thái cập nhật 2026-11-09:** đã triển khai adapter VietQR lookup độc lập, mặc định tắt, và profile chẩn đoán không chi tiền; preview/confirm vẫn xác minh riêng từng refund. Checklist provider/live dưới đây **chưa đóng**. Signed GET payOS hiện trả HTTP403 cho cả hai endpoint list/balance; chưa đủ bằng chứng kết luận nguyên nhân. Xem [bàn giao triển khai](p42a-p88-implementation-handoff-2026-11-09.md) và [trường vận hành cần bổ sung](../p42a-p88-operator-guide-2026-11-09.md). Không suy test local thành activation hoặc giao dịch thật.
 
 **Đầu vào:** một Owner và Admin, mỗi chủ thể có ngân hàng thu SePay, webhook secret và API token truy vấn; kênh chi payOS và bộ client-id/api-key/checksum-key; ví nguồn Bảo Kim liên kết đúng chủ thể, tiền nguồn/credit dịch vụ phù hợp. Credential chỉ ở cấu hình local/biến môi trường; không đưa key/OTP/mật khẩu vào tài liệu, fixture hoặc log.
 

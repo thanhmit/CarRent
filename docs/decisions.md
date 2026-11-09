@@ -1,7 +1,7 @@
 # CarRent — Hồ sơ quyết định (Decisions)
 
 **Ngày chốt:** 2026-10-09
-**Liên quan:** `CarRent.md` §16 (10 câu hỏi mở), `docs/SDD.md` v2.52
+**Liên quan:** `CarRent.md` §16 (10 câu hỏi mở), `docs/SDD.md` v2.55
 **Trạng thái:** Quyết định gốc và lịch sử được giữ; D-25A đồng bộ hợp đồng VIETQR_V1 hiện hành từ roadmap ngày 2026-10-27, cập nhật 2026-11-02 cho P6.12/P6.13. Kiểm chứng offline không thay gate provider/live.
 
 Quy ước: **D-xx** là số quyết định. "Mặc định §16" = chấp nhận đề xuất mặc định trong CarRent.md v1.0.
@@ -205,3 +205,10 @@ Admin theo dõi booking/evidence/30–70/receipts/refunds bằng GET chỉ đọ
 | D-25A | Hiện hành: 30/70, Owner hợp đồng/giao/nhận lại, auto-COMPLETED, ảnh private, timeline Admin chỉ đọc |
 | D-26 | Chọn khoảng thuê ở sidebar Tìm xe, lọc lịch trước phân trang, bỏ kiểm tra riêng tại chi tiết, điền sẵn ngày đặt thuê |
 | D-27 | Nền tài chính: SePay/payOS, durable money states, handler Phase 6/8, giữ legacy và tách offline/live gates |
+
+
+## Bổ sung kiểm chứng P5.8/P5.9 local — 2026-11-04
+
+**Checkpoint P5.8 + P5.9 local — 2026-11-04:** P5.8 hoàn thành **5/5**: ma trận quyền/CSRF/HMAC, biên thời gian, GET chỉ đọc, queue/quota/restart và tài liệu hiện hành. Sửa stale Owner/Admin khi mutation xe, vòng khóa notification/Admin status và HTTP405; regression RED/GREEN được giữ. P5.9 hoàn thành **5/6 checklist local**, còn **gate live**: hành trình HTTP mua gói → tạo/duyệt xe → booking mới → BEFORE →30%→Owner hợp đồng/giao→AFTER bất đồng→nhận lại→70%→COMPLETED; lối vào VIETQR_V1 mặc định tắt, giới hạn pilot và quyền Customer hiện tại. Full isolated **clean verify 1053/1053 JUnit, 0 failure/error/skip**, JAR; Node polling **6/6**; Chrome **256/256**, 108PNG tại1440/390/320. **83/86 task**, còn3 (`ducbinhnguyen07ars`2: P5.9/P8.8; `thanhmit`1: P4.2-A). **P5.9/P8.8/P4.2-A chưa đóng**, chưa có bằng chứng giao dịch/provider/human/migration live. Bảo toàn DB ứng dụng/config/seed/uploads/phase0/dirty prerequisites/refs/index; không kích hoạt hoặc Git publication. Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review.
+
+D-25A/D-27 giữ hợp đồng30/70 hiện hành. Lối vào booking mới có cờ server `carrent.rental.workflow.enabled` mặc địnhfalse, đúng cặp pilot và role/ACTIVE hiện tại, đủ advance/balance handlers; không thay dữ liệu legacy hoặc cấp quyền từ form. Guard mutation xe dùng khóa actor current trước aggregate; Admin status giữ ID order và READ cho actor/WRITE cho target, tránh vòng chờ notification FK. GET giữ chỉ đọc. Xem [audit](plans/phase-5-p58-audit.md), [E2E/live gates](plans/phase-5-p59-verification.md) và [bàn giao](plans/phase-5-batch-6-handoff.md). Không xem checkpoint này là phê duyệt human/live.

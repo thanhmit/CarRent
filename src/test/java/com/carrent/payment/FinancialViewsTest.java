@@ -69,6 +69,7 @@ class FinancialViewsTest {
     @Test void reviewReceiptsArePagedAndUnmatchedMoneyNeverLeaksAcrossCollectorsOrToPayers() throws Exception {
         var processor = f.app.getBean(ReceiptProcessor.class);
         for (int i = 0; i < 21; i++) processor.process(f.receive(12000 + i, null, Integer.toString(100001 + i)));
+        f.jdbc.update("DELETE FROM payment_obligations WHERE id=201");
         String first = html("/payment/finances?view=collected", 2);
         assertThat(first).contains("100.021", "100.002", "Trang sau").doesNotContain("100.001 VNĐ");
         assertThat(html("/payment/finances?view=collected&page=1", 2)).contains("100.001 VNĐ").doesNotContain("100.021", "Trang sau");
@@ -81,6 +82,24 @@ class FinancialViewsTest {
             f.jdbc.update("UPDATE users SET status='BANNED' WHERE id=2");
             f.mvc.perform(get("/payment/finances?view=collected").with(user(stale))).andExpect(status().isForbidden());
         } finally { f.jdbc.update("DELETE FROM users WHERE id=99001"); }
+    }
+
+    @Test void refundOnlyPaginationKeepsScopeAndShowsTheLastRowWithoutOtherSources() throws Exception {
+        long original = refund();
+        for (int i = 0; i < 20; i++) f.jdbc.update("""
+                INSERT INTO refunds(business_key,receipt_id,payout_channel_id,recipient_user_id,amount,reason,
+                status,created_at,updated_at)
+                SELECT ?,receipt_id,payout_channel_id,recipient_user_id,?,reason,status,created_at,updated_at
+                FROM refunds WHERE id=?
+                """, "UI02:PAGING:" + i, 100001 + i, original);
+        String first = html("/payment/finances?view=refunds", 4);
+        assertThat(first).contains("100.020 VNĐ", "Trang sau", "view=refunds&amp;page=1")
+                .doesNotContain("540.000 VNĐ", "id=\"obligations-heading\"", "id=\"review-heading\"");
+        String last = html("/payment/finances?view=refunds&page=1", 4);
+        assertThat(last).contains("540.000 VNĐ", "Trang trước", "view=refunds&amp;page=1")
+                .doesNotContain("100.020 VNĐ", "Trang sau");
+        assertThat(html("/payment/finances?view=paid&page=1", 4))
+                .contains("Chưa có khoản thanh toán trong phạm vi này.", "540.000 VNĐ");
     }
 
     @Test void adminCollectionReviewUsesAdminChannelAndOwnerCanSeeOnlyTheirMatchedSubscription() throws Exception {

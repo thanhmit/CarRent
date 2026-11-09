@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(title='Hồ sơ của tôi')}"></head>
+<body class="bg-surface font-body-md text-on-surface min-h-screen"><div th:replace="~{fragments/header :: header}"></div>
+<main class="pt-24 pb-10 px-4 sm:px-8"><div class="max-w-2xl mx-auto space-y-6">
+  <header><h1 class="font-headline-md text-headline-md">Hồ sơ của tôi</h1><p class="text-on-surface-variant mt-2">Thông tin tài khoản CarRent của bạn.</p></header>
+  <p th:if="${successMessage}" th:text="${successMessage}" role="status" class="bg-tertiary-fixed p-4 rounded-xl"></p>
+  <section class="bg-surface-container-lowest p-5 sm:p-6 rounded-xl shadow-sm break-words" aria-label="Thông tin tài khoản">
+    <dl class="grid sm:grid-cols-2 gap-5">
+      <div class="min-w-0"><dt class="text-on-surface-variant">Họ và tên</dt><dd class="mt-1 font-semibold" th:text="${profile.fullName}"></dd></div>
+      <div class="min-w-0"><dt class="text-on-surface-variant">Email</dt><dd class="mt-1" th:text="${profile.email}"></dd></div>
+      <div class="min-w-0"><dt class="text-on-surface-variant">Số điện thoại</dt><dd class="mt-1" th:text="${profile.phone ?: 'Chưa cung cấp'}"></dd></div>
+      <div><dt class="text-on-surface-variant">Vai trò</dt><dd class="mt-1" th:text="${profile.role.name() == 'ADMIN' ? 'Quản trị viên' : (profile.role.name() == 'OWNER' ? 'Chủ xe' : 'Khách thuê xe')}"></dd></div>
+      <div><dt class="text-on-surface-variant">Ngày tạo tài khoản</dt><dd class="mt-1" th:text="${#temporals.format(profile.createdAt,'dd/MM/yyyy HH:mm')}"></dd></div>
+    </dl>
+  </section>
+  <nav class="flex flex-wrap gap-3" aria-label="Quản lý hồ sơ"><a th:href="@{/profile/edit}" class="bg-primary text-on-primary rounded-lg px-5 py-3">Sửa hồ sơ</a><a th:href="@{/profile/change-password}" class="bg-surface-container-high rounded-lg px-5 py-3">Đổi mật khẩu</a></nav>
+</div></main></body></html>

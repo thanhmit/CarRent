@@ -323,7 +323,8 @@ class BeforeInspectionTest {
         f.mvc.perform(get("/owner/bookings/1").with(user(f.actor(2))))
                 .andExpect(status().isOk()).andExpect(content().string(containsString("Chấp nhận yêu cầu")));
         f.mvc.perform(post("/owner/bookings/1/confirm").with(user(f.actor(2))).with(csrf()))
-                .andExpect(status().is3xxRedirection()).andExpect(flash().attribute("successMessage", "Đã chấp nhận yêu cầu. Vui lòng chuẩn bị biên bản trước thuê."));
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/bookings/1/inspections/BEFORE"))
+                .andExpect(flash().attribute("successMessage", "Đã chấp nhận yêu cầu. Vui lòng chuẩn bị biên bản trước thuê."));
         f.mvc.perform(get("/owner/bookings/1").with(user(f.actor(2))))
                 .andExpect(status().isOk()).andExpect(content().string(containsString("/bookings/1/inspections/BEFORE")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(containsString("/owner/bookings/1/confirm\""))));

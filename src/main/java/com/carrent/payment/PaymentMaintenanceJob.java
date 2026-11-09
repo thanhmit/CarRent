@@ -8,6 +8,7 @@ import java.util.concurrent.RejectedExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.carrent.payment.PaymentMaintenanceWork.Kind;
 
@@ -19,18 +20,22 @@ public class PaymentMaintenanceJob {
     private final PayoutWorker payouts;
     private final Executor domainExecutor;
     private final Executor payoutExecutor;
+    private final boolean payoutEnabled;
     private final EnumMap<Kind, Long> cursors = new EnumMap<>(Kind.class);
     private final Set<String> queued = ConcurrentHashMap.newKeySet();
 
     public PaymentMaintenanceJob(PaymentMaintenanceWork work, ReceiptProcessor receipts, PayoutWorker payouts,
             @Qualifier("paymentDomainExecutor") Executor domainExecutor,
-            @Qualifier("paymentPayoutExecutor") Executor payoutExecutor) {
+            @Qualifier("paymentPayoutExecutor") Executor payoutExecutor,
+            @Value("${carrent.payment.payout.enabled:true}") boolean payoutEnabled) {
         this.work = work; this.receipts = receipts; this.payouts = payouts;
         this.domainExecutor = domainExecutor; this.payoutExecutor = payoutExecutor;
+        this.payoutEnabled = payoutEnabled;
     }
 
     public synchronized void scan() {
         for (Kind kind : Kind.values()) {
+            if (!payoutEnabled && (kind == Kind.DISPATCH || kind == Kind.RECONCILE)) continue;
             try {
                 // Keyset rotation lets later rows progress even when an early row lacks a domain handler.
                 var ids = work.due(kind, cursors.getOrDefault(kind, 0L), 50);
