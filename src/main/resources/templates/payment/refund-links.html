@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"><body>
-<section th:fragment="links" th:if="${intentRefunds != null and !intentRefunds.isEmpty()}" id="intent-refunds" class="flex flex-col gap-space-sm break-words" aria-labelledby="intent-refunds-heading">
-  <h2 id="intent-refunds-heading" class="font-title-md">Các khoản hoàn của lần thanh toán này</h2>
+<section th:fragment="links" th:if="${intentRefunds != null and !intentRefunds.isEmpty()}" id="intent-refunds" class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0 [overflow-wrap:anywhere]" aria-labelledby="intent-refunds-heading">
+  <h2 id="intent-refunds-heading" class="font-title-md text-title-md">Các khoản hoàn của lần thanh toán này</h2>
   <p>Khoản hoàn được theo dõi riêng với việc kích hoạt gói hoặc hoàn tất đơn thuê. Chỉ trạng thái đã hoàn thành mới xác nhận tiền đã được chuyển.</p>
-  <article th:each="r : ${intentRefunds}" class="border rounded-lg p-space-sm flex flex-col gap-space-xs">
-    <a th:href="@{/payment/finances/refunds/{id}(id=${r.id})}" class="text-secondary underline" th:text="${'Khoản hoàn #' + r.id + ' — ' + #numbers.formatInteger(r.amount, 0, 'POINT') + ' VNĐ'}"></a>
-    <p th:text="${r.status.message()}"></p>
+  <article th:each="r : ${intentRefunds}" class="rounded-xl bg-surface-container-low p-4 flex flex-col gap-3 min-w-0">
+    <a th:href="@{/payment/finances/refunds/{id}(id=${r.id})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:text="${'Khoản hoàn #' + r.id + ' — ' + #numbers.formatInteger(r.amount, 0, 'POINT') + ' VNĐ'}"></a>
+    <p class="font-label-md text-label-md" th:text="${r.status.message()}"></p>
     <p th:switch="${r.reason.name()}">
       <span th:case="'DUPLICATE_PAYMENT'">Lý do: chuyển khoản trùng.</span>
       <span th:case="'LATE_SUBSCRIPTION'">Lý do: tiền mua gói đến sau hạn thanh toán.</span>
@@ -13,8 +13,8 @@
       <span th:case="'INCOMPATIBLE_SUBSCRIPTION'">Lý do: khoản mua không tương thích với gói đang còn hạn.</span>
       <span th:case="*">Khoản hoàn theo giao dịch thanh toán.</span>
     </p>
-    <p th:if="${r.overdue}" class="text-error">Quá thời hạn xử lý; hệ thống tiếp tục đối soát.</p>
-    <a th:if="${r.status.name() == 'WAITING_RECIPIENT'}" th:href="@{/payment/refunds/{id}(id=${r.id})}" class="text-secondary underline">Bổ sung tài khoản nhận hoàn tiền</a>
+    <p th:if="${r.overdue}" class="rounded-xl border border-error/30 bg-error-container/50 p-4 text-on-error-container">Quá thời hạn xử lý; hệ thống tiếp tục đối soát.</p>
+    <a th:if="${r.status.name() == 'WAITING_RECIPIENT'}" th:href="@{/payment/refunds/{id}(id=${r.id})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Bổ sung tài khoản nhận hoàn tiền</a>
   </article>
 </section>
 </body></html>

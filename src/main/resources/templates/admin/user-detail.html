@@ -1,29 +1,34 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Hồ sơ tài khoản')}"></head>
-<body class="bg-surface font-body-md text-on-surface"><div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-20 pb-10 px-4 sm:px-8"><div class="max-w-4xl mx-auto flex flex-col gap-6">
-  <header><a th:href="@{/admin/users}" class="text-secondary underline">Quản lý tài khoản</a><h1 class="font-headline-md text-headline-md" th:text="${'Hồ sơ tài khoản #' + detail.user.id}"></h1></header>
-  <p th:if="${successMessage}" th:text="${successMessage}" role="status" class="bg-tertiary-fixed p-4 rounded-xl"></p>
-  <section class="bg-surface-container-lowest p-5 rounded-xl break-words"><h2 class="font-title-md text-title-md" th:text="${detail.user.fullName}"></h2>
+<body class="bg-surface font-body-md text-on-surface">
+<th:block th:replace="~{fragments/workspace :: sidebar('users', null)}"></th:block>
+<div class="lg:pl-64 min-w-0">
+<header th:replace="~{fragments/workspace :: topbar('Hồ sơ tài khoản')}"></header>
+<main id="admin-user-detail" class="p-4 sm:p-6 lg:p-8 min-w-0"><div class="max-w-6xl mx-auto flex flex-col gap-6 [overflow-wrap:anywhere]">
+  <header class="flex flex-col items-start gap-3"><a th:href="@{/admin/users}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Quản lý tài khoản</a><h1 class="font-headline-md text-headline-md" th:text="${'Hồ sơ tài khoản #' + detail.user.id}"></h1><p class="text-on-surface-variant">Thông tin hồ sơ, số liệu liên quan và trạng thái truy cập.</p></header>
+  <p th:if="${successMessage}" th:text="${successMessage}" role="status" class="bg-tertiary-fixed text-on-tertiary-fixed p-4 rounded-xl"></p>
+  <div class="grid lg:grid-cols-2 gap-6 items-start">
+  <section class="bg-surface-container-lowest border border-outline-variant/50 p-5 sm:p-6 rounded-xl min-w-0"><div class="flex items-start gap-3"><span class="material-symbols-outlined rounded-xl bg-surface-container p-3 text-secondary shrink-0" aria-hidden="true">account_circle</span><h2 class="font-title-lg text-title-lg min-w-0" th:text="${detail.user.fullName}"></h2></div>
     <dl class="grid sm:grid-cols-2 gap-4 mt-4">
-      <div><dt>Email</dt><dd th:text="${detail.user.email}"></dd></div><div><dt>Điện thoại</dt><dd th:text="${detail.user.phone ?: 'Chưa cung cấp'}"></dd></div>
-      <div><dt>Vai trò</dt><dd th:text="${roleLabels[detail.user.role]}"></dd></div><div><dt>Trạng thái</dt><dd th:text="${statusLabels[detail.user.status]}"></dd></div>
-      <div><dt>Ngày tạo tài khoản</dt><dd th:text="${#temporals.format(detail.user.createdAt,'dd/MM/yyyy HH:mm')}"></dd></div>
+      <div><dt class="font-caption text-caption text-on-surface-variant mb-1">Email</dt><dd th:text="${detail.user.email}"></dd></div><div><dt class="font-caption text-caption text-on-surface-variant mb-1">Điện thoại</dt><dd th:text="${detail.user.phone ?: 'Chưa cung cấp'}"></dd></div>
+      <div><dt class="font-caption text-caption text-on-surface-variant mb-1">Vai trò</dt><dd th:text="${roleLabels[detail.user.role]}"></dd></div><div><dt class="font-caption text-caption text-on-surface-variant mb-1">Trạng thái</dt><dd class="inline-flex rounded-full px-3 py-1 font-label-md text-label-md" th:classappend="${detail.user.status.name() == 'ACTIVE' ? 'bg-tertiary-fixed text-on-tertiary-fixed' : (detail.user.status.name() == 'BANNED' ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-on-surface-variant')}" th:text="${statusLabels[detail.user.status]}"></dd></div>
+      <div><dt class="font-caption text-caption text-on-surface-variant mb-1">Ngày tạo tài khoản</dt><dd th:text="${#temporals.format(detail.user.createdAt,'dd/MM/yyyy HH:mm')}"></dd></div>
     </dl>
   </section>
-  <section aria-labelledby="related" class="bg-surface-container-lowest p-5 rounded-xl"><h2 id="related" class="font-title-md text-title-md">Số liệu của tài khoản này</h2>
+  <section aria-labelledby="related" class="bg-surface-container-lowest border border-outline-variant/50 p-5 sm:p-6 rounded-xl min-w-0"><h2 id="related" class="font-title-md text-title-md">Số liệu của tài khoản này</h2>
     <dl class="grid sm:grid-cols-2 gap-4 mt-4">
-      <div><dt>Xe sở hữu</dt><dd th:text="${detail.ownedCars}"></dd></div><div><dt>Đơn đặt thuê</dt><dd th:text="${detail.customerBookings}"></dd></div>
-      <div><dt>Đơn thuê xe thuộc sở hữu</dt><dd th:text="${detail.ownerBookings}"></dd></div><div><dt>Đơn mua gói</dt><dd th:text="${detail.financialAvailable ? detail.subscriptionOrders : 'Chưa sẵn sàng'}"></dd></div>
+      <div class="rounded-xl bg-surface-container-low p-4"><dt class="text-on-surface-variant">Xe sở hữu</dt><dd class="font-headline-md text-headline-md tabular-nums mt-2" th:text="${detail.ownedCars}"></dd></div><div class="rounded-xl bg-surface-container-low p-4"><dt class="text-on-surface-variant">Đơn đặt thuê</dt><dd class="font-headline-md text-headline-md tabular-nums mt-2" th:text="${detail.customerBookings}"></dd></div>
+      <div class="rounded-xl bg-surface-container-low p-4"><dt class="text-on-surface-variant">Đơn thuê xe thuộc sở hữu</dt><dd class="font-headline-md text-headline-md tabular-nums mt-2" th:text="${detail.ownerBookings}"></dd></div><div class="rounded-xl bg-surface-container-low p-4"><dt class="text-on-surface-variant">Đơn mua gói</dt><dd class="font-headline-md text-headline-md tabular-nums mt-2" th:classappend="${!detail.financialAvailable ? '!text-title-md' : ''}" th:text="${detail.financialAvailable ? detail.subscriptionOrders : 'Chưa sẵn sàng'}"></dd></div>
     </dl>
   </section>
-  <section aria-labelledby="status-title" class="bg-surface-container-low p-5 rounded-xl flex flex-col gap-3">
+  </div>
+  <section aria-labelledby="status-title" class="bg-surface-container-lowest border border-outline-variant/50 p-5 sm:p-6 rounded-xl flex flex-col gap-4">
     <h2 id="status-title" class="font-title-md text-title-md">Quản lý trạng thái</h2><p>Thay đổi trạng thái không sửa vai trò, email, đơn thuê hoặc các khoản tiền đã ghi nhận.</p>
-    <p th:if="${self}">Bạn không thể đổi trạng thái tài khoản của chính mình.</p>
+    <p th:if="${self}" class="rounded-xl bg-surface-container p-4 text-on-surface-variant">Bạn không thể đổi trạng thái tài khoản của chính mình.</p>
     <form th:unless="${self}" method="post" th:action="@{/admin/users/{id}/status(id=${detail.user.id})}" class="flex flex-col sm:flex-row gap-3">
-      <label class="flex flex-col gap-1 min-w-0">Trạng thái mới<select name="status" class="w-full min-w-0 rounded-lg border border-outline p-2 bg-surface-container-lowest"><option th:each="s : ${statusLabels}" th:value="${s.key}" th:selected="${s.key == detail.user.status}" th:text="${s.value}"></option></select></label>
-      <button type="submit" class="self-start sm:self-end bg-primary text-on-primary rounded-lg px-5 py-2">Cập nhật trạng thái</button>
+      <label class="flex flex-col gap-1 min-w-0">Trạng thái mới<select name="status" class="min-h-11 w-full min-w-0 rounded-xl border border-outline px-3 py-3 bg-surface-container-lowest focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"><option th:each="s : ${statusLabels}" th:value="${s.key}" th:selected="${s.key == detail.user.status}" th:text="${s.value}"></option></select></label>
+      <button type="submit" class="min-h-11 self-start sm:self-end bg-secondary text-on-secondary rounded-xl px-5 py-3 font-label-md text-label-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary">Cập nhật trạng thái</button>
     </form>
   </section>
-</div></main></body></html>
+</div></main></div></body></html>

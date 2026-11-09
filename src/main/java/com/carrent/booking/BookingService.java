@@ -44,7 +44,6 @@ public class BookingService {
     private final PaymentIntentRepository intents;
     private final RefundService refunds;
     private final SubscriptionPolicy subscriptions;
-    private final PaymentPilot pilot;
     private final boolean rentalWorkflowEnabled;
     private final boolean advanceEnabled;
     private final boolean balanceEnabled;
@@ -181,7 +180,6 @@ public class BookingService {
                           PaymentRepository payments, Clock clock, PaymentObligationRepository obligations,
                           PaymentIntentTransactions intentTransactions, InspectionService inspections,
                           PaymentIntentRepository intents, RefundService refunds, SubscriptionPolicy subscriptions,
-                          PaymentPilot pilot,
                           @org.springframework.beans.factory.annotation.Value("${carrent.rental.workflow.enabled:false}") boolean rentalWorkflowEnabled,
                           @org.springframework.beans.factory.annotation.Value("${carrent.rental.advance.enabled:false}") boolean advanceEnabled,
                           @org.springframework.beans.factory.annotation.Value("${carrent.rental.balance.enabled:false}") boolean balanceEnabled) {
@@ -199,7 +197,6 @@ public class BookingService {
         this.intents = intents;
         this.refunds = refunds;
         this.subscriptions = subscriptions;
-        this.pilot = pilot;
         this.rentalWorkflowEnabled = rentalWorkflowEnabled;
         this.advanceEnabled = advanceEnabled;
         this.balanceEnabled = balanceEnabled;
@@ -264,7 +261,7 @@ public class BookingService {
         if (rentalWorkflowEnabled && ownerId == null) {
             ownerId = cars.findById(form.getCarId()).orElseThrow(() -> new NotFoundException("Xe không tồn tại.")).getOwner().getId();
         }
-        boolean rentalWorkflow = rentalWorkflowEnabled && pilot.allowsRentalOwner(ownerId);
+        boolean rentalWorkflow = rentalWorkflowEnabled;
         if (rentalWorkflow) {
             if (!advanceEnabled || !balanceEnabled) throw new BusinessException("Luồng thanh toán thuê xe chưa sẵn sàng.");
             // Current authorization precedes Car even when subscriptions are disabled.
@@ -277,10 +274,6 @@ public class BookingService {
         subscriptions.requireSameOwner(car, ownerId);
         if (rentalWorkflowEnabled && !car.getOwner().getId().equals(ownerId)) {
             throw new BusinessException("Chủ xe đã thay đổi. Vui lòng thử lại.");
-        }
-        if (rentalWorkflow && entityManager.createNativeQuery("SELECT id FROM users WHERE id=:id AND role='ADMIN' AND status='ACTIVE' FOR SHARE")
-                .setParameter("id", pilot.adminId()).getResultList().isEmpty()) {
-            throw new BusinessException("Tài khoản Admin thí điểm chưa sẵn sàng.");
         }
         subscriptions.requireActive(car.getOwner().getId());
         if (car.getApprovalStatus() != ApprovalStatus.APPROVED || car.getListingStatus() != ListingStatus.ACTIVE) {

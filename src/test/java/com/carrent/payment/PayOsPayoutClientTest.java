@@ -187,6 +187,20 @@ class PayOsPayoutClientTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"FIND_MISSING_PAGINATION", "FIND_STRING_HAS_MORE"})
+    void refusesReferenceResultsWithoutExplicitBooleanPagination(String fixture) throws IOException {
+        JsonNode reads;
+        try (var input = getClass().getResourceAsStream("/payment/payos-read-check.json")) {
+            reads = JsonMapper.builder().build().readTree(input).path(fixture);
+        }
+        server.expect(requestTo(BASE_URL + "?referenceId=refund-1-attempt-1&limit=2&offset=0"))
+                .andRespond(withSuccess(reads.path("body").toString(), MediaType.APPLICATION_JSON)
+                        .header("x-signature", reads.path("signature").asText()));
+        assertThat(client.findByReference(1L, "refund-1-attempt-1").outcome()).isEqualTo(TransferOutcome.UNKNOWN);
+        server.verify();
+    }
+
+    @ParameterizedTest
     @ValueSource(longs = {3, 99})
     void refusesDisabledOrUnknownChannelsBeforeNetworkIO(long channelId) {
         assertThatThrownBy(() -> client.create(channelId, COMMAND)).isInstanceOf(IllegalStateException.class);

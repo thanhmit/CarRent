@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Real service proxies and MySQL connections; every committed fixture is deleted by exact ID. */
-@SpringBootTest(properties = {"debug=false", "logging.level.root=WARN", "logging.level.org.springframework=WARN",
+@SpringBootTest(properties = {"carrent.rental.workflow.enabled=false", "debug=false", "logging.level.root=WARN", "logging.level.org.springframework=WARN",
         "logging.level.org.hibernate=WARN", "logging.level.org.hibernate.SQL=OFF", "spring.main.banner-mode=off"})
 class CarCommandTransactionTest {
     @Autowired CarCommandExecutor queue;

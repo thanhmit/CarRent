@@ -25,6 +25,7 @@ public class PaymentMaintenanceConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
+    @org.springframework.context.annotation.Profile("!payos-check & !payos-setup & !sepay-setup & !sepay-activate & !refund-lookup-check")
     @EnableScheduling
     @ConditionalOnProperty(name = "carrent.payment.maintenance.enabled", havingValue = "true")
     static class Schedule {

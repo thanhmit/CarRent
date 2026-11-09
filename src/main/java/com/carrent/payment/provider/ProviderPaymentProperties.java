@@ -30,12 +30,15 @@ public record ProviderPaymentProperties(Map<String, SePayChannel> sepay, Map<Str
         }
     }
 
-    public record SePayChannel(boolean enabled, String webhookSecret) {
+    public record SePayChannel(boolean enabled, String webhookSecret, String gateway) {
+        @ConstructorBinding
         public SePayChannel {
             if (enabled && (webhookSecret == null || webhookSecret.isBlank())) {
                 throw new IllegalArgumentException("Enabled SePay channel requires a webhook secret");
             }
         }
+
+        public SePayChannel(boolean enabled, String webhookSecret) { this(enabled, webhookSecret, null); }
 
         @Override
         public String toString() {

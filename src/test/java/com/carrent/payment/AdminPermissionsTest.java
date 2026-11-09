@@ -18,6 +18,16 @@ class AdminPermissionsTest {
         assertThat(html("/admin/finance")).contains("Nghĩa vụ thanh toán", "600.000", "Chủ xe #2");
     }
 
+    @Test void dashboardAndFinancialPagesKeepTheCurrentAdminNavigation() throws Exception {
+        var before = snapshot();
+        for (String[] route : new String[][]{{"/admin/dashboard", "/admin/dashboard"},
+                {"/admin/finance", "/admin/finance"}, {"/admin/finance/OBLIGATIONS/201", "/admin/finance"}}) {
+            assertThat(html(route[0])).contains("aria-label=\"Điều hướng quản trị\"")
+                    .containsPattern("<a(?=[^>]*href=\"" + route[1] + "\")(?=[^>]*aria-current=\"page\")[^>]*>");
+        }
+        assertThat(snapshot()).isEqualTo(before);
+    }
+
     @Test void ownerCustomerAndAnonymousCannotReadAdminListsOrDetails() throws Exception {
         for (String url : new String[]{"/admin/dashboard", "/admin/finance", "/admin/finance/OBLIGATIONS/201",
                 "/admin/finance/RECEIPTS/1", "/admin/finance/REFUNDS/1"}) {

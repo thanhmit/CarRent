@@ -2,26 +2,11 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Kiểm tra hồ sơ xe')}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-<aside class="md:fixed md:left-0 md:top-0 md:h-full md:w-64 bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-  <div class="h-16 px-space-md flex items-center gap-space-sm bg-surface-container-low">
-    <span class="material-symbols-outlined text-primary text-[28px]">directions_car</span>
-    <div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary leading-tight">CarRent</span><span class="font-caption text-caption text-on-surface-variant leading-none">Quản trị hệ thống</span></div>
-  </div>
-  <nav class="flex flex-wrap md:flex-col gap-space-xs py-space-sm px-space-sm" aria-label="Điều hướng quản trị">
-    <a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-sm transition-colors bg-primary text-on-primary font-title-md text-title-md rounded-lg" th:href="@{/admin/cars}"><span class="material-symbols-outlined text-[20px]">verified</span><span>Duyệt xe</span></a>
-    <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container" th:href="@{/}"><span class="material-symbols-outlined text-[20px]">home</span><span>Trang chủ</span></a>
-  </nav>
-  <form class="mt-auto p-space-sm bg-surface-container-low" th:action="@{/logout}" method="post">
-    <button type="submit" class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-error hover:bg-error-container"><span class="material-symbols-outlined text-[20px]">logout</span><span>Đăng xuất</span></button>
-  </form>
-</aside>
-<div class="md:pl-64">
-  <header class="h-16 bg-surface-container-lowest/90 shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between gap-space-sm px-gutter-mobile md:px-gutter">
-    <span class="font-title-md text-title-md text-primary truncate">Cổng thông tin Điều hành &amp; Quản trị</span>
-    <div class="flex items-center gap-space-sm min-w-0 shrink-0"><a th:replace="~{fragments/header :: notificationBell}"></a><span class="hidden sm:inline font-label-md text-label-md truncate" th:text="${adminName}">Quản trị viên</span><div class="w-8 h-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div>
-  </header>
+<th:block th:replace="~{fragments/workspace :: sidebar('cars', null)}"></th:block>
+<div class="lg:pl-64 min-w-0">
+  <header th:replace="~{fragments/workspace :: topbar('Cổng thông tin quản trị')}"></header>
   <div th:replace="~{fragments/messages :: messages}"></div>
-  <main class="relative w-full px-gutter-mobile md:px-gutter min-h-screen bg-surface [overflow-wrap:anywhere]">
+  <main class="relative w-full px-gutter-mobile lg:px-gutter min-h-screen bg-surface [overflow-wrap:anywhere]">
     <div class="flex flex-col w-full pb-margin">
       <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm py-space-md"><a class="hover:text-primary transition-colors" th:href="@{/admin/cars}">Duyệt xe</a><span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span><span class="text-on-surface font-label-md text-label-md" th:text="${'Hồ sơ #' + car.id}">Hồ sơ</span></div>
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-space-sm bg-surface-container-lowest p-space-lg rounded-xl shadow-sm mb-space-lg">

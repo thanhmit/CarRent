@@ -4,8 +4,7 @@ Phạm vi theo [P5.8](phase-5-admin-polish.md#task-p58--ma-trận-quyền-biên-
 
 ## 1. Cách kiểm chứng
 
-- Audit local ngày2026-11-04 dùng source có cả P5.5–P5.7 chưa commit. Khi tách Git ngày2026-11-05, P5.7 đã được tích hợp; P5.5/P5.6 của huy69332 và P5.9 vẫn ở workspace gốc, ngoài hai nhánh được chọn.
-- Tree Git P5.8 chạy full regression riêng. PaymentAccessAuditTest trên tree này kiểm tra các endpoint đã tồn tại, gồm Admin và Owner dashboard; matrix profile tiếp tục nằm ở bản test local gắn với P5.5/P5.6. Không thêm controller profile hoặc workflow P5.9 để làm test xanh.
+- Dùng source đang làm việc, gồm các thay đổi P5.5–P5.7 chưa commit. Không dùng HEAD sạch thiếu prerequisite làm source kiểm chứng.
 - HTTP qua Spring MVC/Security thật trong `PaymentFlowFixture`; DB MySQL/schema ngẫu nhiên do fixture sở hữu. Provider chỉ fake/offline; không mock endpoint nghiệp vụ.
 - Ma trận phân biệt role, ownership, trạng thái tài khoản hiện tại, method, CSRF và trạng thái đối tượng. HTTP redirect khi chưa đăng nhập khác lỗi từ chối quyền của tài khoản đã đăng nhập.
 - Với GET hoặc request bị từ chối, so sánh snapshot dữ liệu trước/sau; kiểm tra read không đưa việc vào queue và không gọi provider. Mutation hợp lệ dùng số tiền, thời điểm, trạng thái và channel do server quyết định.
@@ -42,12 +41,12 @@ Các checkpoint Phase 0–3/P4.1 và D-25 cũ là lịch sử/legacy, không ph�
 
 Không suy ra human review hoặc live readiness từ test tự động. Production refund destination verifier còn từ chối cho tới khi có hợp đồng lookup không chuyển tiền được xác minh. Provider activation, SePay query/reconciliation, nguồn tiền/phí/tối thiểu, migration vận hành, human review và giao dịch thật vẫn theo [P4.2-A](phase-4-payment.md#task-p42-a--tích-hợp-tài-khoản-thực-tế-và-kiểm-chứng-providerlive--hoãn) và [pilot runbook](phase-8-pilot-runbook.md).
 
-Lần triển khai P5.8 không migrate/reset/seed DB ứng dụng, bật flags/provider/scheduler, restart8080 hoặc chuyển tiền thật. Commit/push/merge riêng P5.7/P5.8 được chủ dự án cho phép ngày2026-11-05. P5.9 có checklist và evidence riêng trên source cuối.
+Trong P5.8 không migrate/reset/seed DB ứng dụng, bật flags/provider/scheduler, restart8080, chuyển tiền thật hoặc stage/commit/push/merge. P5.9 có checklist và evidence riêng trên source cuối.
 
 
 ## 6. Ma trận HTTP thực thi
 
-Bảng dưới lưu kết quả matrix local ngày2026-11-04 trên source kết hợp; mục profile và inventory40 gồm phần P5.5/P5.6 chưa tích hợp. Tree Git riêng dùng inventory38, kiểm tra Admin và Owner dashboard, không kiểm tra route profile chưa tồn tại. Kết quả full tree Git ghi tại [bàn giao Git](phase-5-p57-p58-git-handoff.md). Không suy xác thực tài khoản/provider thật từ fixture.
+Bảng dưới được kiểm tra bằng PaymentAccessAuditTest; kết quả trên source cuối ghi tại bàn giao đợt6. Không suy xác thực tài khoản/provider thật từ fixture.
 
 
 Executed by `PaymentAccessAuditTest` with `PaymentFlowFixture` / MockMvc and the real Spring Security filter chain. The suite verifies these fixture identities against SQL at startup: Admin=1; booking Owner=2; unrelated Owner=3; booking Customer/payer=4; unrelated Customer=5; anonymous=0. Booking 1 belongs to Customer 4 and Owner 2.

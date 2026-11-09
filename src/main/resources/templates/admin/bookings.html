@@ -1,26 +1,30 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Theo dõi đơn thuê')}"></head>
-<body class="bg-surface font-body-md text-on-surface"><div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-20 pb-10 px-4 sm:px-8 min-h-screen"><div class="max-w-6xl mx-auto flex flex-col gap-6 min-w-0 break-words [overflow-wrap:anywhere]">
-  <header><a class="text-secondary underline" th:href="@{/admin/dashboard}">Tổng quan quản trị</a><h1 class="font-headline-md text-headline-md">Theo dõi đơn thuê</h1><p>Chế độ quản trị chỉ đọc. Khoản nợ và khoản hoàn quá hạn là cảnh báo, không tự khóa tài khoản.</p></header>
-  <form method="get" th:action="@{/admin/bookings}" class="bg-surface-container-low rounded-xl p-4 flex flex-wrap items-end gap-4">
-    <label class="flex flex-col gap-1 min-w-0">Trạng thái đơn<select name="status" class="rounded-lg border border-outline p-2 w-full bg-surface-container-lowest"><option value="">Tất cả trạng thái</option><option th:each="s : ${statuses}" th:value="${s}" th:selected="${s == statusFilter}" th:text="${statusLabels[s.name()]}"></option></select></label>
-    <label class="flex flex-col gap-1 min-w-0">Cần theo dõi<select name="attention" class="rounded-lg border border-outline p-2 w-full bg-surface-container-lowest"><option value="ALL" th:selected="${attention.name() == 'ALL'}">Tất cả đơn thuê</option><option value="BALANCE_OVERDUE" th:selected="${attention.name() == 'BALANCE_OVERDUE'}">Nợ 70% quá hạn 1 giờ</option><option value="REFUND_OVERDUE" th:selected="${attention.name() == 'REFUND_OVERDUE'}">Hoàn tiền quá hạn</option></select></label>
-    <button class="px-5 py-2 bg-primary text-on-primary rounded-lg" type="submit">Lọc</button><a class="text-secondary underline" th:href="@{/admin/bookings}">Xóa bộ lọc</a>
+<body class="bg-surface font-body-md text-on-surface">
+<th:block th:replace="~{fragments/workspace :: sidebar('bookings', null)}"></th:block>
+<div class="lg:pl-64 min-w-0">
+<header th:replace="~{fragments/workspace :: topbar('Theo dõi đơn thuê')}"></header>
+<main id="admin-bookings" class="p-4 sm:p-6 lg:p-8 min-w-0"><div class="max-w-6xl mx-auto flex flex-col gap-6 min-w-0 break-words [overflow-wrap:anywhere]">
+  <header class="flex flex-col items-start gap-3"><a class="min-h-11 inline-flex items-center px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-lowest text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:href="@{/admin/dashboard}">Tổng quan quản trị</a><h1 class="font-headline-md text-headline-md">Theo dõi đơn thuê</h1><p class="text-on-surface-variant">Tra cứu tiến trình giao nhận, bằng chứng và các khoản tiền của đơn thuê.</p></header>
+  <p class="rounded-xl bg-secondary-fixed text-on-secondary-fixed p-4">Chế độ quản trị chỉ đọc. Khoản nợ và khoản hoàn quá hạn là cảnh báo, không tự khóa tài khoản.</p>
+  <form method="get" th:action="@{/admin/bookings}" class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-4 sm:p-5 grid sm:grid-cols-2 xl:grid-cols-[1fr_1fr_auto_auto] items-end gap-4">
+    <label class="flex flex-col gap-2 min-w-0 font-label-md text-label-md">Trạng thái đơn<select name="status" class="min-h-11 rounded-xl border border-outline px-3 py-3 w-full min-w-0 bg-surface-container-lowest focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"><option value="">Tất cả trạng thái</option><option th:each="s : ${statuses}" th:value="${s}" th:selected="${s == statusFilter}" th:text="${statusLabels[s.name()]}"></option></select></label>
+    <label class="flex flex-col gap-2 min-w-0 font-label-md text-label-md">Cần theo dõi<select name="attention" class="min-h-11 rounded-xl border border-outline px-3 py-3 w-full min-w-0 bg-surface-container-lowest focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"><option value="ALL" th:selected="${attention.name() == 'ALL'}">Tất cả đơn thuê</option><option value="BALANCE_OVERDUE" th:selected="${attention.name() == 'BALANCE_OVERDUE'}">Nợ 70% quá hạn 1 giờ</option><option value="REFUND_OVERDUE" th:selected="${attention.name() == 'REFUND_OVERDUE'}">Hoàn tiền quá hạn</option></select></label>
+    <button class="min-h-11 px-5 py-3 bg-secondary text-on-secondary rounded-xl font-label-md text-label-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary" type="submit">Lọc</button><a class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:href="@{/admin/bookings}">Xóa bộ lọc</a>
   </form>
-  <p th:text="${'Tìm thấy ' + rows.totalElements + ' đơn thuê'}"></p>
-  <p th:if="${rows.empty}">Không có đơn thuê phù hợp bộ lọc.</p>
-  <section aria-label="Danh sách đơn thuê" class="grid lg:grid-cols-2 gap-4">
-    <article th:each="b : ${rows}" class="bg-surface-container-lowest rounded-xl p-5 flex flex-col gap-3 min-w-0">
-      <h2 class="font-title-md" th:text="${'Đơn thuê #CR-' + b.id}"></h2><span th:replace="~{booking/fragments :: progressBadge(${b})}"></span>
-      <p th:text="${b.car.brand + ' ' + b.car.model}"></p><p th:text="${'Khách hàng: ' + b.customer.fullName + ' · Chủ xe: ' + b.car.owner.fullName}"></p>
-      <p th:text="${#temporals.format(b.startDate,'dd/MM/yyyy') + ' – ' + #temporals.format(b.endDate,'dd/MM/yyyy')}"></p>
-      <p th:if="${b.workflowVersion == 'LEGACY'}">Đơn thuê legacy · lịch sử giả lập, không áp dụng VietQR 30/70.</p>
-      <p th:if="${b.workflowVersion == 'VIETQR_V1' and b.advanceAmount != null}" th:text="${'Trả trước 30%: ' + #numbers.formatInteger(b.advanceAmount,0,'POINT') + ' VNĐ · Phần 70%: ' + #numbers.formatInteger(b.balanceAmount,0,'POINT') + ' VNĐ'}"></p>
-      <a class="text-secondary underline" th:href="@{/admin/bookings/{id}(id=${b.id})}">Xem tiến trình, tài chính và bằng chứng</a>
+  <p class="font-title-md text-title-md" th:text="${'Tìm thấy ' + rows.totalElements + ' đơn thuê'}"></p>
+  <p th:if="${rows.empty}" class="rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest px-5 py-10 text-center text-on-surface-variant">Không có đơn thuê phù hợp bộ lọc.</p>
+  <section aria-label="Danh sách đơn thuê" class="grid xl:grid-cols-2 gap-4">
+    <article th:each="b : ${rows}" class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-5 sm:p-6 flex flex-col gap-4 min-w-0">
+      <div class="flex flex-wrap items-center justify-between gap-3"><h2 class="font-title-md text-title-md" th:text="${'Đơn thuê #CR-' + b.id}"></h2><span th:replace="~{booking/fragments :: progressBadge(${b})}"></span></div>
+      <p class="font-title-md text-title-md" th:text="${b.car.brand + ' ' + b.car.model}"></p><p class="text-on-surface-variant" th:text="${'Khách hàng: ' + b.customer.fullName + ' · Chủ xe: ' + b.car.owner.fullName}"></p>
+      <p class="tabular-nums" th:text="${#temporals.format(b.startDate,'dd/MM/yyyy') + ' – ' + #temporals.format(b.endDate,'dd/MM/yyyy')}"></p>
+      <p th:if="${b.workflowVersion == 'LEGACY'}" class="rounded-xl bg-surface-container-low p-3 text-on-surface-variant">Đơn thuê legacy · lịch sử giả lập, không áp dụng VietQR 30/70.</p>
+      <p th:if="${b.workflowVersion == 'VIETQR_V1' and b.advanceAmount != null}" class="rounded-xl bg-surface-container-low p-3 tabular-nums" th:text="${'Trả trước 30%: ' + #numbers.formatInteger(b.advanceAmount,0,'POINT') + ' VNĐ · Phần 70%: ' + #numbers.formatInteger(b.balanceAmount,0,'POINT') + ' VNĐ'}"></p>
+      <a class="min-h-11 mt-auto inline-flex items-center justify-center px-4 py-3 rounded-xl bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:href="@{/admin/bookings/{id}(id=${b.id})}" th:aria-label="${'Xem đơn thuê #CR-' + b.id}">Xem tiến trình, tài chính và bằng chứng</a>
     </article>
   </section>
-  <nav class="flex flex-wrap gap-4" aria-label="Trang đơn thuê"><a class="text-secondary underline" th:if="${rows.hasPrevious()}" th:href="@{/admin/bookings(status=${statusFilter},attention=${attention},page=${rows.number - 1})}">Trang trước</a><span th:text="${'Trang ' + (rows.number + 1)}"></span><a class="text-secondary underline" th:if="${rows.hasNext()}" th:href="@{/admin/bookings(status=${statusFilter},attention=${attention},page=${rows.number + 1})}">Trang sau</a></nav>
-  <p>Hạn nợ 70% là 1 giờ sau khi chủ xe nhận lại xe thực tế. Khoản hoàn chỉ hết quá hạn khi đã hoàn thành công.</p>
-</div></main></body></html>
+  <nav class="flex flex-wrap items-center justify-center gap-3" aria-label="Trang đơn thuê"><a class="min-h-11 inline-flex items-center px-4 py-3 rounded-xl border border-outline-variant text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:if="${rows.hasPrevious()}" th:href="@{/admin/bookings(status=${statusFilter},attention=${attention},page=${rows.number - 1})}">Trang trước</a><span class="px-3 tabular-nums" th:text="${'Trang ' + (rows.number + 1)}"></span><a class="min-h-11 inline-flex items-center px-4 py-3 rounded-xl border border-outline-variant text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:if="${rows.hasNext()}" th:href="@{/admin/bookings(status=${statusFilter},attention=${attention},page=${rows.number + 1})}">Trang sau</a></nav>
+  <p class="rounded-xl bg-surface-container-low p-4 text-on-surface-variant">Hạn nợ 70% là 1 giờ sau khi chủ xe nhận lại xe thực tế. Khoản hoàn chỉ hết quá hạn khi đã hoàn thành công.</p>
+</div></main></div></body></html>

@@ -125,6 +125,9 @@ public class OwnerBookingController {
             });
             redirect.addFlashAttribute("successMessage", "VIETQR_V1".equals(booking.getWorkflowVersion())
                     ? "Đã chấp nhận yêu cầu. Vui lòng chuẩn bị biên bản trước thuê." : "Đã xác nhận đơn thuê.");
+            if ("VIETQR_V1".equals(booking.getWorkflowVersion()) && booking.isInspectionRequired()) {
+                return "redirect:/bookings/" + id + "/inspections/BEFORE";
+            }
         } catch (BusinessException ex) {
             redirect.addFlashAttribute("errorMessage", ex.getMessage());
         }

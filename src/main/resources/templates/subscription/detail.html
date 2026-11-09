@@ -2,36 +2,49 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Yêu cầu mua gói')}"></head>
 <body class="bg-surface font-body-md text-on-surface">
-<div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
-  <section class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md" id="subscription-order" th:attr="data-order-id=${order.orderId},data-status=${order.status}">
-    <h1 class="font-headline-md text-headline-md">Yêu cầu mua gói <span th:text="${order.planCode}"></span></h1>
-    <p th:if="${errorMessage}" th:text="${errorMessage}" role="alert" class="text-error"></p>
-    <dl class="flex flex-col gap-space-sm">
-      <div><dt>Mã yêu cầu</dt><dd th:text="${order.orderId}"></dd></div>
-      <div><dt>Hạn mức</dt><dd th:text="${order.quotaSnapshot + ' xe'}"></dd></div>
-      <div><dt>Thời hạn mua</dt><dd th:text="${order.durationDays + ' ngày'}"></dd></div>
-      <div><dt>Giá gói</dt><dd th:text="${#numbers.formatInteger(order.priceSnapshot, 0, 'POINT') + ' VNĐ'}"></dd></div>
-    </dl>
-    <div role="status" aria-live="polite" th:switch="${order.status}">
+<th:block th:replace="~{fragments/workspace :: sidebar('subscriptions', null)}"></th:block>
+<div class="lg:pl-64 min-w-0">
+  <header th:replace="~{fragments/workspace :: topbar('Yêu cầu mua gói')}"></header>
+<main class="p-4 sm:p-6 lg:p-8 min-w-0">
+  <section class="max-w-5xl mx-auto flex flex-col gap-6 [overflow-wrap:anywhere]" id="subscription-order" th:attr="data-order-id=${order.orderId},data-status=${order.status}">
+    <header class="flex flex-col gap-2"><h1 class="font-headline-md text-headline-md">Yêu cầu mua gói <span th:text="${order.planCode}"></span></h1><p class="text-on-surface-variant">Theo dõi yêu cầu thanh toán và các khoản hoàn của lần mua này.</p></header>
+    <p th:if="${errorMessage}" th:text="${errorMessage}" role="alert" class="rounded-xl border border-error/30 bg-error-container p-4 text-on-error-container"></p>
+    <div class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex items-start gap-3"><span class="material-symbols-outlined text-secondary text-[28px] shrink-0" aria-hidden="true" th:text="${order.status == 'APPLIED' ? 'check_circle' : (order.status == 'PENDING' or order.status == 'REFUND_PENDING' ? 'schedule' : 'info')}"></span><div role="status" aria-live="polite" class="font-title-md text-title-md" th:switch="${order.status}">
       <p th:case="'PENDING'">Đang chờ thanh toán. Mở lại yêu cầu không gia hạn mã QR.</p>
       <p th:case="'APPLIED'">Đã kích hoạt hoặc gia hạn gói thành công.</p>
       <p th:case="'EXPIRED'">Yêu cầu đã hết hạn. Không chuyển tiền theo mã QR cũ.</p>
       <p th:case="'CANCELLED'">Đã hủy yêu cầu. Thao tác này không đảo giao dịch ngân hàng hoặc xóa thời hạn gói đang dùng.</p>
       <p th:case="'REFUND_PENDING'">Đang chờ hoàn tiền. Chưa xác nhận tiền đã về tài khoản nhận.</p>
       <p th:case="*">Yêu cầu cần được kiểm tra.</p>
-    </div>
-    <a th:if="${order.intent != null}" th:href="@{/payment/intents/{id}(id=${order.intent.id})}" class="text-secondary underline">Xem thanh toán và trạng thái QR</a>
-    <div th:replace="~{payment/refund-links :: links}"></div>
-    <p>Gói không hoàn phí sau khi kích hoạt. Nếu có khoản chuyển trùng hoặc đến muộn cần hoàn, chỉ bổ sung tài khoản nhận khi hệ thống yêu cầu; bạn không cần liên kết dịch vụ nhận tiền.</p>
-    <a th:if="${order.status == 'APPLIED'}" th:href="@{/owner/cars}" class="text-secondary underline">Chọn xe đăng theo hạn mức của gói</a>
+    </div></div>
+    <div class="grid md:grid-cols-2 gap-6 items-start">
+      <section class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0" aria-labelledby="order-summary-heading"><h2 id="order-summary-heading" class="font-title-md text-title-md">Thông tin gói trong yêu cầu</h2>
+        <dl class="flex flex-col gap-4">
+          <div><dt class="font-caption text-caption text-on-surface-variant">Giá gói</dt><dd class="font-headline-md text-headline-md tabular-nums" th:text="${#numbers.formatInteger(order.priceSnapshot, 0, 'POINT') + ' VNĐ'}"></dd></div>
+          <div><dt class="font-caption text-caption text-on-surface-variant">Mã yêu cầu</dt><dd th:text="${order.orderId}"></dd></div>
+          <div><dt class="font-caption text-caption text-on-surface-variant">Hạn mức</dt><dd th:text="${order.quotaSnapshot + ' xe'}"></dd></div>
+          <div><dt class="font-caption text-caption text-on-surface-variant">Thời hạn mua</dt><dd th:text="${order.durationDays + ' ngày'}"></dd></div>
+        </dl>
+        <p class="text-on-surface-variant">Thông tin này được ghi nhận khi tạo yêu cầu. Thời hạn gói chỉ được cộng sau khi khoản thanh toán hợp lệ được xác nhận.</p>
+      </section>
+      <section class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0" aria-labelledby="order-actions-heading"><h2 id="order-actions-heading" class="font-title-md text-title-md">Bước tiếp theo</h2>
+        <p th:if="${order.intent != null}" class="rounded-xl bg-surface-container-low p-4"><span class="block text-on-surface-variant mb-1" th:text="${order.status == 'PENDING' ? 'Hạn thanh toán' : 'Hạn của lần thanh toán'}"></span><time th:datetime="${order.intent.expiresAt}" th:text="${#temporals.format(order.intent.expiresAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time><span class="block text-on-surface-variant mt-2">Đây là hạn thanh toán, không phải ngày hết hạn gói đăng xe.</span></p>
+    <a th:if="${order.intent != null}" th:href="@{/payment/intents/{id}(id=${order.intent.id})}" class="min-h-11 inline-flex items-center justify-center rounded-xl px-4 py-3 font-label-md text-label-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:classappend="${order.status == 'PENDING' ? 'bg-secondary text-on-secondary' : 'border border-outline-variant text-secondary'}">Xem thanh toán và trạng thái QR</a>
+    <a th:if="${order.status == 'APPLIED'}" th:href="@{/owner/cars}" class="min-h-11 inline-flex items-center justify-center rounded-xl bg-secondary text-on-secondary px-4 py-3 font-label-md text-label-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary">Chọn xe đăng theo hạn mức của gói</a>
     <form th:if="${order.status == 'PENDING'}" method="post" th:action="@{/owner/subscriptions/orders/{id}/cancel(id=${order.orderId})}">
-      <button type="submit" class="w-full p-space-sm rounded-lg bg-error-container text-on-error-container">Hủy yêu cầu mua gói</button>
+      <button type="submit" class="min-h-11 w-full rounded-xl bg-error-container text-on-error-container px-4 py-3 font-label-md text-label-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-error">Hủy yêu cầu mua gói</button>
     </form>
-    <a th:href="@{/owner/subscriptions}" class="text-secondary underline">Xem các gói đăng xe</a>
-    <a th:href="@{/owner/subscriptions/orders/{id}(id=${order.orderId})}" class="text-secondary underline">Tải lại yêu cầu và các khoản hoàn</a>
-    <a th:href="@{/payment/finances}" class="text-secondary underline">Theo dõi thanh toán và hoàn tiền</a>
+      </section>
+    </div>
+    <div th:replace="~{payment/refund-links :: links}"></div>
+    <p class="rounded-xl bg-surface-container p-4 text-on-surface-variant">Gói không hoàn phí sau khi kích hoạt. Nếu có khoản chuyển trùng hoặc đến muộn cần hoàn, chỉ bổ sung tài khoản nhận khi hệ thống yêu cầu; bạn không cần liên kết dịch vụ nhận tiền.</p>
+    <nav class="flex flex-wrap gap-3" aria-label="Điều hướng yêu cầu mua gói">
+    <a th:href="@{/owner/subscriptions}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Xem các gói đăng xe</a>
+    <a th:href="@{/owner/subscriptions/orders/{id}(id=${order.orderId})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Tải lại yêu cầu và các khoản hoàn</a>
+    <a th:href="@{/payment/finances}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Theo dõi thanh toán và hoàn tiền</a>
+    </nav>
   </section>
 </main>
+</div>
 </body>
 </html>

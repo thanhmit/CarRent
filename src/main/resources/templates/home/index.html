@@ -9,7 +9,7 @@
 */-->
 <head th:replace="~{fragments/head :: head(title='Trang chủ')}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-<div th:replace="~{fragments/header :: header}"></div>
+<div th:with="publicNavSection='home'"><th:block th:replace="~{fragments/header :: header}"></th:block></div>
 <div th:replace="~{fragments/messages :: messages}"></div>
 
 <main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">

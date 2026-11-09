@@ -10,7 +10,7 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-record SePayIncomingPayment(String transactionId, String accountNumber, String code, long amount, Instant creditedAt) {
+record SePayIncomingPayment(String transactionId, String accountNumber, String code, long amount, Instant creditedAt, String gateway) {
     private static final JsonMapper JSON = JsonMapper.builder()
             .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
             .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
@@ -35,7 +35,8 @@ record SePayIncomingPayment(String transactionId, String accountNumber, String c
                     .atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
             String code = root.hasNonNull("code") ? text(root, "code") : null;
             if (code != null && (code.isBlank() || code.length() > 50)) code = null;
-            return new SePayIncomingPayment(id, account, code, amount, credited);
+            String gateway = root.hasNonNull("gateway") ? text(root, "gateway") : null;
+            return new SePayIncomingPayment(id, account, code, amount, credited, gateway);
         } catch (RuntimeException ex) {
             // Never propagate parser messages containing raw payload/account information.
             throw invalid();

@@ -61,7 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-@SpringBootTest(properties = {"debug=false", "logging.level.root=WARN", "logging.level.org.springframework=WARN",
+@SpringBootTest(properties = {"carrent.rental.workflow.enabled=false", "debug=false", "logging.level.root=WARN", "logging.level.org.springframework=WARN",
         "logging.level.org.hibernate=WARN", "logging.level.org.hibernate.SQL=OFF", "spring.main.banner-mode=off",
         "carrent.car-queue.max-waiting-per-car=1", "carrent.car-queue.wait-timeout=2s"})
 @Import(CarQueueHttpIntegrationTest.FaultConfiguration.class)

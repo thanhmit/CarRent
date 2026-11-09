@@ -28,11 +28,22 @@ class PaymentIntentTest {
         assertThat(view.amount()).isEqualTo(600000L);
         assertThat(view.expiresAt()).isEqualTo(PaymentFlowFixture.NOW.plusSeconds(900));
         assertThat(view.qrUrl()).contains("970422-000123456", "amount=600000", "addInfo=" + view.code());
+        assertThat(view.code()).matches("CR[A-F0-9]{30}");
         f.clock.at.set(PaymentFlowFixture.NOW.plusSeconds(100));
         assertThat(f.payments.status(view.id(), f.actor(4))).isEqualTo(view);
         assertThat(f.payments.openAttempt(201L, f.actor(4))).isEqualTo(view);
         assertThat(f.count("payment_intents")).isEqualTo(1);
         assertThat(f.count("payment_receipts")).isZero();
+    }
+
+    @Test void activeResultLetsThePayerReopenTheExistingQr() throws Exception {
+        var intent = f.payments.openAttempt(201L, f.actor(4));
+        String page = f.mvc.perform(get("/payment/intents/" + intent.id() + "/result")
+                        .with(user(f.actor(4)))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(page).contains("Mở mã QR đang có hiệu lực", "href=\"/payment/intents/" + intent.id() + "\"");
+        assertThat(f.count("payment_intents")).isEqualTo(1);
+        assertThat(f.payments.status(intent.id(), f.actor(4)).expiresAt()).isEqualTo(intent.expiresAt());
     }
 
     @Test void checkoutUsesServerValuesAndPostRequiresCsrf() throws Exception {
@@ -50,6 +61,18 @@ class PaymentIntentTest {
                 .andExpect(status().isOk());
         assertThat(f.count("payment_intents")).isEqualTo(1);
         assertThat(f.count("payment_receipts")).isZero();
+    }
+
+    @ParameterizedTest @ValueSource(strings = {"account", "amount"})
+    void unsupportedVietQrValuesNeverCreateAnIntent(String field) {
+        if (field.equals("account")) {
+            f.jdbc.update("UPDATE payment_channels SET account_number='12345678901234567890' WHERE id=101");
+        } else {
+            f.jdbc.update("UPDATE payment_obligations SET amount_due=10000000000000 WHERE id=201");
+        }
+        assertThatThrownBy(() -> f.payments.openAttempt(201L, f.actor(4)))
+                .isInstanceOf(com.carrent.common.exception.BusinessException.class);
+        assertThat(f.count("payment_intents")).isZero();
     }
 
     @ParameterizedTest @ValueSource(longs = {1, 2, 5, 6, 7})

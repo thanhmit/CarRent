@@ -4,6 +4,9 @@ import com.carrent.config.PaymentProviderConfiguration;
 import com.carrent.payment.provider.PayOsPayoutClient;
 import com.carrent.payment.provider.ProviderPaymentProperties;
 import com.carrent.payment.provider.SePayWebhookVerifier;
+import com.carrent.payment.provider.RefundDestinationVerifier;
+import com.carrent.payment.provider.RefundLookupProperties;
+import com.carrent.payment.provider.HttpVietQrRefundDestinationVerifier;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
@@ -82,5 +85,32 @@ class ProviderPaymentPropertiesTest {
         contextRunner()
                 .withPropertyValues("carrent.payment.providers.payos.owner-payout.enabled=true")
                 .run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void refusesToEnableRecipientLookupWithoutItsOwnCredentials() {
+        contextRunner()
+                .withPropertyValues("carrent.payment.recipient-lookup.enabled=true",
+                        "carrent.payment.recipient-lookup.client-id=fixture-lookup-client")
+                .run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void enablesHttpRecipientLookupWithIndependentCredentialsAndNoPayOsKeys() {
+        contextRunner()
+                .withPropertyValues("carrent.payment.recipient-lookup.enabled=true",
+                        "carrent.payment.recipient-lookup.client-id=fixture-lookup-client",
+                        "carrent.payment.recipient-lookup.api-key=fixture-lookup-secret")
+                .run(context -> {
+                    assertThat(context).hasNotFailed().hasSingleBean(RefundDestinationVerifier.class);
+                    assertThat(context.getBean(RefundDestinationVerifier.class))
+                            .isInstanceOf(HttpVietQrRefundDestinationVerifier.class);
+                    var lookup = context.getBean(RefundLookupProperties.class);
+                    assertThat(lookup.enabled()).isTrue();
+                    assertThat(lookup.clientId()).isEqualTo("fixture-lookup-client");
+                    assertThat(lookup.apiKey()).isEqualTo("fixture-lookup-secret");
+                    assertThat(lookup.toString()).doesNotContain("fixture-lookup-client", "fixture-lookup-secret");
+                    assertThat(context.getBean(ProviderPaymentProperties.class).payos()).isEmpty();
+                });
     }
 }

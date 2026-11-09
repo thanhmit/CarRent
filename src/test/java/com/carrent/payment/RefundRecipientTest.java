@@ -23,6 +23,21 @@ class RefundRecipientTest {
     @AfterAll static void stop() throws Exception { if (f != null) f.close(); }
     @BeforeEach void reset() { f.reset(); }
 
+    @Test void invalidBankIsAssociatedWithItsFieldError() throws Exception {
+        long id = refund();
+        String page = f.mvc.perform(post("/payment/refunds/" + id + "/recipient/preview")
+                        .with(user(f.actor(4))).with(csrf())
+                        .param("bankBin", "97042").param("accountNumber", "123"))
+                .andExpect(status().isBadRequest()).andReturn().getResponse()
+                .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        var input = java.util.regex.Pattern.compile("<input[^>]*id=\"bankBin\"[^>]*>").matcher(page);
+        assertThat(input.find()).isTrue();
+        assertThat(input.group()).contains("aria-invalid=\"true\"", "bankBin-error");
+        assertThat(page).contains("id=\"bankBin-error\"", "Mã ngân hàng phải gồm 6 chữ số.");
+        assertThat(f.jdbc.queryForObject("SELECT ready_at FROM refunds WHERE id=?", java.sql.Timestamp.class, id)).isNull();
+        assertThat(f.count("payout_attempts")).isZero();
+    }
+
     @Test void previewDoesNotWriteAndConfirmationSetsADeadlineOnce() throws Exception {
         long id = refund();
         var service = f.app.getBean(RefundRecipientService.class);

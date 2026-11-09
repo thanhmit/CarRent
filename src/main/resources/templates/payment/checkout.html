@@ -3,40 +3,49 @@
 <head th:replace="~{fragments/head :: head(title='Thanh toán')}"></head>
 <body class="bg-surface font-body-md text-on-surface">
 <div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
-  <section class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md"
+<main class="pt-24 pb-8 min-h-screen px-4 sm:px-6">
+  <section class="max-w-4xl mx-auto flex flex-col gap-6 [overflow-wrap:anywhere]"
            id="payment-checkout" th:attr="data-status-url=@{/payment/intents/{id}/status(id=${payment.id})},data-result-url=@{/payment/intents/{id}/result(id=${payment.id})},data-expires-at=${payment.expiresAt},data-booking-advance=${payment.rental != null and !payment.rental.balance}">
-    <h1 class="font-headline-md text-headline-md">Thanh toán bằng chuyển khoản</h1>
-    <p id="payment-status" role="status" aria-live="polite" th:text="${payment.message()}">Đang chờ thanh toán</p>
-    <section th:if="${payment.rental != null and !payment.rental.balance}" class="flex flex-col gap-space-sm">
-      <h2 class="font-title-md">Trả trước cho đơn thuê</h2>
+    <header class="flex flex-col gap-2"><p class="font-label-md text-label-md text-secondary flex items-center gap-2"><span class="material-symbols-outlined text-[20px]" aria-hidden="true">qr_code_scanner</span>Chuyển khoản ngân hàng</p><h1 class="font-headline-md text-headline-md">Thanh toán bằng chuyển khoản</h1></header>
+    <p class="rounded-xl bg-surface-container p-4 font-title-md text-title-md" id="payment-status" role="status" aria-live="polite" th:text="${payment.message()}">Đang chờ thanh toán</p>
+    <div class="grid md:grid-cols-2 gap-6 items-start">
+      <section class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0" aria-labelledby="transfer-heading"><h2 id="transfer-heading" class="font-title-md text-title-md">Thông tin chuyển khoản</h2>
+    <p>Chuyển đúng số tiền và giữ nguyên nội dung chuyển khoản.</p>
+    <dl class="flex flex-col gap-4 [overflow-wrap:anywhere]">
+      <div><dt class="font-caption text-caption text-on-surface-variant mb-1">Số tiền</dt><dd class="font-headline-lg text-headline-lg tabular-nums [overflow-wrap:anywhere]" th:text="${#numbers.formatInteger(payment.amount, 0, 'POINT') + ' VNĐ'}"></dd></div>
+      <div><dt class="font-caption text-caption text-on-surface-variant mb-1">Nội dung</dt><dd th:text="${payment.code}"></dd></div>
+      <div><dt class="font-caption text-caption text-on-surface-variant mb-1">Hạn mã QR</dt><dd><time th:datetime="${payment.expiresAt}" th:text="${#temporals.format(payment.expiresAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time></dd></div>
+    </dl>
+    <img id="payment-qr" th:src="${payment.qrUrl}" alt="Mã QR chuyển khoản đúng số tiền và nội dung" referrerpolicy="no-referrer" class="w-full max-w-xs mx-auto h-auto object-contain rounded-xl border border-outline-variant/50 p-2"/>
+      </section>
+      <div class="flex flex-col gap-4 min-w-0">
+    <section th:if="${payment.rental != null and !payment.rental.balance}" class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0">
+      <h2 class="font-title-md text-title-md">Trả trước cho đơn thuê</h2>
       <p>Đã đồng ý BEFORE; chưa xác nhận nhận xe. Đơn vẫn chờ nhận đủ tiền trả trước.</p>
       <p th:text="${'Trả trước 30%: ' + #numbers.formatInteger(payment.rental.advanceAmount, 0, 'POINT') + ' VNĐ'}"></p>
       <p th:text="${'Còn lại 70%: ' + #numbers.formatInteger(payment.rental.balanceAmount, 0, 'POINT') + ' VNĐ'}"></p>
-      <a th:href="@{/bookings/{id}(id=${payment.rental.bookingId})}" class="text-secondary underline">Xem đơn thuê và biên bản</a>
+      <a th:href="@{/bookings/{id}(id=${payment.rental.bookingId})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Xem đơn thuê và biên bản</a>
     </section>
-    <section th:if="${payment.rental != null and payment.rental.balance}" class="flex flex-col gap-space-sm">
-      <h2 class="font-title-md">Thanh toán phần còn lại 70%</h2>
+    <section th:if="${payment.rental != null and payment.rental.balance}" class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0">
+      <h2 class="font-title-md text-title-md">Thanh toán phần còn lại 70%</h2>
       <p th:text="${'Khoản nợ còn lại: ' + #numbers.formatInteger(payment.rental.remainingAmount, 0, 'POINT') + ' VNĐ'}"></p>
       <p>Đã nhận lại xe. Hủy hoặc hết hạn QR chỉ kết thúc lần thanh toán, không xóa khoản nợ và không đổi hạn trả.</p>
       <p>Đóng trang không ngừng ghi nhận tiền. Nếu đã chuyển khoản, hãy kiểm tra kết quả trước khi chuyển thêm.</p>
       <p>Hạn trả nợ: <time th:datetime="${payment.rental.dueAt}" th:text="${#temporals.format(payment.rental.dueAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time>. Quá hạn vẫn có thể thanh toán.</p>
-      <a th:href="@{/bookings/{id}(id=${payment.rental.bookingId})}" class="text-secondary underline">Xem đơn thuê và biên bản</a>
+      <a th:href="@{/bookings/{id}(id=${payment.rental.bookingId})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Xem đơn thuê và biên bản</a>
     </section>
-    <p>Chuyển đúng số tiền và giữ nguyên nội dung chuyển khoản.</p>
-    <dl class="flex flex-col gap-space-sm break-all">
-      <div><dt>Số tiền</dt><dd class="font-bold" th:text="${#numbers.formatInteger(payment.amount, 0, 'POINT') + ' VNĐ'}"></dd></div>
-      <div><dt>Nội dung</dt><dd th:text="${payment.code}"></dd></div>
-      <div><dt>Hạn mã QR</dt><dd><time th:datetime="${payment.expiresAt}" th:text="${#temporals.format(payment.expiresAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time></dd></div>
-    </dl>
-    <img id="payment-qr" th:src="${payment.qrUrl}" alt="Mã QR chuyển khoản đúng số tiền và nội dung" referrerpolicy="no-referrer" class="w-full max-w-xs mx-auto"/>
+        <aside class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0"><h2 class="font-title-md text-title-md">Trước khi chuyển tiền</h2><ol class="list-decimal pl-5 space-y-3 text-on-surface-variant"><li>Quét mã QR hoặc dùng đúng nội dung chuyển khoản được hiển thị.</li><li>Kiểm tra số tiền và nội dung trước khi xác nhận trong ứng dụng ngân hàng.</li><li>Theo dõi kết quả tại đây. Nếu đã chuyển, hãy kiểm tra trạng thái trước khi chuyển thêm.</li></ol></aside>
+      </div>
+    </div>
+    <section class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0" aria-label="Theo dõi và hủy thanh toán">
     <form method="post" th:action="@{/payment/intents/{id}/cancel(id=${payment.id})}" id="payment-cancel">
-      <button type="submit" class="w-full p-space-sm rounded-lg bg-error-container text-on-error-container" th:text="${payment.rental != null and !payment.rental.balance ? 'Hủy đặt xe' : 'Hủy lần thanh toán'}">Hủy lần thanh toán</button>
+      <button type="submit" class="min-h-11 w-full rounded-xl bg-error-container text-on-error-container px-4 py-3 font-label-md text-label-md hover:bg-error-container/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-error" th:text="${payment.rental != null and !payment.rental.balance ? 'Hủy đặt xe' : 'Hủy lần thanh toán'}">Hủy lần thanh toán</button>
     </form>
     <p th:if="${payment.rental != null and !payment.rental.balance}">Đóng trang không hủy đặt xe hoặc giải phóng lịch. Muốn hủy, hãy bấm Hủy đặt xe; hạn giữ chỗ không bắt đầu lại khi tải lại trang.</p>
     <p>Đóng trang không hủy giao dịch ngân hàng. Chỉ trạng thái đã xác nhận từ hệ thống mới chứng minh đã nhận tiền.</p>
-    <a th:href="@{/payment/intents/{id}(id=${payment.id})}" class="text-secondary underline">Tải lại trạng thái</a>
+    <a th:href="@{/payment/intents/{id}(id=${payment.id})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Tải lại trạng thái</a>
     <noscript><p>Vui lòng tải lại trang để kiểm tra kết quả. Không chuyển tiền sau hạn hiển thị.</p></noscript>
+    </section>
   </section>
 </main>
 <script th:src="@{/js/payment-polling.js}" defer></script>

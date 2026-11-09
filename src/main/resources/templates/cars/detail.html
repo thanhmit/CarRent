@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/head :: head(title=${car.brand + ' ' + car.model})}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-<div th:replace="~{fragments/header :: header}"></div>
+<div th:with="publicNavSection='cars'"><th:block th:replace="~{fragments/header :: header}"></th:block></div>
 <div th:replace="~{fragments/messages :: messages}"></div>
 <main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
   <div class="max-w-7xl mx-auto px-4 sm:px-gutter w-full py-space-lg">
@@ -82,13 +82,35 @@
       <aside class="lg:col-span-4 lg:sticky lg:top-20">
         <div class="bg-surface-container-lowest rounded-xl shadow-md p-space-lg flex flex-col gap-space-lg">
           <div><strong class="font-headline-md text-headline-md text-primary break-all" th:text="${#numbers.formatDecimal(car.pricePerDay, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong><span class="text-on-surface-variant"> / ngày</span></div>
-          <div th:if="${publicListing and criteria.startDate != null and criteria.endDate != null}" class="flex flex-col gap-space-sm">
+          <section th:if="${publicListing}" data-car-availability th:data-today="${today}" hidden aria-label="Lịch thuê xe" class="space-y-2">
+            <h2 class="font-title-md text-title-md">Chọn lịch thuê xe</h2>
+            <div class="grid grid-cols-2 gap-space-sm">
+              <div class="min-w-0"><label for="calendar-start" class="block text-caption mb-1">Ngày nhận xe</label><input id="calendar-start" data-calendar-start type="date" th:min="${today}" max="9999-12-31" th:value="${criteria.startDate}" aria-describedby="calendar-message" class="w-full min-w-0 rounded-lg border border-outline-variant p-2"/></div>
+              <div class="min-w-0"><label for="calendar-end" class="block text-caption mb-1">Ngày trả xe</label><input id="calendar-end" data-calendar-end type="date" th:min="${today}" max="9999-12-31" th:value="${criteria.endDate}" aria-describedby="calendar-message" class="w-full min-w-0 rounded-lg border border-outline-variant p-2"/></div>
+            </div>
+            <div class="flex gap-space-sm">
+              <button type="button" data-calendar-start-mode aria-pressed="true" class="flex-1 rounded-lg border border-outline-variant px-2 py-2 aria-pressed:bg-secondary-fixed">Chọn ngày nhận</button>
+              <button type="button" data-calendar-end-mode aria-pressed="false" class="flex-1 rounded-lg border border-outline-variant px-2 py-2 aria-pressed:bg-secondary-fixed">Chọn ngày trả</button>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <button type="button" data-calendar-previous aria-label="Tháng trước" class="p-2 rounded-lg disabled:opacity-40"><span aria-hidden="true">←</span></button>
+              <strong data-calendar-month aria-live="polite" class="capitalize"></strong>
+              <button type="button" data-calendar-next aria-label="Tháng sau" class="p-2 rounded-lg disabled:opacity-40"><span aria-hidden="true">→</span></button>
+            </div>
+            <div class="grid grid-cols-7 text-center text-caption text-on-surface-variant" aria-hidden="true"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div>
+            <div data-calendar-days class="grid grid-cols-7 gap-1"></div>
+            <p class="text-caption text-on-surface-variant">Ngày xám: đã giữ lịch hoặc không phù hợp với ngày đang chọn. Ngày viền xanh: đang chọn.</p>
+            <p id="calendar-message" data-calendar-message role="status" aria-live="polite" class="text-caption text-on-surface-variant"></p>
+            <div hidden><span th:each="range : ${busyDateRanges}" data-busy-range th:attr="data-start=${range.startDate},data-end=${range.endDate}"></span></div>
+          </section>
+          <noscript th:if="${publicListing}"><p class="text-caption">Bật JavaScript để xem lịch tháng và ngày bận. Hệ thống vẫn kiểm tra lịch khi gửi đơn đặt xe.</p></noscript>
+          <div th:if="${publicListing and criteria.startDate != null and criteria.endDate != null}" data-calendar-fallback class="space-y-2">
             <h2 class="font-title-md text-title-md">Thời gian thuê đã chọn</h2>
             <p><span th:text="${#temporals.format(criteria.startDate, 'dd/MM/yyyy')}"></span> → <span th:text="${#temporals.format(criteria.endDate, 'dd/MM/yyyy')}"></span></p>
             <a th:href="@{/cars(startDate=${criteria.startDate},endDate=${criteria.endDate})}" class="text-secondary underline">Đổi ngày tại trang Tìm xe</a>
           </div>
           <div th:if="${publicListing}" class="flex flex-col gap-space-sm">
-            <a sec:authorize="isAnonymous() or hasRole('CUSTOMER')" th:href="@{/bookings/new(carId=${car.id},startDate=${criteria.startDate},endDate=${criteria.endDate})}" class="w-full min-h-12 px-space-md py-space-sm rounded-xl bg-secondary hover:bg-secondary-container text-on-secondary font-title-md text-title-md flex items-center justify-center gap-2"><span>Đặt thuê xe</span><span class="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span></a>
+            <a sec:authorize="isAnonymous() or hasRole('CUSTOMER')" data-calendar-book th:data-booking-url="@{/bookings/new(carId=${car.id})}" th:href="@{/bookings/new(carId=${car.id},startDate=${criteria.startDate},endDate=${criteria.endDate})}" class="w-full min-h-12 px-space-md py-space-sm rounded-xl bg-secondary hover:bg-secondary-container text-on-secondary font-title-md text-title-md flex items-center justify-center gap-2"><span>Đặt thuê xe</span><span class="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_forward</span></a>
             <p class="font-caption text-caption text-on-surface-variant">Khi gửi đơn, hệ thống kiểm tra lại lịch và giá hiện tại. Kết quả tìm kiếm không giữ chỗ.</p>
             <p sec:authorize="hasRole('OWNER') or hasRole('ADMIN')" class="text-caption text-on-surface-variant">Chỉ tài khoản khách hàng được đặt thuê xe.</p>
           </div>
@@ -99,5 +121,6 @@
   </div>
 </main>
 <div th:replace="~{fragments/footer :: footer}"></div>
+<script th:if="${publicListing}" th:src="@{/js/car-availability.js}" defer></script>
 </body>
 </html>

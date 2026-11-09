@@ -3,22 +3,24 @@
 <head th:replace="~{fragments/head :: head(title='Trạng thái hoàn tiền')}"></head>
 <body class="bg-surface font-body-md text-on-surface">
 <div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-16 min-h-screen px-gutter-mobile sm:px-gutter">
+<main class="pt-24 pb-8 min-h-screen px-4 sm:px-6">
   <section id="financial-status" th:attr="data-status-url=@{/payment/refunds/{id}/status(id=${refund.id})},data-state=${refund.status.name() + ':' + refund.overdue},data-terminal=${refund.status.name() == 'SUCCEEDED'}"
-           class="max-w-xl mx-auto my-space-xl p-space-lg bg-surface-container-lowest rounded-xl flex flex-col gap-space-md">
+           class="max-w-2xl mx-auto rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4 min-w-0 [overflow-wrap:anywhere]">
     <h1 class="font-headline-md text-headline-md" th:text="${'Khoản hoàn #' + refund.id}"></h1>
-    <p class="font-bold" th:text="${#numbers.formatInteger(refund.amount, 0, 'POINT') + ' VNĐ'}"></p>
-    <p role="status" th:text="${refund.status.message()}"></p>
+    <p class="font-headline-lg text-headline-lg tabular-nums" th:text="${#numbers.formatInteger(refund.amount, 0, 'POINT') + ' VNĐ'}"></p>
+    <p role="status" aria-live="polite" class="rounded-xl bg-surface-container p-4 font-title-md text-title-md" th:text="${refund.status.message()}"></p>
     <p th:if="${refund.reason.name() == 'SYSTEM_CONFIRMATION_DELAY'}">Tiền vào đúng hạn nhưng hệ thống xác nhận chậm; đơn đã hết giữ chỗ. Khoản tiền này được hoàn đầy đủ.</p>
-    <p th:if="${refund.overdue}" class="text-error">Quá thời hạn xử lý; hệ thống tiếp tục xử lý và đối soát.</p>
-    <p th:if="${refund.account != null}" class="break-all" th:text="${'Tài khoản nhận: ' + refund.account}"></p>
+    <p th:if="${refund.overdue}" class="rounded-xl border border-error/30 bg-error-container/50 p-4 text-on-error-container">Quá thời hạn xử lý; hệ thống tiếp tục xử lý và đối soát.</p>
+    <p th:if="${refund.account == null}" class="text-on-surface-variant">Chưa có thông tin tài khoản nhận.</p>
+    <p th:if="${refund.account != null}" class="[overflow-wrap:anywhere]" th:text="${'Tài khoản nhận: ' + refund.account}"></p>
     <p th:if="${refund.dueAt != null}">Hạn xử lý:
       <time th:datetime="${refund.dueAt}" th:text="${#temporals.format(refund.dueAt.atZone(T(java.time.ZoneId).of('Asia/Ho_Chi_Minh')), 'dd/MM/yyyy HH:mm:ss') + ' (giờ Việt Nam)'}"></time>
     </p>
-    <a th:if="${refund.recipient}" th:href="@{/payment/refunds/{id}(id=${refund.id})}" class="text-secondary underline">Thông tin nhận hoàn tiền của tôi</a>
-    <p id="polling-message" role="status" aria-live="polite"></p>
-    <a th:href="@{/payment/finances/refunds/{id}(id=${refund.id})}" class="text-secondary underline">Tải lại trạng thái</a>
-    <a th:href="@{/payment/finances}" class="text-secondary underline">Về tài chính</a>
+    <p th:if="${refund.dueAt == null}" class="text-on-surface-variant">Chưa bắt đầu thời hạn xử lý.</p>
+    <a th:if="${refund.recipient}" th:href="@{/payment/refunds/{id}(id=${refund.id})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Thông tin nhận hoàn tiền của tôi</a>
+    <p id="polling-message" role="status" aria-live="polite" class="text-on-surface-variant empty:hidden"></p>
+    <a th:href="@{/payment/finances/refunds/{id}(id=${refund.id})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Tải lại trạng thái</a>
+    <a th:href="@{/payment/finances}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Về tài chính</a>
   </section>
 </main>
 <script th:src="@{/js/payment-polling.js}" defer></script>

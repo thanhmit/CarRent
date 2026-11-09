@@ -13,6 +13,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
+    @Query("select new com.carrent.booking.BookingDateRange(b.startDate, b.endDate) "
+            + "from Booking b where b.car.id = :carId "
+            + "and b.status in (com.carrent.booking.BookingStatus.PENDING, com.carrent.booking.BookingStatus.CONFIRMED) "
+            + "and b.endDate > :today order by b.startDate, b.endDate")
+    List<BookingDateRange> findBusyDateRanges(@Param("carId") Long carId, @Param("today") LocalDate today);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select b from Booking b where b.car.id = :carId "
             + "and b.status in (com.carrent.booking.BookingStatus.PENDING, com.carrent.booking.BookingStatus.CONFIRMED) "

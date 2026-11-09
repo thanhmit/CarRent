@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title='Xác nhận đặt thuê xe')}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-<div th:replace="~{fragments/header :: header}"></div>
+<div th:with="publicNavSection='bookings'"><th:block th:replace="~{fragments/header :: header}"></th:block></div>
 <main th:with="returnDatesValid=${form.startDate != null and form.endDate != null and !form.startDate.isBefore(today) and form.startDate.isBefore(form.endDate) and form.endDate.year <= 9999}" class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
   <div class="max-w-7xl mx-auto px-gutter py-space-xl">
     <a th:href="@{/cars/{id}(id=${car.id},startDate=${returnDatesValid ? form.startDate : null},endDate=${returnDatesValid ? form.endDate : null})}" th:data-car-detail="@{/cars/{id}(id=${car.id})}" class="inline-flex items-center gap-space-xs text-secondary mb-space-lg"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">arrow_back</span>Thông tin xe</a>

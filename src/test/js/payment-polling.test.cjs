@@ -5,12 +5,12 @@ const vm = require('node:vm');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../../main/resources/static/js/payment-polling.js'), 'utf8');
 
-function browser({ checkout = false, terminal = false, fetcher } = {}) {
+function browser({ checkout = false, terminal = false, bookingAdvance = false, fetcher } = {}) {
   const events = {}, timers = new Map(), intervals = new Map(), requests = [];
   let sequence = 0, reloads = 0, redirect;
   const message = { textContent: '' }, qr = { hidden: false }, cancel = { hidden: false };
   const root = { dataset: { terminal: String(terminal), state: 'READY:false', statusUrl: '/status',
-    resultUrl: '/result', expiresAt: '2000-01-01T00:00:00Z' } };
+    resultUrl: '/result', bookingAdvance: String(bookingAdvance), expiresAt: '2000-01-01T00:00:00Z' } };
   const document = { hidden: false, addEventListener: (event, callback) => { events[event] = callback; },
     getElementById: id => ({ 'financial-status': checkout ? null : root, 'payment-checkout': checkout ? root : null,
       'payment-status': message, 'polling-message': message, 'payment-qr': qr, 'payment-cancel': cancel })[id] };
@@ -90,4 +90,22 @@ test('checkout hides expired QR and redirects only from backend status', async (
   const b = browser({ checkout: true, fetcher: () => response('RECEIVED') });
   assert.equal(b.qr.hidden, true); assert.equal(b.cancel.hidden, true); assert.equal(b.redirect, undefined);
   await b.tick(); assert.equal(b.redirect, '/result'); assert.equal(b.count(2000), 0);
+});
+
+test('advance expiry keeps booking cancellation until authentication changes', async () => {
+  for (const status of [401, 403]) {
+    const b = browser({ checkout: true, bookingAdvance: true, fetcher: () => ({ status }) });
+    assert.equal(b.qr.hidden, true);
+    assert.equal(b.cancel.hidden, false);
+    await b.tick();
+    assert.equal(b.cancel.hidden, true);
+    assert.equal(b.count(2000), 0);
+  }
+});
+
+test('refund overdue change reloads even when status remains READY', async () => {
+  const b = browser({ fetcher: () => response('READY', true) });
+  await b.tick();
+  assert.equal(b.reloads, 1);
+  assert.equal(b.count(2000), 0);
 });

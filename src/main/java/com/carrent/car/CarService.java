@@ -1,6 +1,7 @@
 package com.carrent.car;
 
 import com.carrent.booking.BookingRepository;
+import com.carrent.booking.BookingDateRange;
 import com.carrent.subscription.SubscriptionPolicy;
 import com.carrent.common.exception.BusinessException;
 import com.carrent.common.exception.ForbiddenException;
@@ -15,6 +16,7 @@ import com.carrent.user.UserStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.validation.Validator;
 import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +59,11 @@ public class CarService {
         this.notifications = notifications;
         this.bookings = bookings;
         this.subscriptions = subscriptions;
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingDateRange> busyDateRanges(Long carId, LocalDate today) {
+        return bookings.findBusyDateRanges(carId, today);
     }
 
     @Transactional(readOnly = true)

@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 @Configuration(proxyBeanMethods = false)
+    @org.springframework.context.annotation.Profile("!payos-check & !payos-setup & !sepay-setup & !sepay-activate & !refund-lookup-check")
 @EnableScheduling
 @ConditionalOnProperty(name = "carrent.rental.deadlines.enabled", havingValue = "true")
 public class RentalDeadlineConfiguration {

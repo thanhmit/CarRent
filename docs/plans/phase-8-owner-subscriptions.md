@@ -170,6 +170,8 @@ WHERE owner_id = :ownerId
 
 **Phụ trách:** `@ducbinhnguyen07ars` · **Review:** `@thanhmit`.
 
+**Cập nhật 2026-11-09:** đã bổ sung adapter lookup người nhận và đường chẩn đoán riêng không chi tiền; chuẩn bị nghiệm thu duplicate/late bằng giao dịch thật cùng order và hai nguồn Owner/Admin. P8.8 vẫn pending entitlement/capability/review/kích hoạt và đối soát thực tế. Xem [bàn giao mới](p42a-p88-implementation-handoff-2026-11-09.md), [hướng dẫn và file private cần điền](../p42a-p88-operator-guide-2026-11-09.md).
+
 - [ ] Run `.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify` bằng PowerShell; so baseline seed/schema theo migration đã duyệt.
 - [x] E2E: Owner mua Small → SePay receipt → đăng 4 suất (có pending) → suất thứ 5 fail → hết hạn public ẩn → gia hạn cùng gói phục hồi đúng lựa chọn → đổi gói thấp hơn sau expiry tự chọn xe.
 - [ ] E2E hai lần chuyển thật cùng order → chỉ một lần gia hạn + một refund từ Admin; late order → không cấp gói + hoàn đủ. Phân biệt fixture với live và không tự chuyển tiền trong test.

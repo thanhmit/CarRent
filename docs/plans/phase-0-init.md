@@ -6,7 +6,7 @@
 
 **Architecture:** Monolith MVC 3-layer theo SDD §3; phase này chỉ dựng vỏ: scaffold, cấu hình, fragments, trang home/error.
 
-**Tech Stack:** Java 21, **Spring Boot 4.1.x** (mặc định mới của start.spring.io — khác dòng 3.x ở artifact `spring-boot-starter-webmvc` thay cho `spring-boot-starter-web`; API MVC/Security/JPA/Thymeleaf tương thích Boot 3, các task sau không cần đổi), Thymeleaf, Spring Security, Spring Data JPA, MySQL 8, Maven Wrapper, Lombok, Tailwind CSS Play CDN + design tokens MD3 từ prototype Stitch (D-18/D-23).
+**Tech Stack:** Java 21, **Spring Boot 4.1.x** (mặc định mới của start.spring.io — khác dòng 3.x ở artifact `spring-boot-starter-webmvc` thay cho `spring-boot-starter-web`; API MVC/Security/JPA/Thymeleaf tương thích Boot 3, các task sau không cầngn đổi), Thymeleaf, Spring Security, Spring Data JPA, MySQL 8, Maven Wrapper, Lombok, Tailwind CSS Play CDN + design tokens MD3 từ prototype Stitch (D-18/D-23).
 
 **Spec:** `C:\Users\Admin\Documents\hoc\Car\docs\SDD.md` (đặc biệt §2, §8.2, §14.3) và `docs\decisions.md`.
 

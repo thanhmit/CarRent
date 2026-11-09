@@ -2,7 +2,7 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments/head :: head(title=${'Đơn thuê #CR-' + booking.id})}"></head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-<div th:replace="~{fragments/header :: header}"></div>
+<div th:with="publicNavSection='bookings'"><th:block th:replace="~{fragments/header :: header}"></th:block></div>
 <main class="w-full pt-16 bg-surface min-h-[calc(100vh-16rem)]">
   <div class="max-w-7xl mx-auto px-gutter py-space-xl flex flex-col gap-space-lg">
     <div class="flex flex-wrap items-center justify-between gap-space-md">

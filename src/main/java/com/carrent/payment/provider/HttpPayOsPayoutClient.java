@@ -17,6 +17,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 public final class HttpPayOsPayoutClient implements PayOsPayoutClient {
+    public record ConnectionCheck(boolean funded) { }
     private final LongFunction<PayOsChannel> channels;
     private final RestClient http;
     private final JsonMapper json = JsonMapper.builder().build();
@@ -37,6 +38,35 @@ public final class HttpPayOsPayoutClient implements PayOsPayoutClient {
     public HttpPayOsPayoutClient(LongFunction<PayOsChannel> channels, RestClient http) {
         this.channels = channels;
         this.http = http;
+    }
+
+    /** Explicit diagnostics use GET only and do not require enabling the payout channel. */
+    public ConnectionCheck checkConnection(Long credentialId) {
+        var configured = credentialId == null ? null : channels.apply(credentialId);
+        if (configured == null || configured.clientId() == null || configured.clientId().isBlank()
+                || configured.apiKey() == null || configured.apiKey().isBlank()
+                || configured.checksumKey() == null || configured.checksumKey().isBlank()) {
+            throw new IllegalStateException("payOS credentials are unavailable");
+        }
+        try {
+            var list = verifiedData(http.get().uri("/v1/payouts?limit=1&offset=0")
+                    .headers(headers -> authenticate(headers, configured)).retrieve().toEntity(String.class), configured);
+            if (!list.path("payouts").isArray() || !list.path("pagination").path("hasMore").isBoolean()) {
+                throw new IllegalArgumentException("Invalid payout list");
+            }
+            var source = verifiedData(http.get().uri("/v1/payouts-account/balance")
+                    .headers(headers -> authenticate(headers, configured)).retrieve().toEntity(String.class), configured);
+            var balance = source.path("balance");
+            if (!"VND".equals(source.path("currency").asText()) || !balance.isString()) {
+                throw new IllegalArgumentException("Unsupported source balance");
+            }
+            long amount = new java.math.BigDecimal(balance.asText()).longValueExact();
+            if (amount < 0) throw new IllegalArgumentException("Invalid source balance");
+            return new ConnectionCheck(amount > 0);
+        } catch (RestClientException | JacksonException | IllegalArgumentException | ArithmeticException ex) {
+            // Do not propagate HTTP bodies or provider/account details into application startup logs.
+            throw new IllegalStateException("payOS read-only connection check failed");
+        }
     }
 
     @Override
@@ -107,6 +137,7 @@ public final class HttpPayOsPayoutClient implements PayOsPayoutClient {
             var data = verifiedData(response, channel);
             var payouts = data.path("payouts");
             if (!payouts.isArray() || payouts.size() != 1
+                    || !data.path("pagination").path("hasMore").isBoolean()
                     || data.path("pagination").path("hasMore").asBoolean()
                     || !referenceId.equals(payouts.get(0).path("referenceId").asText())) {
                 return fallback;

@@ -55,4 +55,20 @@ public final class SePayWebhookVerifier {
             throw new IllegalStateException("HMAC-SHA256 is unavailable", ex);
         }
     }
+
+    /** Shared receiving accounts may route only within the same configured webhook trust boundary. */
+    public boolean sharesWebhookSecret(String first, String second) {
+        var source = first == null ? null : properties.sepay().get(first);
+        var target = second == null ? null : properties.sepay().get(second);
+        return source != null && target != null && source.webhookSecret() != null
+                && !source.webhookSecret().isBlank() && target.webhookSecret() != null
+                && MessageDigest.isEqual(source.webhookSecret().getBytes(StandardCharsets.UTF_8),
+                        target.webhookSecret().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public boolean acceptsGateway(String reference, String gateway) {
+        var channel = reference == null ? null : properties.sepay().get(reference);
+        return channel != null && (channel.gateway() == null || channel.gateway().isBlank()
+                || channel.gateway().equals(gateway));
+    }
 }

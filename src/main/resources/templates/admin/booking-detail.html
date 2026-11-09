@@ -2,35 +2,54 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(title=${'Theo dõi đơn thuê #CR-' + booking.id})}"></head>
 <body class="bg-surface font-body-md text-on-surface">
-<div th:replace="~{fragments/header :: header}"></div>
-<main class="pt-20 px-gutter-mobile sm:px-gutter min-h-screen">
-  <div class="max-w-4xl mx-auto flex flex-col gap-space-md py-space-lg min-w-0 break-words [overflow-wrap:anywhere]">
-    <h1 class="font-headline-md" th:text="${'Theo dõi đơn thuê #CR-' + booking.id}"></h1>
-    <a th:href="@{/admin/bookings}" class="text-secondary underline">Danh sách đơn thuê</a>
-    <p>Chế độ quản trị chỉ đọc. Mốc giao nhận xe và trạng thái tiền được ghi nhận riêng.</p>
-    <p>Hợp đồng, giao xe và nhận lại xe do chủ xe xác nhận. Bất đồng AFTER được lưu làm bằng chứng và không chặn hoàn thành đơn khi tiền đã đủ.</p>
-    <span th:replace="~{booking/fragments :: progressBadge(${booking})}"></span>
-    <p th:text="${'Khách hàng: ' + booking.customer.fullName + ' · Chủ xe: ' + booking.car.owner.fullName}"></p>
+<th:block th:replace="~{fragments/workspace :: sidebar('bookings', null)}"></th:block>
+<div class="lg:pl-64 min-w-0">
+<header th:replace="~{fragments/workspace :: topbar('Chi tiết đơn thuê')}"></header>
+<main id="admin-booking-detail" class="p-4 sm:p-6 lg:p-8 min-w-0">
+  <div class="max-w-6xl mx-auto flex flex-col gap-6 min-w-0 break-words [overflow-wrap:anywhere]">
+    <header class="flex flex-col items-start gap-3"><a th:href="@{/admin/bookings}" class="min-h-11 inline-flex items-center px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-lowest text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Danh sách đơn thuê</a><h1 class="font-headline-md text-headline-md" th:text="${'Theo dõi đơn thuê #CR-' + booking.id}"></h1></header>
+    <p class="rounded-xl bg-secondary-fixed text-on-secondary-fixed p-4">Chế độ quản trị chỉ đọc. Mốc giao nhận xe và trạng thái tiền được ghi nhận riêng.</p>
+    <section aria-labelledby="booking-summary-heading" class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4">
+      <div class="flex flex-wrap items-center justify-between gap-3"><h2 id="booking-summary-heading" class="font-title-md text-title-md">Thông tin đơn thuê</h2><span th:replace="~{booking/fragments :: progressBadge(${booking})}"></span></div>
+      <dl class="grid sm:grid-cols-2 gap-4">
+        <div><dt class="text-on-surface-variant mb-1">Xe</dt><dd class="font-title-md text-title-md" th:text="${booking.car.brand + ' ' + booking.car.model}"></dd></div>
+        <div><dt class="text-on-surface-variant mb-1">Thời gian thuê</dt><dd class="tabular-nums" th:text="${#temporals.format(booking.startDate,'dd/MM/yyyy') + ' – ' + #temporals.format(booking.endDate,'dd/MM/yyyy')}"></dd></div>
+        <div><dt class="text-on-surface-variant mb-1">Khách hàng và chủ xe</dt><dd th:text="${'Khách hàng: ' + booking.customer.fullName + ' · Chủ xe: ' + booking.car.owner.fullName}"></dd></div>
+        <div><dt class="text-on-surface-variant mb-1">Tổng tiền thuê đã lưu</dt><dd class="font-title-md text-title-md tabular-nums" th:text="${#numbers.formatInteger(booking.totalAmount,0,'POINT') + ' VNĐ'}"></dd></div>
+      </dl>
+      <p class="text-on-surface-variant">Hợp đồng, giao xe và nhận lại xe do chủ xe xác nhận. Bất đồng AFTER được lưu làm bằng chứng và không chặn hoàn thành đơn khi tiền đã đủ.</p>
+    </section>
     <th:block th:if="${timeline != null}">
-      <div th:replace="~{booking/fragments :: rentalPaymentSummary(${booking})}"></div>
-      <section th:replace="~{booking/fragments :: timeline}"></section>
-      <a th:if="${timeline.beforeSubmitted}" th:href="@{/bookings/{id}/inspections/BEFORE(id=${booking.id})}" class="text-secondary underline">Xem BEFORE và bằng chứng</a>
-      <a th:if="${timeline.afterSubmitted}" th:href="@{/bookings/{id}/inspections/AFTER(id=${booking.id})}" class="text-secondary underline">Xem AFTER và bằng chứng</a>
-      <section class="flex flex-col gap-4" th:each="entry : ${finance}">
-        <h2 class="font-title-md" th:text="${entry.key.name() == 'OBLIGATIONS' ? 'Nghĩa vụ thanh toán 30/70' : (entry.key.name() == 'RECEIPTS' ? 'Tiền đã nhận' : 'Hoàn tiền')}"></h2>
-        <p th:if="${entry.value.empty}">Chưa có khoản được ghi nhận cho đơn thuê này.</p>
-        <article th:each="r : ${entry.value}" class="bg-surface-container-lowest p-5 rounded-xl flex flex-col gap-3 min-w-0" th:attr="data-finance-kind=${entry.key}">
-          <h3 class="font-title-sm" th:text="${'Khoản #' + r.id}"></h3>
+      <div class="grid xl:grid-cols-[1fr_1.4fr] gap-6 items-start min-w-0">
+        <section aria-labelledby="payment-summary-heading" class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 min-w-0 flex flex-col gap-4"><h2 id="payment-summary-heading" class="font-title-md text-title-md">Thanh toán tiền thuê</h2><div th:replace="~{booking/fragments :: rentalPaymentSummary(${booking})}"></div></section>
+        <div class="min-w-0 rounded-xl border border-outline-variant/50 [&_h2]:text-title-md [&_h3]:text-label-md [&_li]:border-l-2 [&_li]:border-outline-variant [&_li]:pl-4 [&_a]:min-h-11 [&_a]:inline-flex [&_a]:items-center [&_a]:py-3 [&_a]:focus-visible:outline [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-secondary"><section th:replace="~{booking/fragments :: timeline}"></section></div>
+      </div>
+      <section aria-labelledby="evidence-heading" class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4">
+        <h2 id="evidence-heading" class="font-title-md text-title-md">Biên bản và bằng chứng</h2><p class="text-on-surface-variant">Biên bản đã gửi được lưu riêng với mốc giao nhận xe thực tế.</p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <a th:if="${timeline.beforeSubmitted}" th:href="@{/bookings/{id}/inspections/BEFORE(id=${booking.id})}" class="min-h-11 inline-flex items-center justify-center px-4 py-3 rounded-xl bg-secondary-fixed text-on-secondary-fixed focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Xem BEFORE và bằng chứng</a>
+          <p th:unless="${timeline.beforeSubmitted}" class="rounded-xl bg-surface-container-low p-4 text-on-surface-variant">Chưa có biên bản BEFORE được gửi.</p>
+          <a th:if="${timeline.afterSubmitted}" th:href="@{/bookings/{id}/inspections/AFTER(id=${booking.id})}" class="min-h-11 inline-flex items-center justify-center px-4 py-3 rounded-xl bg-secondary-fixed text-on-secondary-fixed focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Xem AFTER và bằng chứng</a>
+          <p th:unless="${timeline.afterSubmitted}" class="rounded-xl bg-surface-container-low p-4 text-on-surface-variant">Chưa có biên bản AFTER được gửi.</p>
+        </div>
+      </section>
+      <section class="rounded-xl border border-outline-variant/50 bg-surface-container-lowest p-5 sm:p-6 flex flex-col gap-4" th:each="entry : ${finance}">
+        <h2 class="font-title-md text-title-md" th:text="${entry.key.name() == 'OBLIGATIONS' ? 'Nghĩa vụ thanh toán 30/70' : (entry.key.name() == 'RECEIPTS' ? 'Tiền đã nhận' : 'Hoàn tiền')}"></h2>
+        <p th:if="${entry.value.empty}" class="rounded-xl bg-surface-container-low p-4 text-on-surface-variant">Chưa có khoản được ghi nhận cho đơn thuê này.</p>
+        <div class="grid xl:grid-cols-2 gap-4">
+        <article th:each="r : ${entry.value}" class="bg-surface-container-low p-4 sm:p-5 rounded-xl flex flex-col gap-3 min-w-0" th:attr="data-finance-kind=${entry.key}">
+          <h3 class="font-label-md text-label-md" th:text="${'Khoản #' + r.id}"></h3>
           <dl th:replace="~{admin/finance-row :: fields(${r})}"></dl>
           <p th:if="${entry.key.name() != 'REFUNDS'}" th:text="${'Đã phân bổ: ' + #numbers.formatInteger(r.allocated,0,'POINT') + ' VNĐ'}"></p>
-          <a class="text-secondary underline" th:href="@{/admin/finance/{kind}/{id}(kind=${entry.key},id=${r.id})}">Xem chi tiết tài chính</a>
+          <a class="min-h-11 mt-auto inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:href="@{/admin/finance/{kind}/{id}(kind=${entry.key},id=${r.id})}" th:aria-label="${'Xem chi tiết tài chính ' + entry.key + ' #' + r.id}">Xem chi tiết tài chính</a>
         </article>
+        </div>
       </section>
-      <p>Hạn nợ 70% là 1 giờ từ lúc chủ xe nhận lại xe thực tế. Trạng thái quá hạn được tính theo thời điểm hiện tại; thời hạn mã QR không thay đổi hạn nợ.</p>
-      <p>Khoản hoàn đang chờ người nhận, chờ số dư hoặc đang xử lý chưa phải tiền đã hoàn thành công.</p>
+      <aside aria-label="Cách đọc trạng thái tiền" class="rounded-xl bg-surface-container-low p-4 flex flex-col gap-2 text-on-surface-variant"><p>Hạn nợ 70% là 1 giờ từ lúc chủ xe nhận lại xe thực tế. Trạng thái quá hạn được tính theo thời điểm hiện tại; thời hạn mã QR không thay đổi hạn nợ.</p>
+      <p>Khoản hoàn đang chờ người nhận, chờ số dư hoặc đang xử lý chưa phải tiền đã hoàn thành công.</p></aside>
     </th:block>
-    <p th:if="${timeline == null}">Đơn thuê legacy: không áp dụng timeline VietQR 30/70.</p>
-    <a th:href="@{/admin/finance(subjectType='BOOKING',subjectId=${booking.id})}" class="text-secondary underline">Tra cứu tài chính của đơn thuê</a>
+    <p th:if="${timeline == null}" class="rounded-xl bg-surface-container-low border border-outline-variant/50 p-5 text-on-surface-variant">Đơn thuê legacy: không áp dụng timeline VietQR 30/70.</p>
+    <a th:href="@{/admin/finance(subjectType='BOOKING',subjectId=${booking.id})}" class="min-h-11 self-start inline-flex items-center justify-center rounded-xl bg-secondary px-5 py-3 text-on-secondary font-label-md text-label-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary">Tra cứu tài chính của đơn thuê</a>
   </div>
-</main>
+</main></div>
 </body></html>

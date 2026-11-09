@@ -26,7 +26,7 @@ class SePayInboxTest {
     @BeforeEach void reset() { f.reset(); }
 
     static byte[] body(long id, String code, String amount) {
-        return ("{\"id\":" + id + ",\"accountNumber\":\"000123456\",\"transactionDate\":\"2026-10-30 10:00:00\","
+        return ("{\"id\":" + id + ",\"gateway\":\"MBBank\",\"accountNumber\":\"000123456\",\"transactionDate\":\"2026-10-30 10:00:00\","
                 + "\"code\":" + (code == null ? "null" : "\"" + code + "\"")
                 + ",\"transferType\":\"in\",\"transferAmount\":" + amount + "}").getBytes(StandardCharsets.UTF_8);
     }
