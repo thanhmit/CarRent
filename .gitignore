@@ -37,6 +37,7 @@ build/
 .env.*
 !.env.example
 /.scratch/
+/.local/
 /.superpowers/
 /.playwright-mcp/
 __pycache__/

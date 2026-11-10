@@ -1,6 +1,6 @@
 # P4.2-A/P8.8: contract công khai để chuẩn bị verifier
 
-Đối chiếu **09-11-2026, khoảng 08:58 giờ Việt Nam** bằng GET tài liệu công khai chính thức. Không đọc credentials/DB, không gọi API lookup/payout, không POST hay gửi thông điệp ra ngoài. Raw response và URL cuối, HTTP status, thời điểm UTC, SHA-256 được lưu tại [manifest](../../.scratch/p42a-p88-implementation-20261109/contract-public/manifest.json).
+Đối chiếu **09-11-2026, khoảng 08:58 giờ Việt Nam** bằng GET tài liệu công khai chính thức. Không đọc credentials/DB, không gọi API lookup/payout, không POST hay gửi thông điệp ra ngoài. Raw response và URL cuối, HTTP status, thời điểm UTC, SHA-256 được lưu tại manifest (bằng chứng tạm đã dọn).
 
 **Có thể triển khai adapter VietQR `/v2/lookup` tắt mặc định và kiểm thử offline theo schema đang công bố. Chưa đủ căn cứ bật production:** trang vẫn thông báo migrate sang CAS; tài liệu không xác nhận quyền lookup cho tài khoản CarRent, điều kiện cấp mới/cũ, giá hoặc contract CAS thay thế. [S1]
 

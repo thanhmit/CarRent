@@ -120,7 +120,7 @@ Mỗi public type ở file tương ứng trong map file. payoutChannelId do serv
 
 **Phụ trách:** `@thanhmit` · **Review:** `@huy69332`.
 
-**Trạng thái cập nhật 2026-11-09:** đã triển khai adapter VietQR lookup độc lập, mặc định tắt, và profile chẩn đoán không chi tiền; preview/confirm vẫn xác minh riêng từng refund. Checklist provider/live dưới đây **chưa đóng**. Signed GET payOS hiện trả HTTP403 cho cả hai endpoint list/balance; chưa đủ bằng chứng kết luận nguyên nhân. Xem [bàn giao triển khai](p42a-p88-implementation-handoff-2026-11-09.md) và [trường vận hành cần bổ sung](../p42a-p88-operator-guide-2026-11-09.md). Không suy test local thành activation hoặc giao dịch thật.
+**Trạng thái cập nhật 2026-11-09:** đã triển khai adapter VietQR lookup độc lập, mặc định tắt, và profile chẩn đoán không chi tiền; preview/confirm vẫn xác minh riêng từng refund. Checklist provider/live dưới đây **chưa đóng**. Signed GET payOS hiện trả HTTP403 cho cả hai endpoint list/balance; chưa đủ bằng chứng kết luận nguyên nhân. Xem [bàn giao triển khai](p42a-p88-implementation-contract-2026-11-09.md) và [trường vận hành cần bổ sung](../p42a-p88-operator-guide-2026-11-09.md). Không suy test local thành activation hoặc giao dịch thật.
 
 **Đầu vào:** một Owner và Admin, mỗi chủ thể có ngân hàng thu SePay, webhook secret và API token truy vấn; kênh chi payOS và bộ client-id/api-key/checksum-key; ví nguồn Bảo Kim liên kết đúng chủ thể, tiền nguồn/credit dịch vụ phù hợp. Credential chỉ ở cấu hình local/biến môi trường; không đưa key/OTP/mật khẩu vào tài liệu, fixture hoặc log.
 

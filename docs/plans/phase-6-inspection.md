@@ -10,7 +10,7 @@
 
 **Ngày cập nhật:** 2026-11-02. **Trạng thái:** P6.1–P6.11 hoàn thành; P6.12–P6.13 chưa hoàn thành. **Checkpoint lịch sử P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git phía trên. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
 
-**Tích hợp Git 2026-11-01:** P6.4–P6.7 thuộc `huy69332`, commit `4a6af85`, merge main `66c2d8b`; nhánh tính năng được giữ. Kiểm chứng mới clean verify683/683/JAR và post-merge handover45/45; có agent review, chưa có human review mới. Thay đổi riêng phase0 nằm ngoài commit, DB ứng dụng giữ nguyên. Đây là snapshot trước P6.8/P6.9; chat sau hiện dùng [handoff P6.11](phase-6-batch-3-handoff.md) từ main sau tích hợp; các checkpoint không commit/push bên dưới là lịch sử trước tích hợp.
+**Tích hợp Git 2026-11-01:** P6.4–P6.7 thuộc `huy69332`, commit `4a6af85`, merge main `66c2d8b`; nhánh tính năng được giữ. Kiểm chứng mới clean verify683/683/JAR và post-merge handover45/45; có agent review, chưa có human review mới. Thay đổi riêng phase0 nằm ngoài commit, DB ứng dụng giữ nguyên. Đây là snapshot trước P6.8/P6.9; chat sau hiện dùng [handoff P6.11](phase-6-inspection.md) từ main sau tích hợp; các checkpoint không commit/push bên dưới là lịch sử trước tích hợp.
 
 **Goal:** Thực hiện đầy đủ BEFORE → trả trước 30% → Owner xác nhận hợp đồng/giao xe → AFTER/trả xe → 70%, cùng hủy/hoàn và cảnh báo đã chốt.
 
@@ -46,9 +46,9 @@ P6.1–P6.13 đã hoàn thành phạm vi offline. Không còn đợt implement P
 | 3 — đã hoàn thành | **P6.11** | Giữ đợt riêng cho hủy có phí/hoàn, backend quote snapshot và race cancel/handover; không chuyển payout trong transaction. |
 | 4 — đã hoàn thành | **P6.12 → P6.13** | Hoàn thiện timeline/quyền/job/queue trước; sau đó gate E2E/concurrency/build/browser trên source cuối và đồng bộ SDD. Gate có kết quả độc lập, không tick từ việc UI đã xong. |
 
-Áp dụng [quy tắc nghiệm thu chung](README.md#cac-dot-con-lai-da-duyet): checklist/checkpoint riêng mỗi task, full regression và browser phù hợp cuối đợt. UI/reminder thuộc P6.8/P6.9 phải hoàn thành ngay đợt1; P6.12 tích hợp phần đã có. Không bật scheduler/workflow trên DB ứng dụng chỉ để kiểm chứng; fixture riêng phải chứng minh job/restart thật khi checklist yêu cầu. P4.2-A giữ riêng, không suy live pass từ fixture.
+Áp dụng [quy tắc nghiệm thu chung](README.md): checklist/checkpoint riêng mỗi task, full regression và browser phù hợp cuối đợt. UI/reminder thuộc P6.8/P6.9 phải hoàn thành ngay đợt1; P6.12 tích hợp phần đã có. Không bật scheduler/workflow trên DB ứng dụng chỉ để kiểm chứng; fixture riêng phải chứng minh job/restart thật khi checklist yêu cầu. P4.2-A giữ riêng, không suy live pass từ fixture.
 
-**Handoff chat mới:** [Phase6 đợt4 — P6.12→P6.13](phase-6-batch-4-handoff.md). Handoff đợt1/đợt2 giữ lịch sử, không dùng làm lệnh triển khai task đã đóng.
+**Handoff chat mới:** [Phase6 đợt4 — P6.12→P6.13](phase-6-inspection.md). Handoff đợt1/đợt2 giữ lịch sử, không dùng làm lệnh triển khai task đã đóng.
 
 ## Map file
 
@@ -496,7 +496,7 @@ POM/harness dùng toàn bộ source/resources thật, output/schema tạm riêng
 **Bảo toàn:** HEAD/index, diff/hash phase0, nguyên `scriptDB.sql`/seed,9ảnh uploads và fingerprint schema/toàn bộ rows ứng dụng trước/sau bằng nhau; ứng dụng vẫn7bảng. Fixture DB/private files/port đã dọn. Không thay source để khớp kết quả browser sau khi chạy. Evidence riêng `.scratch/phase6/p68-p69/`; không ghi đè evidence đợt cũ.
 
 **Tiến độ cuối đợt:** **64/86**, còn22 (45task mới xong23, còn22). **Tiếp theo P6.10**; P4.2-A vẫn hoãn. Apply/QR BALANCE, nhắc nợ70% và auto-COMPLETED thuộc P6.10; paid cancellation tiếp tục bị chặn đến P6.11. Scheduler chỉ bật trong schema/port fixture riêng.
-Handoff: [P6.10](phase-6-batch-2-handoff.md).
+Handoff: [P6.10](phase-6-inspection.md).
 
 ## Checkpoint P6.10 — 2026-11-02
 
@@ -522,17 +522,17 @@ POM/output/schema fixture riêng; source/resources thật. Evidence `.scratch/ph
 
 **Bảo toàn và giới hạn:** DB ứng dụng vẫn7bảng, fingerprint schema/rows và phase0/seed/ảnh không đổi; schema/private files/port fixture được dọn. Flags ADVANCE/BALANCE/deadlines chỉ bật fixture, cấu hình mặc định ứng dụng không đổi. Không migrate DB ứng dụng, restart8080, tiền thật hoặc stage/commit/push. Có phân công agent độc lập và review; chưa có human reviewer `thanhmit`. P4.2-A giữ pending.
 
-**Tiếp theo:** [P6.11 riêng](phase-6-batch-3-handoff.md). Không gộp P6.12/P6.13 hoặc bật live từ fixture.
+**Tiếp theo:** [P6.11 riêng](phase-6-inspection.md). Không gộp P6.12/P6.13 hoặc bật live từ fixture.
 
 ## Checkpoint P6.11 — 2026-11-02
 
 **Checkpoint lịch sử P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-paid-cancellation` từ main `a9c2a28`, chưa commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
 
-Chi tiết SDD §14.37. Lệnh: `java @.scratch/phase6/p611/full-suite.args`; POM/output/schema riêng, tương đương Maven Wrapper `clean verify` trên source thật. Evidence mới `.scratch/phase6/p611/`. Migration cancellation-reason chỉ chạy fixture; migration rental cũ giữ nguyên. Bảo toàn phase0/appDB/config/uploads; provider live chưa kiểm chứng. [Handoff đợt4](phase-6-batch-4-handoff.md).
+Chi tiết SDD §14.37. Lệnh: `java @.scratch/phase6/p611/full-suite.args`; POM/output/schema riêng, tương đương Maven Wrapper `clean verify` trên source thật. Evidence mới `.scratch/phase6/p611/`. Migration cancellation-reason chỉ chạy fixture; migration rental cũ giữ nguyên. Bảo toàn phase0/appDB/config/uploads; provider live chưa kiểm chứng. [Handoff đợt4](phase-6-inspection.md).
 
 
 ## Checkpoint P6.12 và P6.13 — 2026-11-02
 
 **Checkpoint P6.12 + P6.13 — 2026-11-02:** hoàn thành riêng **5/5 + 5/5 checklist**. Timeline Customer/Owner/Admin chỉ đọc, các mốc tiền/vật lý/hoàn độc lập; audit queue/deadline/current actor và gate rental liên tục. Full isolated **clean verify 856/856 JUnit, 0 failure/error/skip**, JAR; Chromium **109/109** trên source cuối, 320/390/1440 và no-JS. **68/86 task**, còn18 (45task mới xong27). Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-rental-gate` từ main `82a3852`, chưa stage/commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. Dừng trước Phase8; tiếp theo **P8.1 riêng**, phụ trách `ducbinhnguyen07ars`. P4.2-A live vẫn chờ.
 
-Đủ10/10 mục, giữ5/5 riêng mỗi task. Chi tiết checklist→source→evidence, RED/GREEN và giới hạn tại SDD §14.38 và `.scratch/phase6/p612-p613/ledger.md`. Các test/browser của P6.11 không dùng thay gate đợt này. Handoff nghiệm thu và prompt lần sau tại [đợt4](phase-6-batch-4-handoff.md).
+Đủ10/10 mục, giữ5/5 riêng mỗi task. Chi tiết checklist→source→evidence, RED/GREEN và giới hạn tại SDD §14.38 và `.scratch/phase6/p612-p613/ledger.md`. Các test/browser của P6.11 không dùng thay gate đợt này. Handoff nghiệm thu và prompt lần sau tại [đợt4](phase-6-inspection.md).

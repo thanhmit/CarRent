@@ -1,6 +1,6 @@
 # P4.2-A/P8.8 — cấu hình lookup và nghiệm thu vận hành
 
-Hướng dẫn ngày **2026-11-09**, đi cùng [kế hoạch triển khai](plans/p42a-p88-implementation-2026-11-09.md) và [contract mới](plans/p42a-p88-implementation-contract-2026-11-09.md). Không tự bật payout, không phải bằng chứng đã hoàn tiền thật.
+Hướng dẫn đi cùng [hợp đồng lookup/recipient](plans/p42a-p88-implementation-contract-2026-11-09.md). Không tự bật payout, không phải bằng chứng đã hoàn tiền thật.
 
 ## 1. Người nhận xác nhận từng khoản hoàn như thế nào?
 
@@ -40,7 +40,8 @@ Không cần nhập lại khóa PayOS đã được cấu hình nếu kiểm tra
 Chỉ sau khi đã điền file private và có quyền lookup, dùng JAR đã build theo manifest trong bàn giao và được review; không chọn `.jar.original`. Chạy từ root workspace hiện tại:
 
 ```powershell
-java -jar 'C:/Users/Admin/Documents/hoc/Car/.scratch/p42a-p88-implementation-20261109/build/carrent-0.0.1-SNAPSHOT.jar' '--spring.profiles.active=refund-lookup-check' '--spring.config.additional-location=file:./.scratch/p42a-p88-implementation-20261109/operator-lookup.properties'
+.\mvnw.cmd '-DskipTests' package
+java -jar '.\target\carrent-0.0.1-SNAPSHOT.jar' '--spring.profiles.active=refund-lookup-check' '--spring.config.additional-location=file:./.scratch/p42a-p88-implementation-20261109/operator-lookup.properties'
 ```
 
 Profile này bind loopback/port0, initSQL never/DDL none, tắt financial/domain jobs; scheduler bị loại bằng profile ngay cả khi nguồn cấu hình khác ép bật. Runner vẫn từ chối nếu effective maintenance/deadlines=true. Lookup chỉ POST endpoint tra tên, đọc metadata source rồi so tên chuẩn; không tạo refund/attempt, không enable kênh, không gọi payout. Output thành công chỉ `Recipient lookup VERIFIED. No payout was created or activated.`; không in tên/STK/key. Main đóng context sau khi hoàn tất diagnostic.

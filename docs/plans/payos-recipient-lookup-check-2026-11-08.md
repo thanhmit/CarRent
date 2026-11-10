@@ -1,6 +1,6 @@
 # payOS: kiểm tra contract tra cứu tên người nhận trước khi hoàn
 
-Ngày đối chiếu: **2026-11-08**. Đã đọc báo cáo [điều kiện vận hành 07-11](payos-refund-live-prerequisites-2026-11-07.md), sau đó chỉ GET lại 5 trang tài liệu chính thức bên dưới. Không đọc cấu hình riêng, tài khoản hoặc DB; không gọi API xác thực, lookup thực tế hay chuyển tiền.
+Ngày đối chiếu: **2026-11-08**. Đã đọc báo cáo [điều kiện vận hành 07-11](refund-gates-research-2026-11-09.md), sau đó chỉ GET lại 5 trang tài liệu chính thức bên dưới. Không đọc cấu hình riêng, tài khoản hoặc DB; không gọi API xác thực, lookup thực tế hay chuyển tiền.
 
 ## Kết quả
 
