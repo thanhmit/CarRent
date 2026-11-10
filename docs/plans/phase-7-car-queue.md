@@ -21,7 +21,7 @@
 - Cùng xe FIFO; xe khác có thể song song; đọc danh sách/chi tiết/polling không enqueue.
 - Không enqueue từ transaction đang giữ khóa; không lồng queue. Worker không lấy secret hoặc quyền từ dữ liệu client.
 - Queue mất khi dừng app; DB locking, rollback, timeout và kiểm tra trạng thái vẫn là lớp bảo vệ cuối.
-- Toàn bộ quy tắc bảo toàn seed, kiểm chứng và không auto-commit ở [README §8](README.md#8-verification-và-bàn-giao) áp dụng.
+- Toàn bộ quy tắc bảo toàn seed, kiểm chứng và không auto-commit ở [README §8](README.md) áp dụng.
 
 ## Map file
 
@@ -182,4 +182,4 @@ GET danh sách/chi tiết và các thao tác ngoài aggregate xe/booking không 
 8. **Tách quyền người dùng và ghi nhận tiền.** HTTP giữ CSRF và kiểm tra lại actor ACTIVE/role/ownership khi thực thi. Worker dùng entry point hệ thống, kiểm chứng channel/chủ thể và sự kiện đã xác thực; không giả session Customer hoặc bỏ giao dịch ngân hàng chỉ vì tài khoản bị khóa.
 9. **API chi ngoài transaction/queue.** Claim/lưu attempt và idempotency key → commit → gọi provider ngoài DB transaction và Car queue → ghi kết quả trong transaction ngắn; đối soát kết quả chưa rõ theo cùng key. Queue không giải quyết side effect mạng hoặc thay cơ chế phục hồi payout.
 
-Kiểm chứng inbox/retry/restart/payout thật thuộc P4.5–P4.10; P7.4 không tạo schema/job tiền, không chứng minh provider đã sẵn sàng live. Xem [hợp đồng chung §6.3](README.md#63-khóa-queue-và-giao-dịch-ngoài-hệ-thống) và [P4.6](phase-4-payment.md#task-p46--apply-receipt-một-lần-và-adapter-domain).
+Kiểm chứng inbox/retry/restart/payout thật thuộc P4.5–P4.10; P7.4 không tạo schema/job tiền, không chứng minh provider đã sẵn sàng live. Xem [hợp đồng chung §6.3](README.md) và [P4.6](phase-4-payment.md#task-p46--apply-receipt-một-lần-và-adapter-domain).

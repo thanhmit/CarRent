@@ -1,329 +1,41 @@
-# CarRent — Kế hoạch Queue, thanh toán thật và gói Owner
-
-**P4.2-A/P8.8 — 2026-11-09:** đã triển khai lookup người nhận độc lập và diagnostic không payout; tiếp tục nghiệm thu provider/live theo [bàn giao](p42a-p88-implementation-handoff-2026-11-09.md). [Hướng dẫn vận hành](../p42a-p88-operator-guide-2026-11-09.md) liệt kê các trường còn thiếu; chưa đóng gate hoặc tăng số task hoàn thành.
-
-**Owner xác nhận → BEFORE — 2026-11-09:** đã sửa booking admission và redirect, bật luồng có biên bản cho booking mới của mọi Owner hợp lệ; app8080 đã cập nhật. Full verify **1149/1149**, Node **18/18**, Chrome **22 kiểm tra**, 20 bảng ứng dụng không đổi. Giữ payment pilot và đơn LEGACY cũ. Xem [kế hoạch](owner-confirm-before-fix-2026-11-09.md) và [bàn giao](owner-confirm-before-fix-2026-11-09-handoff.md).
-
-**Lịch bận — 2026-11-08:** đã triển khai/kiểm chứng local lịch tháng làm mờ/khóa ngày bận ngay tại **chi tiết từng xe**, truyền khoảng hợp lệ sang form. Java **40/40**, Node **18/18**, Chrome **18 assertion** desktop/390/320px. Source đã về root, fixture đã dọn; chưa restart/deploy app 8080. Xem [bàn giao](booking-busy-calendar-2026-11-08-handoff.md) và [kế hoạch](booking-busy-calendar-2026-11-08.md).
-
-**UI-05C — 2026-11-08:** đã hoàn thiện booking list/detail Admin, đủ **15/15 trang** về implementation/kiểm chứng local. Suite cuối **89/89**, Node **8/8**, Chrome **482 kiểm tra**, **20 ảnh trước/109 ảnh sau**; smoke cuối đủ 15 trang và shared callers, 20 bảng đọc không đổi, payout 0 và fixture đã dọn. Xem [bàn giao UI-05C](ui-05C-handoff.md). Còn **0 đợt** trong scope gốc; human/native zoom/live giữ riêng, chưa triển khai UI-06/UI-07.
-
-**UI-05B — 2026-11-08:** đã hoàn thiện danh sách/hồ sơ tài khoản Admin (2 trang), giữ self/CSRF/status-only. Focused **22/22**, Chrome **296 kiểm tra**, **16 ảnh trước/37 ảnh sau**; 20 bảng đọc theo đoạn, 3 POST audit chỉ target status/updatedAt, payout 0; fixture đã dọn. Xem [bàn giao UI-05B](ui-05B-handoff.md). Đã triển khai **13/15 trang**, còn **UI-05C: 1 đợt / 2 trang** và smoke cuối. Human/native zoom/live giữ riêng.
-
-**UI-05A — 2026-11-08:** đã hoàn thiện dashboard và tài chính Admin (3 trang), giữ `fields(r)` cho booking. Focused **32/32**, Chrome **427 kiểm tra**, **36 ảnh trước/53 ảnh sau**; 20 bảng GET không đổi theo đoạn và toàn phiên sau phục hồi control; payout 0, fixture đã dọn. Xem [bàn giao UI-05A](ui-05A-handoff.md). Tại checkpoint UI-05A còn **2 đợt / 4 trang: UI-05B và UI-05C** trong phạm vi 15 trang; human visual review/native zoom 200% và gate live giữ riêng.
-
-**UI-04 — 2026-11-08:** đã hoàn thiện gói đăng xe và order trong workspace Owner; tái sử dụng overview/refund-links. Focused **69/69**, Chrome **348 kiểm tra**, **40 ảnh trước/51 ảnh sau**; 20 bảng theo từng đoạn đọc, 5 POST/2 control audit, browser payout 0; fixture đã dọn. Xem [bàn giao UI-04](ui-04-handoff.md). Tại checkpoint UI-04, human visual review/native zoom 200% còn chờ; UI-05A trở đi và gate live giữ mở.
-
-**Payment settings — CANCELLED 2026-11-09:** chủ dự án hủy S1/S2/S3, quay lại source trước S1 và yêu cầu commit/push/merge toàn bộ thay đổi local còn lại, giữ nhánh. S1/S2 chỉ từng nằm ở worktree riêng, không phát hành. Các tài liệu thiết kế/plan/handoff giữ làm lịch sử với nhãn CANCELLED. [Phạm vi khôi phục/phát hành](pre-s1-release-2026-11-09.md).
-
-
-**UI-03 — 2026-11-08:** đã triển khai checkout/result/refund/refund-summary và refund-links; focused **135/135**, Node **8/8**, Chrome **828 kiểm tra + 28 bổ sung**, **36 ảnh trước/138 ảnh sau**. GET/poll/preview kiểm tra 20 bảng theo từng đoạn; 4 POST audit giữ invariant, fake payout 0; cleanup đã xác nhận. Xem [bàn giao UI-03](ui-03-handoff.md). Tại checkpoint UI-03, human visual review/native zoom 200% còn chờ; UI-04 trở đi và các gate live giữ mở.
-
-**UI-02 — 2026-11-08:** dashboard Owner, finances đủ 9 role/view và overview dùng chung đã triển khai, kiểm chứng cục bộ: focused **47/47**, Chrome **1233 kiểm tra**, **28 ảnh trước/139 ảnh sau**; 20 bảng fixture không đổi, provider 0, cleanup đã xác nhận. Xem [bàn giao UI-02](ui-02-handoff.md). Tại checkpoint UI-02, human visual review/native zoom 200% còn chờ; UI-03 trở đi và gate live giữ mở.
-
-**UI-01 — 2026-11-08:** đã triển khai shell/sidebar/topbar tại đủ 6 caller, active public header và accessibility của phân trang/vùng bảng; focused suite **35/35**, browser **634 kiểm tra**, 60 ảnh sau sửa. Xem [bàn giao UI-01](ui-01-handoff.md). Human visual review còn chờ; tại checkpoint UI-01, UI-02–07 chưa triển khai, không đổi tiến độ nghiệp vụ/provider. Các đoạn khảo sát dưới đây là snapshot trước khi thực hiện UI-01.
-
-**Đối chiếu worktree/UI — 2026-11-08:** xác minh 5 worktree, 42 trang + 9 fragment; template/static root và completion giống nội dung sau chuẩn hóa CRLF/LF. Đề xuất root làm baseline, UI-01 thay đủ 6 sidebar caller, sau đó ưu tiên dashboard Owner/tài chính; chia Admin và workflow thành các phần A/B/C có kiểm chứng riêng. Xem [phân tích và thứ tự triển khai cập nhật](ui-worktree-analysis-2026-11-08.md) cùng [kế hoạch chi tiết 7 nhóm UI](ui-completion-2026-11-07.md). Phiên này chỉ cập nhật tài liệu, chưa triển khai hoặc nghiệm thu UI.
-
-**Sửa lỗi mua Tier — 2026-11-07:** chuẩn hóa deadline tạo đơn về micro giây khớp MySQL `DATETIME(6)`, xử lý thông báo sai chủ thể trên cả ba Tier. RED3/3 → GREEN; regression/package148/148. Có E2E HTTP fixture mua gói → webhook → đăng/duyệt/ẩn xe; thu tiền thật vẫn chờ kiểm chứng. Xem [nguyên nhân, bằng chứng và kịch bản test thật](tier-payment-fix-2026-11-07.md).
-
-**SePay webhook đã kết nối — 2026-11-07:** đã tạo webhook TPBank tiền vào/HMAC/JSON, cấu hình CR + 30 ký tự, lưu secret private, bật hai kênh thu và runtime `sepay-local` (chi payOS vẫn tắt). Kiểm chứng lại 186/186 trên fixture; public endpoint từ chối chữ ký thiếu và nhận đúng HMAC trước validation. Chưa nghiệm thu giao dịch thu thật. Xem [bàn giao cấu hình và bước kiểm thử thật](sepay-webhook-connected-2026-11-07.md).
-
-**Kế hoạch hoàn thiện UI — 2026-11-07:** đã khảo sát 51 template (42 trang + 9 fragment), xác định 15 trang cần thiết kế lại bố cục rõ rệt; chưa sửa giao diện. Ưu tiên shell dùng chung, `/owner/dashboard` và `/payment/finances?view=collected`, sau đó thanh toán/hoàn tiền, gói Owner và Admin. Xem [SDD §8.7](../SDD.md#87-hoàn-thiện-thiết-kế-ui-sau-các-đợt-triển-khai-chức-năng--2026-11-07) và [kế hoạch 7 đợt UI](ui-completion-2026-11-07.md). Không đổi tiến độ task nghiệp vụ hoặc đóng gate thanh toán thật.
-
-**SePay local 2026-11-07:** ?? b? sung m? CR + 30 k? t?, ??nh tuy?n m?t webhook cho t?i kho?n Owner/Admin chung, dedup li?n k?nh v? profile ch? thu ti?n `sepay-local`. Xem [b?n giao SePay](sepay-local-2026-11-07-handoff.md) v? [h??ng d?n c?u h?nh](../local-ngrok-sepay-setup.md). Ch?a c? b?ng ch?ng giao d?ch thu th?t; kh?ng ??ng gate ho?n ti?n ho?c P4.2-A/P8.8/P5.9.
-
-**Ki?m tra l?i sau khi ng??i d?ng n?p B?o Kim ? 2026-11-07:** GET balance/list c? ch? k? h?p l?, ngu?n `FUNDED` cho hai reference d?ng chung. Ch?a c? receipt/refund/payout attempt trong DB; ch?a ph?t l?nh chi. Verifier ng??i nh?n, m?c t?i thi?u/ph? v? th? ho?n th?t c?n m?. Snapshot ngu?n 0 VND b?n d??i l? l?n ki?m tra tr??c khi n?p.
-
-**payOS local 2026-11-07:** GET danh sách/số dư đã xác thực chữ ký; nguồn hiện 0 VND; hai mapping PAYOUT disabled. Phần code có contract đã có regression 152/152 trên root và worktree; lookup người nhận và gate chi thật còn mở. Xem [bàn giao payOS](payos-local-2026-11-07-handoff.md).
-
-**Checkpoint P5.8 + P5.9 local — 2026-11-04:** P5.8 hoàn thành **5/5**: ma trận quyền/CSRF/HMAC, biên thời gian, GET chỉ đọc, queue/quota/restart và tài liệu hiện hành. Sửa stale Owner/Admin khi mutation xe, vòng khóa notification/Admin status và HTTP405; regression RED/GREEN được giữ. P5.9 hoàn thành **5/6 checklist local**, còn **gate live**: hành trình HTTP mua gói → tạo/duyệt xe → booking mới → BEFORE →30%→Owner hợp đồng/giao→AFTER bất đồng→nhận lại→70%→COMPLETED; lối vào VIETQR_V1 mặc định tắt, giới hạn pilot và quyền Customer hiện tại. Full isolated **clean verify 1053/1053 JUnit, 0 failure/error/skip**, JAR; Node polling **6/6**; Chrome **256/256**, 108PNG tại1440/390/320. **83/86 task**, còn3 (`ducbinhnguyen07ars`2: P5.9/P8.8; `thanhmit`1: P4.2-A). **P5.9/P8.8/P4.2-A chưa đóng**, chưa có bằng chứng giao dịch/provider/human/migration live. Bảo toàn DB ứng dụng/config/seed/uploads/phase0/dirty prerequisites/refs/index; không kích hoạt hoặc Git publication. Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. [Bàn giao](phase-5-batch-6-handoff.md).
-
-**Checkpoint P5.7 — 2026-11-04:** hoàn thành **4/4 checklist local** dashboard Owner và trang chủ: gói/hạn/quota, xe/booking scoped principal, tiền thuê đã phân bổ và hoàn/nợ riêng; hoàn một phần giữ receipt, pending chưa tính đã hoàn, deadline theo Clock. Home tối đa8 xe mới nhất dùng public policy Phase8 hiện có; quyền preview riêng được giữ. Current ACTIVE OWNER/stale session/IDOR/XSS và GET chỉ đọc đã kiểm chứng. Focused **33/33**, full isolated **clean verify 1016/1016 JUnit, 0 failure/error/skip**, JAR; Chrome **152/152**, 36PNG ở1440/390/320; SQL invariants/provider0/cleanup đã xác nhận. **82/86 task**, còn **4** (`ducbinhnguyen07ars`3, `thanhmit`1; `huy69332`0). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. **P8.8/P4.2-A live vẫn pending**. Tiếp theo **P5.8 → P5.9**, không đóng P5.9 khi gate thật chưa đạt. Bảo toàn P5.5/P5.6 chưa commit, phase0/config/seed/uploads/DB ứng dụng/refs/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-5-handoff.md).
-
-**Checkpoint P5.5 + P5.6 — 2026-11-04:** hoàn thành **3/3 + 3/3 checklist local**: profile của tài khoản hiện tại, chỉ sửa tên/điện thoại; đổi mật khẩu kiểm tra BCrypt hash DB mới nhất, tối thiểu6ký tự/tối đa72byte UTF-8, form lỗi không giữ mật khẩu. Kiểm tra ACTIVE/role hiện tại dưới khóa User; chống IDOR/mass assignment/CSRF/XSS và ghi đè hash khi đồng thời. Navbar tên cache được thông báo đăng nhập lại; giữ policy session/logout hiện hành. Focused **12/12**, full isolated **clean verify 1005/1005 JUnit, 0 failure/error/skip**, JAR; Chrome **113/113**, 24PNG ở1440/390/320; SQL 15khoảng/20bảng, provider0, cleanup đã xác nhận. **81/86 task**, còn **5** (`ducbinhnguyen07ars`4, `thanhmit`1; `huy69332`0). Phụ trách `huy69332`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A live vẫn pending. Dừng sau đợt này; tiếp theo **P5.7 riêng của ducbinhnguyen07ars**. Bảo toàn phase0/config/seed/uploads/DB ứng dụng; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-4-handoff.md).
-
-**Checkpoint P5.4 — 2026-11-04:** hoàn thành **4/4 checklist local** Admin booking/biên bản/khoản còn nợ: list/detail chỉ đọc, nghĩa vụ30/70 và receipts/refunds đúng booking, BEFORE/AFTER private kể cả COMPLETED còn bất đồng; lọc nợ70% quá hạn1giờ và hoàn quá hạn theo Clock/deadline nghiệp vụ. Admin không ký/giao nhận thay Owner hoặc buộc resolve AFTER. Full isolated **clean verify 993/993 JUnit, 0 failure/error/skip**, JAR; Chrome **205/205**, 30 PNG ở1440/390/320. **79/86 task**, còn **7** (`ducbinhnguyen07ars`4, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A live vẫn pending. Tiếp theo **P5.5 + P5.6 của huy69332**. Bảo toàn dirty prerequisites/phase0/config/seed/uploads/DB ứng dụng/HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push/merge. [Bàn giao](phase-5-batch-3-handoff.md).
-
-**Checkpoint P5.3 — 2026-11-04:** hoàn thành **4/4 checklist** Admin quản lý tài khoản: q/role/status/page20, hồ sơ và số liệu scoped target, POST status ACTIVE/INACTIVE/BANNED dưới khóa và kiểm tra Admin hiện tại; chống self-change/role-email tamper/CSRF, banned login và stale request trong queue. Full isolated **clean verify 986/986 JUnit, 0 failure/error/skip**, JAR; Chrome **107/107**, 33 PNG. **78/86 task**, còn **8** (`ducbinhnguyen07ars`5, `huy69332`2, `thanhmit`1). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.8/P4.2-A gate thật vẫn pending. Tiếp theo **P5.4 riêng**. Bảo toàn dirty P8/P5,phase0/config/seed/uploads,DB ứng dụng,HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. [Bàn giao](phase-5-batch-2-handoff.md).
-
-**Checkpoint P5.1 + P5.2 — 2026-11-04:** hoàn thành **5/5 + 5/5 checklist** về read model và dashboard/tài chính Admin. Phí gói từ order applied của đúng Admin; tiền thuê, tiền trùng/chờ đối soát và hoàn tiền tách riêng. Tháng theo giờ Việt Nam; filter/phân trang/sort whitelist, kiểm tra Admin ACTIVE hiện tại, tài khoản được che và GET chỉ đọc. Full isolated **clean verify 973/973 JUnit, 0 failure/error/skip**, JAR; Chrome **103/103**, 33 PNG. **77/86 task**, còn **9**: `ducbinhnguyen07ars` 6, `huy69332` 2, `thanhmit` 1. Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. Đây là đợt code độc lập được chuẩn bị theo roadmap khi P8.8 đã xong local; **P8.8 và P4.2-A vẫn pending gate migration/human/provider/live**. Đợt code tiếp theo **P5.3 riêng**. Bảo toàn P8 chưa commit/phase0/config/seed/uploads, DB ứng dụng, HEAD/main/index; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. [Bàn giao](phase-5-batch-1-handoff.md).
-
-**Checkpoint P8.8 local — 2026-11-04:** hoàn tất phần triển khai/kiểm chứng local: cặp Owner/Admin pilot mặc định từ chối, chặn tạo/reuse và ẩn QR ngoài phạm vi; receipt/refund/cancel/đối soát giữ nguyên. Full isolated **clean verify957/957 JUnit, 0 failure/error/skip**, JAR; Chrome **110/110**, 45PNG. E2E Small/quota/pending/expiry/gia hạn/Business→Small/manual selection và duplicate/late refund dùng provider offline. **P8.8 chưa đóng**: chờ migration/human review, P4.2-A, giao dịch/hoàn tiền thật và cho phép kích hoạt. Tiến độ giữ **75/86 task**, còn11. Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.1–P8.8 local chưa commit trên feature `705f320`/main `6948664`; DB ứng dụng/phase0/config/seed/uploads giữ nguyên. Không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. [Bàn giao](phase-8-batch-6-handoff.md).
-
-**Checkpoint P8.7 — 2026-11-04:** hoàn thành **5/5 checklist**: UI Owner xem gói/hạn/quota gồm pending và xe tạm ẩn; gia hạn đúng loại; order/result dẫn từng refund của đúng Owner. Dùng chung Phase4: Admin thiếu tiền giữ WAITING_FUNDS, thông báo Admin và cảnh báo quá hạn; không dùng kênh Owner hoặc báo hoàn thành giả. Full isolated **clean verify 950/950 JUnit, 0 failure/error/skip**, JAR; Chrome **123/123**, 54PNG. **75/86 task**, còn11 (45 task mới xong34). Phụ trách `ducbinhnguyen07ars`, reviewer `thanhmit`; agent review không thay human review. P8.1–P8.7 chưa commit, feature `705f320`/main `6948664` giữ nguyên; phase0/config/seed/uploads và DB ứng dụng giữ nguyên. Không migrate/bật workflow/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. Dừng trước **P8.8 riêng**, gate live vẫn chờ. [Bàn giao](phase-8-batch-5-handoff.md).
-
-**Checkpoint P8.6 — 2026-11-04:** hoàn thành **5/5 checklist**: gia hạn giữ ý định đăng; hạ gói sau expiry ẩn toàn bộ xe cũ atomic với receipt/entitlement, Owner tự chọn xe theo quota. Full isolated **clean verify 943/943 JUnit, 0 failure/error/skip**, JAR; Chrome **87/87**, 42PNG ở320/390/1440 và no-JS forms. **74/86 task**, còn12 (45 task mới xong33). Phụ trách `ducbinhnguyen07ars`, reviewer được giao `thanhmit`, `huy69332` review Car/Booking; agent review không thay human review. P8.1–P8.6 chưa commit; feature `705f320`, main `6948664` giữ nguyên. Phase0/config/seed/uploads và DB ứng dụng7bảng giữ nguyên. Không migrate/bật workflow/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. Dừng trước P8.7; tiếp theo **P8.7 riêng**, gate live vẫn chờ. [Bàn giao](phase-8-batch-4-handoff.md).
-
-**Checkpoint P8.4 + P8.5 — 2026-11-04:** hoàn thành **6/6 + 6/6 checklist**: quota theo Owner, current reads chống vượt suất, public predicate trực tiếp theo hạn gói và POST booking kiểm tra lại. Full isolated **clean verify 930/930 JUnit, 0 failure/error/skip**, JAR; Chrome **74/74**, 36PNG ở320/390/1440 và no-JS. **73/86 task**, còn13 (45 task mới xong32). Phụ trách `ducbinhnguyen07ars`, reviewer được giao `thanhmit`, `huy69332` review tích hợp Car/Booking; agent review không thay human review. P8.1–P8.5 chưa commit; feature `705f320`, main `6948664` giữ nguyên. Phase0/config/seed/uploads và DB ứng dụng7bảng giữ nguyên. Không migrate/bật workflow/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. Dừng trước P8.6; tiếp theo **P8.6 riêng**, gate live vẫn chờ. [Bàn giao](phase-8-batch-3-handoff.md).
-
-**Checkpoint P8.2 + P8.3 — 2026-11-03:** hoàn thành **5/5 + 6/6 checklist**: order/QR Admin 15 phút, receipt cấp/gia hạn 30 ngày đúng một lần, hoàn trùng/muộn/hủy/không tương thích từ Admin. Full isolated **clean verify 914/914 JUnit, 0 failure/error/skip**, JAR; Chromium **47/47**, 320/390/1440 và no-JS. **71/86 task**, còn15 (45 task mới xong30). Phụ trách `ducbinhnguyen07ars`, reviewer được giao `thanhmit`; agent review không thay human review. P8.1–P8.3 chưa commit; P6.12/P6.13 đã tích hợp main `6948664` (feature `705f320`). Phase0/config/seed/uploads và DB ứng dụng7bảng giữ nguyên. Không migrate/bật workflow/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. Dừng trước P8.4; tiếp theo **P8.4 + P8.5**, gate live vẫn chờ. [Bàn giao](phase-8-batch-2-handoff.md).
-
-**Checkpoint P8.1 — 2026-11-02:** hoàn thành **4/4 checklist** catalog/schema/mapping; SMALL 4/5.000, STANDARD 8/10.000, BUSINESS 16/15.000 VND, mỗi gói30ngày. Hai bảng mới, snapshot và obligation UNIQUE; không booking giả/tự cấp gói. Full isolated **clean verify 879/879 JUnit, 0 failure/error/skip**, JAR; schema21/21, catalog/JPA2/2. Browser không chạy lại vì đợt này không đổi UI; P6 có bằng chứng109/109 trước đó. **69/86 task**, còn17 (45task mới xong28). Phụ trách `ducbinhnguyen07ars`, reviewer được giao `thanhmit`; có agent review, chưa có human review mới. Bảo toàn thay đổi P6 chưa commit và phase0/config/seed/uploads; DB ứng dụng vẫn7bảng. Không migrate/bật workflow/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push. Tiếp theo **P8.2 + P8.3**; gate live vẫn chờ. [Bàn giao](phase-8-batch-1-handoff.md).
-
-**Checkpoint P6.12 + P6.13 — 2026-11-02:** hoàn thành riêng **5/5 + 5/5 checklist**. Timeline Customer/Owner/Admin chỉ đọc, các mốc tiền/vật lý/hoàn độc lập; audit queue/deadline/current actor và gate rental liên tục. Full isolated **clean verify 856/856 JUnit, 0 failure/error/skip**, JAR; Chromium **109/109** trên source cuối, 320/390/1440 và no-JS. **68/86 task**, còn18 (45task mới xong27). Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. Nhánh `feat/phase6-rental-gate` từ main `82a3852`, chưa stage/commit/push. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên. Không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. Dừng trước Phase8; tiếp theo **P8.1 riêng**, phụ trách `ducbinhnguyen07ars`. P4.2-A live vẫn chờ.
-
-**Tích hợp P6.11 — 2026-11-02:** feature `6de7526`, merge main `7aeb8a8`, author `huy69332`; đã push và giữ nhánh `feat/phase6-paid-cancellation`. Source merge khớp source đã clean verify816/816/JAR và browser79/79; sau merge chạy lại32/32 cancellation/UI test trên schema riêng. Phase0 riêng nằm ngoài commit và giữ nguyên. Tiến độ66/86, còn20; tiếp theo P6.12→P6.13, phụ trách `huy69332`, reviewer `thanhmit`. Không migrate DB ứng dụng/bật workflow/provider/scheduler/restart8080 hoặc chuyển tiền thật.
-
-**Tích hợp Git 2026-11-02:** P6.8–P6.10 dùng author `huy69332`, commit tính năng `983e7c9`, merge main `0a1d9e6`; giữ nhánh tính năng. Clean verify mới783/783/JAR; evidence `.scratch/phase6/p610/integration/full-clean-verify.log`. Thay đổi riêng phase-0 nằm ngoài commit và giữ nguyên; không migrate/bật DB ứng dụng/provider/scheduler hoặc chuyển tiền thật. Có agent review, chưa có human contributor review. P6.11 đã hoàn thành trong working tree; tiếp theo P6.12→P6.13.
-
-**Ngày cập nhật:** 2026-11-02. **Checkpoint lịch sử P6.11 — 2026-11-02:** đủ **5/5 checklist**: Customer/Owner hủy trước handover, snapshot thời gian/phí/lý do và nghĩa vụ hoàn atomic; receipt gốc giữ tiền đã nhận. Full isolated clean verify **816/816 JUnit, 0 failure/error/skip**, JAR; Chromium **79/79**,25PNG,7/7SQL invariant. **66/86 task**, còn20 (45task mới xong25). Tiếp theo **P6.12 → P6.13** cùng đợt. Phụ trách `huy69332`, reviewer được giao `thanhmit`; có agent review, chưa có human contributor review. P6.11 đã tích hợp main; xem checkpoint Git phía trên. DB ứng dụng vẫn7bảng, phase0/config/seed/uploads giữ nguyên; không migrate/bật workflow/provider/scheduler ứng dụng, restart8080 hoặc chuyển tiền thật. P4.2-A live vẫn chờ.
-
-**Spec:** các quyết định brainstorming được tổng hợp tại file này; [SDD](../SDD.md) §1.4–1.6 lưu backlog và phạm vi tiền thật. Những phần mock payment/inspection cũ trong SDD và D-04/D-06/D-07/D-12/D-25 là thiết kế hoặc checkpoint trước lần cập nhật này. Khi thực hiện các phase bên dưới, dùng hợp đồng mới tại đây cho workflow mới; giữ bằng chứng lịch sử và hành vi legacy. Đồng bộ các chương chi tiết của SDD trước khi kích hoạt workflow mới.
-
-## 1. Thứ tự thực hiện
-
-Giữ số phase đã tồn tại để không đổi định danh task lịch sử. Số phase không phải thứ tự chạy:
-
-| Thứ tự | Plan | Đầu ra |
-|---|---|---|
-| 1 | [Phase 7 — Queue](phase-7-car-queue.md) | FIFO theo carId, request đợi kết quả, transaction bắt đầu khi đến lượt |
-| 2 | [Phase 4 — Thanh toán thật](phase-4-payment.md) | SePay, nghĩa vụ thanh toán, inbox bền vững, polling, payOS và hoàn tiền |
-| 3 | [Phase 6 — Thuê xe và biên bản](phase-6-inspection.md) | BEFORE/AFTER, 30/70, hợp đồng, giao/trả xe, hủy và các hạn 1 giờ |
-| 4 | [Phase 8 — Gói Owner](phase-8-owner-subscriptions.md) | Gói 30 ngày, hạn mức, gia hạn/hết hạn, thanh toán và hoàn từ Admin |
-| 5 | [Phase 5 — Admin và hoàn thiện](phase-5-admin-polish.md) | Dashboard, quản lý tài khoản/profile, đối soát và E2E cuối |
-
-Phase 0–3 và **P4.1 đã hoàn thành** được giữ nguyên lịch sử. P4.2 trở đi, Phase 5 và Phase 6 được lập lại theo yêu cầu mới. Không chạy lại P4.1 và không đánh dấu bất kỳ task mới nào hoàn thành chỉ vì có plan.
-
-**Tiến độ hiện tại:** 41 task lịch sử +42 task mới = **83/86**, còn **3**: P5.9/P8.8 của `ducbinhnguyen07ars`, P4.2-A của `thanhmit`. P5.8 đã đóng; P5.9 local đạt5/6, còn gate live. Xem [bàn giao đợt6](phase-5-batch-6-handoff.md).
-
-**Tích hợp Git 2026-11-01 theo yêu cầu chủ dự án:** P6.4–P6.7 được commit với author `huy69332` tại `4a6af85`, merge vào main bằng `66c2d8b`; nhánh tính năng được giữ. Không đưa thay đổi riêng `docs/plans/phase-0-init.md` vào commit. Đoạn này là snapshot tích hợp trước P6.8/P6.9; bàn giao lịch sử tại thời điểm đó là [handoff P6.11](phase-6-batch-3-handoff.md), dùng baseline main sau tích hợp. Việc tích hợp không tăng số task hoàn thành hoặc mở gate live.
-
-<a id="cac-dot-con-lai-da-duyet"></a>
-### Các đợt còn lại — được chủ dự án duyệt 2026-11-01
-
-Đây là lịch triển khai hiện hành, giữ thứ tự **6 → 8 → 5** và checklist từng task. P6.1–P6.13, P8.1–P8.7 và P5.1–P5.8 đã đóng local; **83/86**, còn3. P5.9 local đã kiểm chứng, còn gate live cùng P8.8/P4.2-A. Giữ thứ tự/phân công đã duyệt, không suy human review hoặc cho phép kích hoạt từ agent review/fixture.
-
-| Phase | Thứ tự các đợt trong phase | Plan chi tiết |
-|---|---|---|
-| 6 — hoàn tất offline | **P6.1–P6.13 đã đóng** | [Lịch Phase 6](phase-6-inspection.md#cac-dot-da-duyet) |
-| 8 — 6 đợt | P8.1 → (P8.2 + P8.3) → (P8.4 + P8.5) → P8.6 → P8.7 → P8.8 | [Lịch Phase 8](phase-8-owner-subscriptions.md#cac-dot-da-duyet) |
-| 5 — 6 đợt | (P5.1 + P5.2) → P5.3 → P5.4 → (P5.5 + P5.6) → P5.7 → (P5.8 → P5.9) | [Lịch Phase 5](phase-5-admin-polish.md#cac-dot-da-duyet) |
-
-Quy ước: **+** là cùng đợt, triển khai theo phụ thuộc; **→ trong ngoặc** là cùng đợt nhưng phải hoàn tất phần tích hợp/audit trước khi chạy gate cuối. Không sửa đồng thời các luồng có cùng khóa hoặc dùng kết quả test cũ thay kiểm chứng source cuối.
-
-- Mỗi chat triển khai một đợt được giao, hoàn thiện backend/UI/job cần cho đợt đó; không dồn UI hoặc deadline đang thuộc checklist sang đợt cuối.
-- Mỗi task có test, checkpoint và trạng thái riêng. Chỉ tick task đã đạt đầy đủ; task còn thiếu giữ pending dù task cùng đợt đã đạt. Giữ nguyên tổng86task và lịch sử checkpoint.
-- Chạy test tập trung trong quá trình làm; cuối đợt chạy full regression/build sạch, browser phù hợp và đối chiếu baseline trên source cuối. Ghi lệnh, kết quả, giới hạn và đợt tiếp theo; cập nhật SDD/plan/phân công.
-- P4.2-A tiếp tục là gate tài khoản/provider/live riêng. P8.8/P5.9 có gate live chưa đạt thì không đóng toàn task hoặc toàn phase từ fixture; ghi rõ phần local đã đạt và gate còn chờ.
-- Tiếp tục giữ thay đổi riêng, không tự stage/commit/push, migrate DB ứng dụng, bật workflow/provider/scheduler hoặc chuyển tiền thật.
-- **Quy tắc subagent được chủ dự án duyệt 2026-11-01:** Được chủ động dùng subagent cho công việc độc lập và review. Agent chính chịu trách nhiệm phân công, tránh sửa chồng file, tích hợp và kiểm chứng kết quả cuối. Quy tắc này thay giới hạn cũ “Chỉ dùng subagent khi được yêu cầu” cho các lần triển khai tiếp theo; không tự mở rộng đợt/task. Review bằng agent không được ghi thành human contributor review.
-
-**Chat tiếp theo:** hoàn tất gate thật P4.2-A/P8.8/P5.9 theo [bàn giao đợt6](phase-5-batch-6-handoff.md). Không chạy lại phần local đã đạt nếu source không đổi. Chỉ đóng task khi có evidence bắt buộc; không migrate/bật flags/provider/scheduler/restart8080/chuyển tiền thật/stage/commit/push từ checklist local.
-
-### Phân công ba thành viên
-
-**Phase 4 chia 7 đợt theo cập nhật được duyệt 2026-10-30:** P4.2 → P4.3 → (P4.4 + P4.5 + P4.6) → P4.7 → P4.8 → (P4.9 + P4.10) → P4.11. Xem [checkpoint từng đợt](phase-4-payment.md#7-đợt-triển-khai--cập-nhật-được-duyệt-2026-10-30) và SDD §14.1; từng task vẫn kiểm chứng riêng, gate live không được suy ra từ test offline.
-
-**Checkpoint 2026-10-29:** đợt 1 đạt đầu ra kỹ thuật/offline, verify lại 86 test không cần DB đạt và JAR đóng gói thành công; lần clean đầu có một timeout test queue, ghi cả hai lần ở [checkpoint đợt 1](phase-4-payment.md#checkpoint-đợt-1--p42-kỹ-thuậtoffline-2026-10-29). P4.2 còn gate provider/live, giữ 45/85; tiếp theo đợt 2/P4.3.
-
-**Quyết định lịch sử sau checkpoint P4.2:** chuyển nguyên gate tài khoản/provider/live sang P4.2-A; tiến độ khi tách là 46/86, còn 40. Kế hoạch 8 đợt lúc đó đã được thay bằng 7 đợt được duyệt ở trên. P4.2-A chạy theo điều kiện tài khoản và các phần code cần kiểm chứng; P4.11 tổng hợp trạng thái, chưa đạt thì không bật live.
-
-Đã kiểm tra ba contributor trực tiếp trên GitHub và phân công tại [team-assignment.md](team-assignment.md):
-
-| Thành viên | Task mới phụ trách | Số task |
-|---|---|---:|
-| `thanhmit` | P7.1–P7.4; P4.2–P4.11; P4.2-A | 15 |
-| `huy69332` | P6.1–P6.13; P5.5–P5.6 | 15 |
-| `ducbinhnguyen07ars` | P8.1–P8.8; P5.1–P5.4; P5.7–P5.9 | 15 |
-
-Mỗi task mới có trường **Phụ trách** và **Review**. File phân công cũng ghi bằng chứng phần đã làm và trách nhiệm bảo trì được bàn giao từ nay; không đổi tác giả lịch sử. Thứ tự 7 → 4 → 6 → 8 → 5 là thứ tự tích hợp/đạt gate; có thể chuẩn bị task độc lập hoặc nhánh/UI/test song song theo các đợt ở file phân công, chưa bật luồng live trước gate.
-
-## 2. Phạm vi và luồng tiền đã chốt
-
-- Ứng dụng local, một tiến trình Spring Boot. Kiểm chứng tiền thật với **một Owner + Admin trước**; cấu hình gắn đúng chủ thể, không hardcode mọi Owner dùng chung một tài khoản nhận.
-- Customer → Owner: tiền thuê qua **SePay VietQR**, xác nhận bằng webhook. Customer không cần tài khoản SePay.
-- Owner → Customer: tự động hoàn qua **API payOS**, dùng nguồn tiền ví Bảo Kim/kênh chi của chính Owner. Customer nhập tài khoản nhận khi phát sinh hoàn; có thể chọn lưu lại. Admin dùng bộ payOS/ví riêng khi hoàn tiền gói.
-- payOS cung cấp API tạo/query payout; ví Bảo Kim là tiền nguồn theo kênh chi đang được tài liệu mô tả, nạp riêng với credit dịch vụ payOS. Tiền nhận qua SePay không tự được CarRent chuyển vào ví. P4.2-A xác minh kênh thực tế; không đổi nhà cung cấp hoặc tự thêm tích hợp API Bảo Kim.
-- Owner → Admin: phí gói qua **SePay VietQR** vào ngân hàng Admin.
-- Admin → Owner: tự động hoàn khoản mua gói bị trả trùng hoặc thực sự đến sau hạn, dùng ví/kênh chi của Admin.
-- Backend đối soát payout bằng API; trình duyệt polling CarRent. Không giả định webhook thu tiền SePay là webhook kết quả chi tiền; không bắt người nhận xác nhận thủ công hoặc upload biên lai.
-- Chỉ báo hoàn thành hoàn tiền khi nhà cung cấp xác nhận chuyển thành công. HTTP chấp nhận yêu cầu hoặc trạng thái đang xử lý chưa phải kết quả cuối.
-
-**Gate nhà cung cấp:** phải kiểm chứng kênh nhận/chi thật, quyền gọi API, IP/callback, ngân hàng hỗ trợ, hạn mức/phí/số tiền tối thiểu, cơ chế idempotency và trạng thái cuối trước khi bật tiền thật. Tài liệu payOS có đích nhận ngân hàng/số tài khoản và truy vấn payout; quyền CarRent gọi thay Owner, kích hoạt và cấp vốn vẫn cần xác nhận thực tế. Sandbox thành công không chứng minh live được phép. Không thêm SePay refund API làm phương án mặc định: tính năng đó có điều kiện VietinBank doanh nghiệp riêng.
-
-## 3. Quy tắc thuê xe đã chốt
-
-### 3.1. Giá và lịch
-
-- Chỉ có **ngày nhận/ngày trả**. Hai bên tự hẹn giờ ngoài ứng dụng.
-- `days = DAYS.between(startDate, endDate)`, tối thiểu 1 ngày; tổng tiền là giá/ngày snapshot × số ngày. Không đổi sang đơn vị 24 giờ, không tính thêm phụ phí/bồi thường trong bản này.
-- Trả trước **30%**, sau trả xe **70%** của tổng đã chốt. Đây là tiền thuê trả trước, không phải tiền bảo đảm hư hỏng.
-- Mặc định kỹ thuật: làm tròn xuống phần 30% tới VND; phần còn lại = tổng − phần trả trước để tổng không lệch. Chặn tạo yêu cầu tiền thật nếu một phần nhỏ hơn 1 VND hoặc dưới mức tối thiểu đã xác minh của nhà cung cấp; dữ liệu legacy không bị sửa theo quy tắc này.
-- Thời điểm hệ thống dùng UTC/Instant; hiển thị và chuyển ngày lịch bằng `Asia/Ho_Chi_Minh`. Dùng `Clock` để kiểm thử biên, không phụ thuộc múi giờ của máy chạy.
-
-### 3.2. Trước và trong chuyến đi
-
-1. Customer tạo yêu cầu; Owner chấp nhận và gửi ảnh/text BEFORE.
-2. Customer đồng ý BEFORE; hệ thống tạo yêu cầu trả trước 30%, giữ xe **15 phút** từ lúc backend tạo yêu cầu. Reload không gia hạn.
-3. Nhận đúng khoản hợp lệ trong hạn → xác nhận đặt xe.
-4. Trong khoảng ngày thuê, Owner tích **“Tôi xác nhận đã ký hợp đồng thuê xe với khách hàng”** rồi bấm **“Xác nhận đã giao xe”** → hiển thị **Đang thuê**. Không cần Customer xác nhận nhận xe lần nữa.
-5. Owner phải là chủ xe, BEFORE đã được Customer đồng ý, đã nhận đủ 30%, xe không còn ở booking khác và ngày hiện tại thuộc `[startDate, endDate)`. Không tự suy ra giao xe từ lịch.
-6. Từ lần Owner xác nhận giao xe: chặn hủy cho cả hai bên. Lưu actor và thời điểm server một lần; không bỏ tích để đảo ngược bàn giao. Checkbox là xác nhận của Owner về hợp đồng ký ngoài ứng dụng, chưa phải chữ ký điện tử hoặc bằng chứng nội dung hợp đồng.
-
-### 3.3. Trả xe và 70%
-
-- Customer gửi ảnh/text AFTER. Việc gửi báo cáo chưa có nghĩa Owner đã nhận xe.
-- Sau **1 giờ từ lần gửi AFTER** mà Owner chưa xác nhận: nhắc Owner, thông báo Admin; không tự xác nhận nhận xe và không tự phát sinh hạn nợ 70% chỉ vì hết giờ chờ.
-- Owner xác nhận nhận lại xe thực tế, đồng thời chọn đồng ý hoặc có bất đồng về tình trạng. Bất đồng cần lý do và được lưu; không tự đổi giá thuê.
-- Khi Owner xác nhận nhận lại xe: tạo nghĩa vụ 70%, hạn **1 giờ**. Nhắc Customer và hiển thị khoản phải trả.
-- QR 70% có hạn hiển thị **15 phút**. Hủy/để hết hạn QR chỉ kết thúc lần thử; khoản nợ và hạn 1 giờ giữ nguyên. Được tạo QR mới. Tiền đến qua QR cũ vẫn đối soát với khoản còn nợ; khoản trả trùng/vượt số còn nợ được hoàn phần dư.
-- Quá hạn 70%: **chỉ cảnh báo** Customer, Owner, Admin; không khóa tài khoản hoặc chặn tạo đơn mới. Không tự phạt, tự hủy hay hoàn lại 30%.
-- Đã trả xe và nhận đủ tiền → tự chuyển COMPLETED; bất đồng AFTER còn lại được giữ làm ghi chú/bằng chứng, không chặn hoàn thành.
-- Xe đã trả không còn bị giữ về vật lý bởi khoản nợ. Tìm kiếm/đặt xe vẫn kiểm tra khoảng ngày trùng theo quy tắc hiện hành, không bỏ qua overlap chỉ vì có timestamp trả sớm.
-
-### 3.4. Hết hạn, hủy và thứ tự nhận webhook
-
-- Hết 15 phút chưa xác nhận khoản trả trước: EXPIRED, giải phóng lịch, ẩn QR và hiện thông báo hết hạn.
-- Customer bấm **Hủy đặt xe** ở trang trả trước: hủy yêu cầu và booking, giải phóng lịch ngay. Nếu tiền đến sau đó thì hoàn 100%.
-- Tiền trả trước thực sự đến sau hạn: không khôi phục đơn; hoàn 100%, không thu phí hủy.
-- Ngân hàng nhận đúng hạn nhưng webhook đến chậm: phân biệt bằng thời điểm ngân hàng đã xác minh; không gọi đó là Customer trả muộn. Nếu lịch đã được giữ cho B, giữ B và hoàn đủ cho A, ghi lý do hệ thống xác nhận chậm. Không áp dụng “ai thanh toán trước giành xe”.
-- Mặc định triển khai bảo thủ: khi EXPIRED đã commit thì không tự phục hồi đơn, kể cả chưa có B; nhận khoản đúng hạn sau đó tạo hoàn 100% với lý do xác nhận chậm. Điểm mặc định này phải được đọc khi review plan, không diễn giải thành ưu tiên giờ chuyển tiền.
-- Trước khi QR trả trước được tạo, giữ hành vi PENDING chặn lịch hiện có; chưa thêm timeout mới cho thời gian Owner chuẩn bị BEFORE/Customer xem báo cáo. Đây là giới hạn v1, khác thời hạn giữ chỗ 15 phút khi đã tạo QR.
-
-### 3.5. Phí hủy trước bàn giao
-
-Áp dụng sau khi đã ghi nhận khoản trả trước hợp lệ; snapshot tiền và chính sách vào booking để sửa cấu hình sau này không đổi lịch sử:
-
-| Bên hủy / thời điểm | Phí trên khoản trả trước |
-|---|---:|
-| Customer hủy trong 1 giờ sau thanh toán giữ chỗ | 0% |
-| Sau 1 giờ; ngày nhận cách ngày hủy hơn 3 ngày | 10% |
-| Sau 1 giờ; cách 0–3 ngày, hoặc đã qua ngày nhận nhưng chưa bàn giao | 50% |
-| Owner hủy trước bàn giao | 0% |
-
-Ưu tiên cửa sổ miễn phí. Mặc định biên: đúng 1 giờ vẫn miễn phí; đúng 3 ngày thuộc mức 50%. Mốc thanh toán lấy thời điểm ngân hàng ghi nhận khoản hợp lệ, không lấy thời điểm trình duyệt thấy thành công. Phí làm tròn xuống VND; tiền hoàn = tiền trả trước − phí. Không tính mốc 72 giờ theo giờ hẹn ngoài ứng dụng.
-
-### 3.6. Hoàn tiền
-
-- Nghĩa vụ hoàn được tạo tự động khi điều kiện đã xác định, không chờ Owner bấm nút hoàn.
-- Chưa có tài khoản nhận → WAITING_RECIPIENT; người nhận nhập ngân hàng/số tài khoản, hệ thống kiểm tra và hiển thị tên đích mà nhà cung cấp xác minh được. Không coi tên tự nhập là chứng minh sở hữu tài khoản.
-- Khi đã xác định số tiền và có tài khoản hợp lệ: ghi `readyAt` một lần, hạn hoàn `readyAt + 1 giờ`. Chờ người nhận cung cấp tài khoản chưa tính vào hạn này.
-- Thiếu số dư kênh chi → WAITING_FUNDS, thông báo bên phải cấp vốn, tự kiểm tra/thử lại. Sau 1 giờ chưa thành công: đánh dấu quá hạn, thông báo các bên/Admin; **chỉ cảnh báo**, không chặn Owner nhận đơn mới.
-- Không reset hạn khi retry, reload, app restart hoặc sửa dữ liệu hiển thị. Dùng cùng cơ chế trạng thái và đối soát cho khoản Admin hoàn Owner; đây là mặc định tái sử dụng hạ tầng của plan.
-- Không gọi lại lệnh chi mới chỉ vì timeout. Mỗi lần chi có provider ID/idempotency key; kết quả chưa rõ phải truy vấn lần đó. Chỉ tạo lần thử mới sau khi có kết quả chắc chắn chưa chuyển và lỗi được phép thử lại.
-
-## 4. Gói Owner đã chốt
-
-| Gói | Hạn mức | Giá tạm thời / 30 ngày |
-|---|---:|---:|
-| SMALL | 4 xe | 5.000 VND |
-| STANDARD | 8 xe | 10.000 VND |
-| BUSINESS | 16 xe | 15.000 VND |
-
-- Snapshot giá/hạn mức vào yêu cầu mua. Thay bảng giá không đổi yêu cầu đã tạo.
-- Một lần mua hợp lệ được kích hoạt sau xác nhận tiền. Còn hạn và mua cùng gói: cộng **30 ngày vào hạn hiện tại**; hết hạn: từ lúc kích hoạt lại + 30 ngày. Dùng cùng một transaction để ghi đã áp dụng và cộng hạn.
-- Chỉ đổi loại gói sau khi gói hiện tại hết hạn; không nâng/hạ giữa kỳ, không quy đổi tiền/ngày còn lại.
-- Hạn mức = xe **đang đăng + đang chờ duyệt**; xe chủ động ẩn hoặc bị từ chối không chiếm suất.
-- Hết gói: tạm ẩn khỏi public, chặn đơn thuê mới và đăng thêm xe; Owner vẫn xem/sửa, đơn đã xác nhận vẫn thực hiện và thanh toán/hoàn bình thường. Chưa thêm quy tắc tự hủy các yêu cầu thuê tồn tại chỉ vì gói hết hạn; chặn tạo mới tại thời điểm submit.
-- Gia hạn cùng gói: phục hồi xe đủ điều kiện từng được đăng, không bật lại xe Owner đã chủ động ẩn. Mua gói thấp hơn sau hết hạn: giữ dữ liệu, tất cả xe tiếp tục ẩn; Owner tự chọn bật/gửi duyệt trong hạn mức mới. Gói cao hơn có thể phục hồi lựa chọn cũ trong hạn mức mới.
-- Phí gói đã kích hoạt: **không hoàn theo ngày/suất chưa dùng**, không tự trừ tiền kỳ sau.
-- QR mua/gia hạn: **15 phút**, hết hạn thì ẩn và cho tạo mới; gói cũ còn hiệu lực không bị ảnh hưởng.
-- Hai lần chuyển tiền thật cho cùng yêu cầu: lần hợp lệ đầu chỉ cấp quyền lợi một lần, khoản trả trùng hoàn tự động 100% từ Admin. Webhook gửi lại một giao dịch chỉ dedupe, không tạo khoản hoàn mới.
-- Tiền gói thực sự đến sau hạn: không kích hoạt yêu cầu hết hạn, hoàn tự động 100% từ Admin. Đúng hạn nhưng webhook chậm đối soát riêng; chỉ áp dụng nếu không vi phạm quy tắc gói hiện tại.
-
-## 5. Các mặc định kỹ thuật để người triển khai không tự suy đoán
-
-Các giá trị dưới đây là lựa chọn triển khai có thể review, không phải yêu cầu kinh doanh mới:
-
-- Queue: 4 worker dùng chung; tối đa 50 tác vụ chờ/car, 500 tác vụ chờ toàn app; thời gian chờ trước bắt đầu 10 giây. Chỉ hủy tác vụ còn QUEUED. Tác vụ đã RUNNING phải chờ kết quả commit/rollback; không báo đã thất bại rồi để nó âm thầm commit. Đặt timeout DB để transaction không treo vô hạn.
-- Polling UI: 2 giây khi tab đang mở, dừng ở kết quả cuối và khi trang bị đóng; GET chỉ đọc. Backend đối soát chi tiền độc lập với trình duyệt.
-- Job DB: quét hết hạn/nhắc nợ mỗi 30 giây, lưu mốc xử lý để mỗi loại nhắc chỉ phát một lần. Sau restart quét bù. Payout đang xử lý truy vấn mỗi 30 giây; lỗi hạ tầng dùng backoff tối đa 5 phút, không gửi lệnh chi lặp.
-- Yêu cầu mua gói bị hủy trước kích hoạt: kết thúc intent; tiền nhận sau đó tạo hoàn 100% từ Admin, không cấp gói. Đây là mặc định tương ứng với yêu cầu hết hạn, cần review cùng vòng đời mua gói.
-- Nếu tiền gói đúng hạn nhưng xử lý sau khi một gói khác đã được kích hoạt và loại gói không còn hợp lệ, tạo hoàn 100% thay vì ghi đè quyền lợi hiện tại. Chặn tạo nhiều yêu cầu mua gói ACTIVE của cùng Owner từ đầu.
-- Giao dịch không xác định được mã hoặc có lệch tiền thuộc phần hoãn: lưu receipt/inbox ở REVIEW_REQUIRED, hiển thị cho đúng chủ thể; không tự đánh dấu đủ tiền, không làm mất tiền đã nhận. Chưa xây màn hình đối soát thủ công để giả lập “đã thanh toán”.
-
-## 6. Hợp đồng kỹ thuật xuyên phase
-
-### 6.1. Biên module và giao diện
-
-**Handoff nghiệm thu P4.11:** [interface thực tế, handler registration, money states, sequence và cutover](phase-4-handoff.md); dùng trước khi nối Phase 6/8.
-
-Bảng dưới gồm các module đã triển khai và các đích dự kiến ở task/phase tiếp theo; trạng thái cụ thể theo checkpoint từng task. Package gốc `com.carrent`.
-
-**Cập nhật contract đợt 3 — 2026-10-30:** P4.4–P4.6 đã được kiểm chứng theo các seam dưới đây. Core tạo/allocation receipt và cập nhật amountSettled/status tài chính; handler `apply(receiptId)` đọc kết quả đã flush để áp dụng quyền lợi domain và yêu cầu refund cho phần chưa phân bổ. Handler không cộng tiền lần nữa, không mở transaction/queue lồng và không gọi mạng provider. P4.7 đã bổ sung RefundService/RefundRecipientService, recipient MVC và saved-account prefill; P4.8 đã bổ sung PayoutWorker/PayoutTransactions/PayoutChannelResolver: durable attempt/lease trước HTTP, đối soát query-only khi UNKNOWN và retry có phân loại; nguồn kênh bất biến theo vận hành, không repoint credential reference có lịch sử. P4.9 đã thêm scheduler quét DB 30 giây, bounded executors và cảnh báo atomic, mặc định tắt; endpoint webhook chỉ lưu inbox trước ACK, không khởi chạy worker trong request. P4.10 thêm scoped financial views và polling; không cấp quyền sửa đích cho collector/Admin.
-
-| Module | Trách nhiệm / giao diện chính |
-|---|---|
-| `concurrency/CarCommandExecutor` | `<T> T execute(Long carId, Supplier<T> action)`; xếp tác vụ trước transaction, trả kết quả sau commit/rollback |
-| `payment/PaymentObligationService` | `PaymentIntentView openAttempt(Long obligationId, CustomUserPrincipal actor)`; `void cancelAttempt(Long intentId, CustomUserPrincipal actor)`; không quyết định hủy booking |
-| `payment/SePayWebhookService` | `void receive(Long channelId, HttpHeaders headers, byte[] rawBody)`; xác thực rồi ghi inbox bền vững trước ACK |
-| `payment/ReceiptProcessor` | `void process(Long inboxId)`; idempotent, route theo đối tượng và gọi adapter nghiệp vụ dưới cùng transaction |
-| `payment/ReceiptApplicationService` | `void apply(Long inboxId, String leaseOwner)`; `void expire(Long intentId)` trên Spring proxy transactional riêng; khóa aggregate trước tiền rồi gọi handler; lease token bắt buộc để chặn worker cũ |
-| `payment/RefundService` | `Long request(String businessKey, Long receiptId, long amount, RefundReason reason)`; tạo nghĩa vụ một lần, chưa đồng nghĩa chuyển tiền |
-| `payment/RefundRecipientService` | `void submit(Long refundId, RefundRecipientForm form, CustomUserPrincipal actor)`; chỉ người nhận đúng khoản, snapshot đích trước dispatch |
-| `payment/PayoutTransactions` | transaction claim/beginSend/finish độc lập, READ_COMMITTED, khóa Receipt → Refund → Attempt và lease fencing; persist snapshot/key trước HTTP |
-| `payment/PayoutChannelResolver` | đọc ID kênh → credential reference phía server, chỉ kênh PAYOS/PAYOUT hợp lệ; đổi nguồn phải tạo kênh mới |
-| `payment/PaymentMaintenanceJob` | `scan()` quét ID bounded/keyset rồi giao cho executor domain/payout riêng; DB work giữ nguyên khi queue đầy, thiếu handler hoặc restart; schedule 30 giây opt-in |
-| `payment/PaymentMaintenanceWork` | discovery ngắn và `notifyOverdue(refundId)` khóa Receipt → Refund, thông báo parties/Admin cùng marker trong một transaction |
-| `payment/FinancialViews` | scoped page/detail theo ACTIVE user/role; refund status chỉ id/status/dueAt/overdue, read-only và không trả bank/credential/raw payload |
-| `payment/PayoutWorker` | `void dispatch(Long refundId)`; `void reconcile(Long attemptId)`; không giữ transaction/Car queue lúc gọi API ngoài |
-| `booking/BookingService` | giữ create/Owner accept/cancel; bổ sung `acceptBefore`, `confirmHandover`, `confirmReturn`, `applyAdvance`, `applyBalance` theo Phase 6 |
-| `inspection/InspectionService` | nháp, ảnh private, gửi BEFORE/AFTER và ghi nhận bất đồng; không tự sửa tổng tiền |
-| `subscription/SubscriptionService` | tạo yêu cầu mua, áp dụng payment một lần, gia hạn và policy quota/hiển thị |
-
-`PaymentIntentView` là record chứa `id`, `code`, `amount`, `expiresAt`, `status`, `qrUrl`; chỉ dữ liệu hiển thị, không chứa secret. `status` là trạng thái hiển thị, có thêm REFUND_PENDING/REFUNDED/UNAVAILABLE, không sửa enum DB để biểu diễn các trạng thái tổng hợp này. `PaymentDomainHandler` bắt buộc có `subject`, `lockSubject`, `apply`, `expire`, `cancel`: cancel chỉ đóng attempt trong core, handler quyết định tác động domain theo loại nghĩa vụ. Handler phải khóa/đọc current aggregate, xác thực điều kiện nghiệp vụ và không lấy thêm khóa aggregate trong apply/expire/cancel. `RefundRecipientForm` gồm `bankBin`, `accountNumber`, `saveForLater`, `confirmedAccountName`; tên cuối chỉ đối chiếu với verifier vừa gọi lại, không dùng làm tên lưu. Preview và submit xác minh ngoài transaction/queue, rồi commit ngắn dưới khóa. Production verifier mặc định từ chối cho tới P4.2-A; fixture không chứng minh lookup thật. `RefundReason` gồm CUSTOMER_CANCEL, OWNER_CANCEL, LATE_ADVANCE, SYSTEM_CONFIRMATION_DELAY, DUPLICATE_PAYMENT, EXCESS_BALANCE, LATE_SUBSCRIPTION, CANCELLED_SUBSCRIPTION, INCOMPATIBLE_SUBSCRIPTION. Actor, amount, ID kênh chi không lấy từ form của người nhận.
-
-### 6.2. Dữ liệu và migration
-
-Giữ bảng `payments`/seed hiện có làm dữ liệu legacy; không đổi chúng thành hai đợt thanh toán mới hoặc giả định có gói lịch sử. P4.3 đã tạo migration/bootstrap và mapping cho 7 bảng core đầu tiên, kiểm chứng trên DB riêng; DB ứng dụng chưa migration. P4.7 bổ sung migration `2026-10-30-01-refund-accounts.sql` và bảng prefill riêng; cả hai migration chỉ kiểm chứng trên DB tạm. Các bảng domain Phase 6/8 vẫn là kế hoạch. Luồng thật dùng các bảng sau:
-
-| Bảng theo phase | Khóa/thuộc tính bắt buộc |
-|---|---|
-| `payment_channels` | chủ thể OWNER/ADMIN, userId, provider, purpose COLLECT/PAYOUT, ngân hàng/đích nhận, credential reference, enabled; không trả credential ra UI |
-| `payment_obligations` | business_key UNIQUE; purpose ADVANCE/BALANCE/SUBSCRIPTION; payer/collector userId, subjectId, amountDue/amountSettled, dueAt, trạng thái; tiền snapshot |
-| `payment_intents` | obligationId FK, code UNIQUE, channelId, amount snapshot, createdAt/expiresAt/cancelledAt, trạng thái; mỗi nghĩa vụ tối đa một attempt ACTIVE qua khóa obligation |
-| `webhook_inbox` | UNIQUE(channelId, providerTransactionId), raw payload, receivedAt, trạng thái/lease/retry; lưu trước ACK |
-| `payment_receipts` | UNIQUE(channelId, providerTransactionId), inboxId, intentId nullable, amount, creditedAt, allocation, trạng thái APPLIED/REFUND_REQUIRED/REVIEW_REQUIRED |
-| `refunds` | business_key UNIQUE, receiptId, payout_channel_id thuộc đúng collector của receipt, recipient user, amount/reason, beneficiary snapshot, readyAt/dueAt/status; không giảm số đã thu để giả lập hoàn |
-| `payout_attempts` | UNIQUE(refundId, attemptNo), idempotencyKey UNIQUE, provider ID, trạng thái/kết quả/lỗi; một lần chi chưa rõ kết quả chặn lần chi mới |
-| `refund_recipient_accounts` | user PK/FK RESTRICT, bank BIN/account/name đã xác minh và verified_at UTC; opt-in, chỉ prefill, không sửa snapshot refund/attempt cũ |
-| `subscription_orders` | Owner, mã gói, quota/giá snapshot, obligationId UNIQUE, expiresAt, appliedAt; tạo tại Phase 8 |
-| `owner_subscriptions` | ownerId UNIQUE, mã gói, quota, validFrom/validUntil, lastAppliedOrderId; tạo tại Phase 8 |
-| `booking_inspections`, `inspection_images`, `inspection_events` | report BEFORE/AFTER UNIQUE theo booking/phase; tác giả, ảnh private, event append-only; tạo tại Phase 6 |
-
-Booking mới có `workflow_version=VIETQR_V1`; bản ghi cũ mặc định LEGACY. Phase 6 thêm Owner accepted, BEFORE accepted, handover/contract actor + timestamp, return timestamp, hold expiry và snapshot advance/balance. Giữ các status cũ, thêm EXPIRED; “Đang thuê”, “Đã trả — chờ 70%” là tiến độ hiển thị từ timestamp + nghĩa vụ. Owner accept chưa phải đã thanh toán: PENDING → CONFIRMED sau khoản trả trước hợp lệ. COMPLETED tự động khi đã trả và nghĩa vụ còn lại được thanh toán đủ.
-
-P6.1 chỉ thêm nền schema/model; createBooking hiện vẫn LEGACY/false. Server cấp VIETQR_V1 khi đủ gate provider/domain ở các task rental sau, không phải side effect của migration.
-
-Migration chỉ chạy có kiểm soát, backup và kiểm tra schema nguồn; không DDL lúc boot, không reset seed. Mỗi phase cập nhật migration và `scriptDB.sql` đồng nhất. Không áp dụng policy mới cho booking legacy.
-
-### 6.3. Khóa, queue và giao dịch ngoài hệ thống
-
-- Reads không vào queue. Các entry point HTTP, xử lý receipt thuê xe và job thay đổi booking/custody cùng xe đi qua CarCommandExecutor; không lồng queue, không enqueue khi đang giữ transaction DB.
-- Queue chỉ điều phối một tiến trình, không thay khóa DB hoặc ngăn mọi deadlock. Webhook/job có nguồn việc bền vững trong DB; queue mất khi app dừng không được làm mất giao dịch đã ACK.
-- Contract tích hợp worker sau gate P7.4 được ghi tại [Phase 7](phase-7-car-queue.md#contract-worker-tài-chính-cho-phase-46): claim/route xong transaction mới enqueue, apply/processed cùng commit, admission fail giữ việc để retry; API payout ngoài transaction/Car queue.
-- Thứ tự khóa mở rộng: **Owner User → OwnerSubscription → SubscriptionOrder → Car → Booking (ID tăng) → Obligation → Intent → Receipt → Refund → PayoutAttempt → Inspection → Image**. Chỉ lấy các hàng cần thiết theo thứ tự, không lấy khóa ngược chiều. Nghiệp vụ không cần Owner/quota có thể bắt đầu từ Car nhưng sau đó không quay lại khóa Owner.
-- Quota phối hợp theo Owner bằng khóa hàng Owner, vì hai carId khác nhau vẫn có thể cùng lấy suất cuối. Subscription mutation không đi vào Car queue rồi chờ Owner lock; tier change/hide nhiều xe khóa Owner trước rồi Car theo ID tăng.
-- Xác thực webhook và ghi inbox là transaction riêng ngắn. Worker đọc route rồi vào queue nếu cần; transaction xử lý nghiệp vụ bắt đầu khi đến lượt. ACK thành công chỉ sau inbox commit; DB lỗi trả lỗi để nhà cung cấp retry.
-- Trong apply/expiry transaction, handler phải khóa aggregate trước các hàng tài chính: rental khóa Car/Booking; subscription khóa Owner/entitlement/order và các Car sẽ đổi khi hạ gói. Sau đó core mới khóa Obligation/Intent/Receipt. Không khóa tiền trước rồi mới gọi handler đi lấy Owner hoặc Car.
-- Payout: claim/ghi attempt và idempotency key rồi commit → gọi API ngoài transaction → lưu kết quả trong transaction ngắn. Không giữ Car queue/DB lock trong khi đợi mạng. Khôi phục các attempt chưa rõ sau restart bằng truy vấn/retry cùng key theo hợp đồng nhà cung cấp.
-- Session/role/ownership phải đọc lại khi tác vụ thực thi. POST người dùng có CSRF; chỉ endpoint webhook cụ thể dùng xác thực provider thay CSRF. GET polling không tạo intent, không đánh dấu paid và không phát sinh chuyển tiền.
-- Webhook đã xác thực vẫn phải được ghi nhận/đối soát khi người dùng đã bị vô hiệu hóa; không bỏ tiền đã nhận chỉ vì không còn một session ACTIVE. Quyền thao tác của người dùng và việc ghi nhận giao dịch ngân hàng là hai kiểm tra riêng.
-
-### 6.4. Hạch toán và giao diện
-
-- Tiền thu và tiền hoàn là các bản ghi riêng; refund một phần không biến toàn bộ receipt thành REFUNDED. Net = phần thu được phân bổ − khoản hoàn đã SUCCEEDED.
-- Doanh thu Admin = khoản phí gói hợp lệ đã áp dụng; không cộng tiền thuê Owner hoặc khoản chưa phân bổ/đang chờ hoàn. Theo dõi phí nhà cung cấp riêng nếu cần đối soát, không tự khấu trừ từ khoản hoàn đã chốt.
-- Doanh thu Owner chỉ thuộc xe của Owner; tách tiền đã thu, đã hoàn thành công, còn nợ và hoàn đang chờ.
-- Checkout phân biệt cancelled/expired/received/refund-pending/refunded. Không coi đóng tab hoặc nút hủy là đảo giao dịch ngân hàng. Thành công trên UI chỉ từ trạng thái backend đã commit.
-
-## 7. Phần hoãn và giới hạn v1
-
-- **Chuyển thiếu/thừa trả trước 30%:** lưu tại [SDD mục 1.4](../SDD.md). Chưa chọn cộng dồn hay hoàn toàn bộ mỗi giao dịch lệch; không thêm hai tính năng đó vào task hiện tại. Ghi nhận lệch ở REVIEW_REQUIRED và giữ nguyên hạn giữ chỗ; không tự xác nhận đủ tiền. Khoản trả trùng đúng số tiền và các khoản 70% vượt số còn nợ vẫn thuộc xử lý đã chốt.
-- Chưa tính bồi thường/phụ phí, e-sign, upload bắt buộc hợp đồng, tự động thu nợ, chặn tài khoản do nợ hoặc hoàn quá hạn, nâng/hạ gói giữa kỳ, realtime WebSocket, queue phân tán.
-- Chưa xây self-service onboarding nhiều Owner thật; cấu hình chủ thể thử nghiệm do người vận hành local thiết lập, secret chỉ phía server.
-- Mặc định kỹ thuật tại §3–5 cần được đọc khi review. Không tự mô tả chúng là lựa chọn kinh doanh đã được hỏi riêng. Nếu nhà cung cấp không hỗ trợ kênh của Owner, dừng gate live và ghi rõ bằng chứng; không chuyển tiền thuê qua Admin để lách điều kiện.
-
-## 8. Verification và bàn giao
-
-Mọi phase: fixture riêng, giữ seed/schema/data cũ theo baseline; không in `.env`, API key, số dư hoặc tài khoản đầy đủ ra log công khai. Kịch bản tiền, bảo mật, concurrency cần kiểm chứng có ý nghĩa; không chỉ mock controller trả 200.
-
-```powershell
-.\mvnw.cmd '-Dmaven.compiler.useIncrementalCompilation=false' clean verify
-git diff --check
-```
-
-Trước khi thực thi plan: xác nhận baseline hiện tại, migration/backup và trạng thái từng gate. Cuối mỗi task ghi lệnh, kết quả thật và giới hạn; checkbox mới chỉ được tick sau khi thực thi. Không stage/commit/push tự động. Đợt lập roadmap chỉ tạo kế hoạch; các lần thực thi sau được ghi riêng tại checkpoint từng phase, chưa chuyển tiền thật.
-
-**Gate bật demo mới:** Phase 7, 4, 6 và 8 đạt kiểm chứng tích hợp; **P4.2-A đạt gate tài khoản/provider/live** của một Owner và Admin; workflow flags chưa bật cho user khác. P4.2 offline hoàn thành không bỏ gate này. Phase 5 chốt dashboard và E2E toàn bộ. Tiền thật chỉ thử khi người dùng chủ động thực hiện giao dịch kiểm chứng đã xác định; không tự chuyển tiền thử lúc boot.
+# Thiết kế, hợp đồng và phân công CarRent
+
+Các tài liệu dưới đây còn được dùng để phát triển và vận hành. Nhật ký từng
+đợt, biên bản bàn giao lặp lại, chẩn đoán đã xử lý và thiết kế Payment Settings
+đã hủy được bỏ khỏi cây hiện tại; phiên bản đã commit vẫn có trong Git.
+
+## Đọc trước
+
+- [Thiết kế tổng thể](../SDD.md).
+- [Các quyết định kỹ thuật](../decisions.md).
+- [Phân công ba thành viên](team-assignment.md).
+- [Hướng dẫn launcher Windows](../local-startup.md).
+- [Migration DB-first](../migrations/README.md).
+
+## Thiết kế theo module
+
+| Phần | Tài liệu |
+| --- | --- |
+| Khởi tạo và schema mới | [Phase 0](phase-0-init.md), [DB bootstrap](db-bootstrap.md) |
+| Auth, phân quyền và nền tảng | [Phase 1](phase-1-foundation.md) |
+| Catalog, quản lý xe và ảnh | [Phase 2](phase-2-car.md) |
+| Booking và notification | [Phase 3](phase-3-booking.md) |
+| Thanh toán, refund và đối soát | [Phase 4](phase-4-payment.md), [kiến trúc giao tiếp](phase-4-handoff.md) |
+| Admin, hồ sơ và đổi mật khẩu | [Phase 5](phase-5-admin-polish.md) |
+| BEFORE/AFTER, hợp đồng và vòng đời thuê | [Phase 6](phase-6-inspection.md) |
+| Queue và concurrency | [Phase 7](phase-7-car-queue.md) |
+| Gói Owner | [Phase 8](phase-8-owner-subscriptions.md), [pilot runbook](phase-8-pilot-runbook.md) |
+
+## Provider và kiểm chứng vận hành
+
+- [Hợp đồng provider/payment](payment-provider-contract.md).
+- [Hợp đồng thu SePay](sepay-collection-contract-2026-11-07.md).
+- [Hợp đồng lookup/recipient](p42a-p88-implementation-contract-2026-11-09.md).
+- [Nguồn tài liệu lookup và giới hạn endpoint](payos-recipient-lookup-check-2026-11-08.md).
+- [Các điều kiện nghiệm thu hoàn tiền còn lại](refund-gates-research-2026-11-09.md).
+- [Hướng dẫn operator](../p42a-p88-operator-guide-2026-11-09.md).
+
+Các checkpoint trong đặc tả module là bằng chứng theo thời điểm, không phải
+trạng thái server/provider hiện tại. Dùng `start.bat -CheckOnly -NoOpen` và
+`.local/SETUP-NEEDED.md` để kiểm tra máy đang chạy. Payment Settings S1/S2/S3
+không nằm trong phạm vi triển khai hiện hành.

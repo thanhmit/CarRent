@@ -1,6 +1,6 @@
 # P8.8 — điều kiện và quy trình demo một Owner
 
-**Cập nhật 2026-11-09:** [hướng dẫn lookup/nghiệm thu](../p42a-p88-operator-guide-2026-11-09.md) bổ sung bước xác minh lại từng khoản hoàn, diagnostic không payout, UNKNOWN query-only và các trường private còn thiếu. [Bàn giao triển khai](p42a-p88-implementation-handoff-2026-11-09.md) tách kết quả local với điều kiện provider/live; chưa có phê duyệt kích hoạt.
+**Cập nhật 2026-11-09:** [hướng dẫn lookup/nghiệm thu](../p42a-p88-operator-guide-2026-11-09.md) bổ sung bước xác minh lại từng khoản hoàn, diagnostic không payout, UNKNOWN query-only và các trường private còn thiếu. [Bàn giao triển khai](p42a-p88-implementation-contract-2026-11-09.md) tách kết quả local với điều kiện provider/live; chưa có phê duyệt kích hoạt.
 
 Tài liệu chuẩn bị vận hành, **không phải phê duyệt hoặc bằng chứng đã kích hoạt**. P8.8 và P4.2-A còn pending khi thiếu gate thật. Xem [checklist Phase8](phase-8-owner-subscriptions.md#task-p88--gate-tích-hợp-gói-và-kích-hoạt-demo-một-owner), [provider contract](payment-provider-contract.md) và [quy trình migration](../migrations/README.md).
 
@@ -29,7 +29,7 @@ Biến môi trường tương ứng: `CARRENT_PAYMENT_PILOT_OWNER_ID`, `CARRENT_
 - Pilot không tự chọn Admin mới: quy tắc duy nhất một Admin có kênh thu hợp lệ vẫn giữ nguyên. Các kiểm tra channel/provider, quyền và CSRF vẫn áp dụng.
 - Sau thay đổi cấu hình cần quy trình triển khai/restart được cho phép. Phiên implement không tự restart8080 hoặc thay cấu hình ứng dụng.
 
-**Lối vào booking mới, bổ sung P5.9:** `carrent.rental.workflow.enabled` mặc định `false` (environment `CARRENT_RENTAL_WORKFLOW_ENABLED`). Khi được phép bật, chỉ booking mới của Owner thuộc cặp pilot hợp lệ dùng `VIETQR_V1`/inspection bắt buộc; cần cả `carrent.rental.advance.enabled=true` và `carrent.rental.balance.enabled=true`, Owner/Admin ACTIVE đúng role hiện tại. Thiếu handler/tài khoản phù hợp phải từ chối. Cờ tắt hoặc Owner ngoài pilot giữ LEGACY; không chuyển booking cũ hàng loạt và form không chọn workflow. Đây là mô tả cấu hình, chưa có bằng chứng đã bật trên DB ứng dụng. [Kiểm chứng P5.9](phase-5-p59-verification.md).
+**Lối vào booking mới, bổ sung P5.9:** `carrent.rental.workflow.enabled` mặc định `false` (environment `CARRENT_RENTAL_WORKFLOW_ENABLED`). Khi được phép bật, chỉ booking mới của Owner thuộc cặp pilot hợp lệ dùng `VIETQR_V1`/inspection bắt buộc; cần cả `carrent.rental.advance.enabled=true` và `carrent.rental.balance.enabled=true`, Owner/Admin ACTIVE đúng role hiện tại. Thiếu handler/tài khoản phù hợp phải từ chối. Cờ tắt hoặc Owner ngoài pilot giữ LEGACY; không chuyển booking cũ hàng loạt và form không chọn workflow. Đây là mô tả cấu hình, chưa có bằng chứng đã bật trên DB ứng dụng. [Kiểm chứng P5.9](phase-5-admin-polish.md).
 
 ## 2. Bằng chứng cần có trước khi xin kích hoạt
 
