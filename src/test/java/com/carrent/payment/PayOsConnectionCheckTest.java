@@ -42,6 +42,7 @@ class PayOsConnectionCheckTest {
     private void respond(String path, String name) {
         var fixture = fixtures.path(name);
         server.expect(requestTo(BASE + path)).andExpect(method(HttpMethod.GET))
+                .andExpect(header("User-Agent", "CarRent/0.0.1"))
                 .andExpect(header("x-client-id", "fixture-owner-client"))
                 .andExpect(header("x-api-key", "fixture-owner-key"))
                 .andRespond(withSuccess(fixture.path("body").toString(), MediaType.APPLICATION_JSON)

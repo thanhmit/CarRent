@@ -149,6 +149,7 @@ public final class HttpPayOsPayoutClient implements PayOsPayoutClient {
     }
 
     private static void authenticate(HttpHeaders headers, PayOsChannel channel) {
+        headers.set(HttpHeaders.USER_AGENT, "CarRent/0.0.1");
         headers.set("x-client-id", channel.clientId());
         headers.set("x-api-key", channel.apiKey());
     }

@@ -54,6 +54,7 @@ class PayOsPayoutClientTest {
     @Test
     void createsASingleTransferWithTheCorrectCollectorCredentialsAndStableIdempotencyKey() {
         var request = server.expect(requestTo(BASE_URL)).andExpect(method(HttpMethod.POST))
+                .andExpect(header("User-Agent", "CarRent/0.0.1"))
                 .andExpect(header("x-client-id", "fixture-owner-client"))
                 .andExpect(header("x-api-key", "fixture-owner-key"))
                 .andExpect(header("x-idempotency-key", "stable-attempt-key"))
@@ -78,7 +79,7 @@ class PayOsPayoutClientTest {
     @Test
     void findsTheExistingPayoutByReferenceAfterTheCreateResponseWasLost() {
         respond(server.expect(requestTo(BASE_URL + "?referenceId=refund-1-attempt-1&limit=2&offset=0"))
-                .andExpect(method(HttpMethod.GET)), "FIND_ONE");
+                .andExpect(method(HttpMethod.GET)).andExpect(header("User-Agent", "CarRent/0.0.1")), "FIND_ONE");
         assertThat(client.findByReference(1L, "refund-1-attempt-1")).isEqualTo(new PayoutResult(
                 "payout_fixture_1", "refund-1-attempt-1", TransferOutcome.SUCCEEDED, "970422", "0000000123", 5000));
         server.verify();
@@ -89,7 +90,7 @@ class PayOsPayoutClientTest {
             "APPROVAL_ONLY,PROCESSING", "FAILED,UNKNOWN", "CANCELLED,UNKNOWN", "REVERSED,UNKNOWN", "FUTURE_STATE,UNKNOWN"})
     void usesTheSignedTransactionStateInsteadOfTheApprovalState(String fixture, TransferOutcome outcome) {
         respond(server.expect(requestTo(BASE_URL + "/payout_fixture_1"))
-                .andExpect(method(HttpMethod.GET)), fixture);
+                .andExpect(method(HttpMethod.GET)).andExpect(header("User-Agent", "CarRent/0.0.1")), fixture);
         assertThat(client.get(1L, "payout_fixture_1").outcome()).isEqualTo(outcome);
         server.verify();
     }
