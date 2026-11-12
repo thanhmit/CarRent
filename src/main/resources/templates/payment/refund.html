@@ -8,7 +8,7 @@
     <h1 class="font-headline-md text-headline-md">Khoản hoàn tiền của bạn</h1>
     <p class="font-headline-lg text-headline-lg tabular-nums" th:text="${#numbers.formatInteger(refund.amount, 0, 'POINT') + ' VNĐ'}"></p>
     <p th:switch="${refund.status.name()}" role="status" aria-live="polite" class="rounded-xl bg-surface-container p-4">
-      <span th:case="'WAITING_RECIPIENT'">Vui lòng xác nhận tài khoản nhận hoàn tiền. Thời hạn hoàn bắt đầu khi tài khoản đã được xác minh và xác nhận.</span>
+      <span th:case="'WAITING_RECIPIENT'">Vui lòng xác nhận tài khoản nhận hoàn tiền. Thời hạn hoàn bắt đầu khi bạn xác nhận ngân hàng và số tài khoản nhận.</span>
       <span th:case="'READY'">Đã xác nhận tài khoản nhận. Khoản hoàn đang chờ xử lý, chưa xác nhận đã chuyển tiền.</span>
       <span th:case="'WAITING_FUNDS'">Đang chờ bên hoàn tiền bổ sung số dư.</span>
       <span th:case="'PROCESSING'">Đang đối soát kết quả chuyển tiền.</span>
@@ -22,18 +22,20 @@
     <p th:if="${successMessage}" th:text="${successMessage}" role="status"></p>
     <p th:if="${errorMessage}" th:text="${errorMessage}" class="rounded-xl border border-error/30 bg-error-container/50 p-4 text-on-error-container" role="alert"></p>
     <dl th:if="${refund.accountNumber != null}" class="rounded-xl bg-surface-container-low p-4 [overflow-wrap:anywhere] flex flex-col gap-3">
-      <div><dt class="font-caption text-caption text-on-surface-variant">Ngân hàng (BIN)</dt><dd th:text="${refund.bankBin}"></dd></div>
+      <div><dt class="font-caption text-caption text-on-surface-variant">Ngân hàng nhận</dt><dd th:text="${bankDirectory.displayName(refund.bankBin)}"></dd></div>
       <div><dt class="font-caption text-caption text-on-surface-variant">Số tài khoản đã xác nhận</dt><dd th:text="${refund.accountNumber}"></dd></div>
-      <div><dt class="font-caption text-caption text-on-surface-variant">Tên do nhà cung cấp xác minh</dt><dd th:text="${refund.accountName}"></dd></div>
     </dl>
-    <form th:if="${refund.editable and destination == null}" method="post"
-          th:action="@{/payment/refunds/{id}/recipient/preview(id=${refund.id})}" th:object="${recipientForm}" class="flex flex-col gap-4 border-t border-outline-variant pt-5">
-      <h2 class="font-title-md text-title-md">Bước 1 · Nhập thông tin nhận hoàn</h2>
+    <form th:if="${refund.editable}" method="post"
+          th:action="@{/payment/refunds/{id}/recipient(id=${refund.id})}" th:object="${recipientForm}" class="flex flex-col gap-4 border-t border-outline-variant pt-5">
+      <h2 class="font-title-md text-title-md">Thông tin nhận hoàn tiền</h2>
       <div>
-        <label for="bankBin">Mã ngân hàng (BIN, 6 chữ số)</label>
-        <input id="bankBin" th:field="*{bankBin}" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required
-               class="block w-full min-h-11 border border-outline rounded-xl px-3 py-3 mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" th:attr="aria-invalid=${#fields.hasErrors('bankBin')},aria-describedby=${#fields.hasErrors('bankBin') ? 'bank-help bankBin-error' : 'bank-help'}"/>
-        <p id="bank-help" class="pt-2 text-on-surface-variant">Nhập mã BIN của ngân hàng nhận, ví dụ MB: 970422, Vietcombank: 970436.</p>
+        <label for="bankBin">Ngân hàng nhận</label>
+        <select id="bankBin" th:field="*{bankBin}" required
+                class="block w-full min-h-11 border border-outline rounded-xl px-3 py-3 mt-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary"
+                th:attr="aria-invalid=${#fields.hasErrors('bankBin')},aria-describedby=${#fields.hasErrors('bankBin') ? 'bankBin-error' : null}">
+          <option value="">Chọn ngân hàng</option>
+          <option th:each="bank : ${bankDirectory.banks()}" th:value="${bank.bin}" th:text="${bank.shortName + ' — ' + bank.name}"></option>
+        </select>
         <p id="bankBin-error" th:if="${#fields.hasErrors('bankBin')}" th:errors="*{bankBin}" class="text-error pt-2"></p>
       </div>
       <div>
@@ -43,21 +45,8 @@
         <p id="accountNumber-error" th:if="${#fields.hasErrors('accountNumber')}" th:errors="*{accountNumber}" class="text-error pt-2"></p>
       </div>
       <label class="min-h-11 flex items-start gap-3 rounded-xl bg-surface-container-low p-3 cursor-pointer"><input class="mt-1 h-5 w-5 shrink-0 accent-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" type="checkbox" th:field="*{saveForLater}"/>Lưu tài khoản để điền sẵn cho lần hoàn sau.</label>
-      <button class="min-h-11 inline-flex items-center justify-center rounded-xl bg-secondary text-on-secondary px-4 py-3 font-label-md text-label-md hover:bg-secondary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary" type="submit">Kiểm tra tài khoản nhận</button>
-    </form>
-    <form th:if="${refund.editable and destination != null}" method="post"
-          th:action="@{/payment/refunds/{id}/recipient(id=${refund.id})}" th:object="${recipientForm}" class="flex flex-col gap-4 border-t border-outline-variant pt-5">
-      <h2 class="font-title-md text-title-md">Bước 2 · Kiểm tra và xác nhận</h2><p class="text-on-surface-variant">Kiểm tra đúng người nhận trước khi xác nhận:</p>
-      <dl class="rounded-xl bg-surface-container-low p-4 flex flex-col gap-3 [overflow-wrap:anywhere]">
-        <div><dt class="font-caption text-caption text-on-surface-variant">Mã ngân hàng</dt><dd th:text="${destination.bankBin}"></dd></div>
-        <div><dt class="font-caption text-caption text-on-surface-variant">Số tài khoản</dt><dd th:text="${destination.accountNumber}"></dd></div>
-        <div><dt class="font-caption text-caption text-on-surface-variant">Tên do nhà cung cấp xác minh</dt><dd th:text="${destination.accountName}"></dd></div>
-      </dl>
-      <input type="hidden" th:field="*{bankBin}"/><input type="hidden" th:field="*{accountNumber}"/>
-      <input type="hidden" th:field="*{saveForLater}"/><input type="hidden" th:field="*{confirmedAccountName}"/>
-      <label class="min-h-11 flex items-start gap-3 rounded-xl bg-surface-container-low p-3 cursor-pointer"><input class="mt-1 h-5 w-5 shrink-0 accent-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" type="checkbox" name="confirmed" value="true" required/>Tôi đã kiểm tra đúng ngân hàng, số tài khoản và tên người nhận.</label>
+      <label class="min-h-11 flex items-start gap-3 rounded-xl bg-surface-container-low p-3 cursor-pointer"><input class="mt-1 h-5 w-5 shrink-0 accent-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary" type="checkbox" name="confirmed" value="true" required/>Tôi xác nhận ngân hàng và số tài khoản nhận đã nhập là chính xác.</label>
       <button class="min-h-11 inline-flex items-center justify-center rounded-xl bg-secondary text-on-secondary px-4 py-3 font-label-md text-label-md hover:bg-secondary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary" type="submit">Xác nhận tài khoản nhận hoàn tiền</button>
-      <a th:href="@{/payment/refunds/{id}(id=${refund.id})}" class="min-h-11 inline-flex items-center justify-center rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-secondary hover:bg-surface-container-low focus-visible:outline focus-visible:outline-2 focus-visible:outline-secondary">Nhập lại thông tin</a>
     </form>
     <p th:unless="${refund.editable}" class="text-on-surface-variant">Thông tin nhận hoàn đã được khóa khi bắt đầu xử lý. Vui lòng theo dõi kết quả xác nhận.</p>
     <p id="polling-message" role="status" aria-live="polite" class="text-on-surface-variant empty:hidden"></p>

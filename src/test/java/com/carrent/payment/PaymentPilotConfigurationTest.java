@@ -3,6 +3,7 @@ package com.carrent.payment;
 import com.carrent.user.User;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.WebApplicationType;
@@ -23,7 +24,7 @@ class PaymentPilotConfigurationTest {
         Path dotenv = directory.resolve(".env");
         Files.writeString(dotenv, "CARRENT_SEPAY_OWNER_ID=2\nCARRENT_SEPAY_ADMIN_ID=1\n");
         try (var context = new SpringApplicationBuilder(PilotConfiguration.class).web(WebApplicationType.NONE)
-                .run("--spring.profiles.active=local", "--spring.config.import=optional:" + dotenv.toUri() + "[.properties]",
+                .run("--spring.profiles.active=local", isolatedConfiguration(dotenv),
                         "--logging.level.root=ERROR", "--spring.main.banner-mode=off")) {
             var pilot = context.getBean(PaymentPilot.class);
             for (var purpose : PaymentPurpose.values()) {
@@ -59,7 +60,7 @@ class PaymentPilotConfigurationTest {
         Path dotenv = directory.resolve(".env");
         Files.writeString(dotenv, "");
         try (var context = new SpringApplicationBuilder(PilotConfiguration.class).web(WebApplicationType.NONE)
-                .run("--spring.profiles.active=local", "--spring.config.import=optional:" + dotenv.toUri() + "[.properties]",
+                .run("--spring.profiles.active=local", isolatedConfiguration(dotenv),
                         "--logging.level.root=ERROR", "--spring.main.banner-mode=off")) {
             var pilot = context.getBean(PaymentPilot.class);
             for (var purpose : PaymentPurpose.values()) {
@@ -69,5 +70,19 @@ class PaymentPilotConfigurationTest {
                 assertThat(pilot.allows(obligation)).as(purpose.name()).isFalse();
             }
         }
+    }
+
+    private String isolatedConfiguration(Path dotenv) throws Exception {
+        var defaults = new Properties();
+        try (var input = getClass().getResourceAsStream("/application.properties")) {
+            defaults.load(input);
+        }
+        // Imports are processed per document even when a command-line import overrides the property.
+        defaults.setProperty("spring.config.import", "optional:" + dotenv.toUri() + "[.properties]");
+        Path configuration = directory.resolve("application.properties");
+        try (var output = Files.newOutputStream(configuration)) {
+            defaults.store(output, null);
+        }
+        return "--spring.config.location=" + configuration.toUri();
     }
 }

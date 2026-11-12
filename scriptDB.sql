@@ -398,11 +398,11 @@ CREATE TABLE IF NOT EXISTS refund_recipient_accounts (
     user_id BIGINT NOT NULL,
     bank_bin VARCHAR(6) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     account_number VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-    account_name VARCHAR(150) NOT NULL,
+    account_name VARCHAR(150) NULL,
     verified_at DATETIME(6) NOT NULL,
     PRIMARY KEY (user_id),
     CONSTRAINT fk_refund_accounts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
-    CONSTRAINT chk_refund_accounts_bank CHECK (bank_bin REGEXP '^[0-9]{6}$' AND account_number REGEXP '^[0-9]{1,50}$'),
+    CONSTRAINT chk_refund_accounts_bank CHECK (bank_bin REGEXP _ascii'^[0-9]{6}$' AND account_number REGEXP _ascii'^[0-9]{1,50}$'),
     CONSTRAINT chk_refund_accounts_name CHECK (CHAR_LENGTH(TRIM(account_name)) > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

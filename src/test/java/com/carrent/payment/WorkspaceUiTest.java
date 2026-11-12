@@ -3,8 +3,10 @@ package com.carrent.payment;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.*;
+import org.springframework.core.env.MapPropertySource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -67,11 +69,12 @@ class WorkspaceUiTest {
     }
 
     @Test void disabledSubscriptionsDoNotAdvertiseThePurchaseRoute() throws Exception {
-        System.setProperty("carrent.subscription.enabled", "false");
+        var properties = f.app.getEnvironment().getPropertySources();
+        properties.addFirst(new MapPropertySource("disabledSubscriptions", Map.of("carrent.subscription.enabled", "false")));
         try {
             assertThat(nav(html("/owner/cars", 2), "Điều hướng chủ xe"))
                     .doesNotContain("/owner/subscriptions");
-        } finally { System.setProperty("carrent.subscription.enabled", "true"); }
+        } finally { properties.remove("disabledSubscriptions"); }
     }
 
     @Test void ownerDashboardUsesWorkspaceNavigation() throws Exception {

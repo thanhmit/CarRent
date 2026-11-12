@@ -4,7 +4,6 @@ import com.carrent.common.exception.BusinessException;
 import com.carrent.common.exception.ForbiddenException;
 import com.carrent.common.exception.NotFoundException;
 import com.carrent.payment.provider.ProviderPaymentProperties;
-import com.carrent.payment.provider.RefundDestinationVerifier.Destination;
 import com.carrent.security.CustomUserPrincipal;
 import com.carrent.user.Role;
 import com.carrent.user.User;
@@ -51,7 +50,7 @@ public class RefundRecipientTransactions {
     }
 
     @Transactional
-    public void confirm(Check check, Destination destination, boolean saveForLater, CustomUserPrincipal actor) {
+    public void confirm(Check check, RefundDestination destination, boolean saveForLater, CustomUserPrincipal actor) {
         locks.current(PaymentReceipt.class, check.receiptId());
         var refund = locks.current(Refund.class, check.refundId());
         requireRecipient(refund, actor);
@@ -64,7 +63,7 @@ public class RefundRecipientTransactions {
         }
         refund.setBankBin(destination.bankBin());
         refund.setAccountNumber(destination.accountNumber());
-        refund.setAccountName(destination.accountName());
+        refund.setAccountName(null);
         if (refund.getReadyAt() == null) {
             refund.setReadyAt(clock.instant());
             refund.setDueAt(refund.getReadyAt().plusSeconds(3600));

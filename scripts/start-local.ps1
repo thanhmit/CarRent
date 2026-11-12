@@ -125,7 +125,7 @@ function Write-SetupReport([string]$Path, [string]$Root, [hashtable]$Facts) {
     $lines.Add('Private inputs: ' + (Join-Path $Root '.env'))
     $lines.Add('Existing DB/provider overrides: ' + (Join-Path $Root 'application-local.properties'))
     $lines.Add(''); $lines.Add('Do not share this folder, credentials, OTPs, bank details or runtime logs.')
-    $lines.Add('No payout or provider login is performed by this launcher.')
+    $lines.Add('Launcher makes no payout API calls; the app worker follows explicit configuration. No provider login is performed.')
     $lines.Add('')
     foreach ($key in ($Facts.Keys | Sort-Object)) { $lines.Add('- ' + $key + ': ' + $Facts[$key]) }
     $lines.Add(''); $lines.Add('## Action items')
@@ -221,9 +221,10 @@ function Test-NewManagedDatabase([bool]$HadLocal, [hashtable]$Supplied, [string]
 }
 
 function Get-AppStartupArguments([string]$Jar, [hashtable]$Properties) {
+    $payoutEnabled = (Get-LocalValue $Properties 'carrent.payment.payout.enabled' 'false') -eq 'true'
     $result = @('-jar',$Jar,'--spring.profiles.active=local','--server.address=127.0.0.1',
         '--spring.jpa.hibernate.ddl-auto=none','--spring.sql.init.mode=never','--carrent.subscription.enabled=true',
-        '--carrent.payment.payout.enabled=false','--carrent.rental.deadlines.enabled=false')
+        ('--carrent.payment.payout.enabled=' + $payoutEnabled.ToString().ToLowerInvariant()),'--carrent.rental.deadlines.enabled=false')
     foreach ($role in @('owner','admin')) {
         $id = Get-LocalValue $Properties ('carrent.payment.pilot.' + $role + '-id') (Get-LocalValue $Properties ('CARRENT_SEPAY_' + $role.ToUpperInvariant() + '_ID'))
         $number = [long]0
@@ -442,7 +443,7 @@ function Start-AppTunnel([hashtable]$Properties, [int]$Port) {
 
 function Invoke-LocalLauncher {
     $facts = @{'Mode'=$(if ($CheckOnly) {'CHECK ONLY - no installs/builds/service starts/DB writes'} else {'START'});
-        'Payouts'='Launcher never enables payouts; new app starts with payout worker OFF'}
+        'Payouts'='App payout worker follows explicit carrent.payment.payout.enabled; default OFF'}
     $report = Join-Path $script:State 'SETUP-NEEDED.md'
     try {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12

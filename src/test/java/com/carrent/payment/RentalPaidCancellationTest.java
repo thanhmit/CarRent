@@ -129,7 +129,7 @@ class RentalPaidCancellationTest {
     @Test void waitingFundsKeepsCancellationAndReceivedMoneyUntilProviderSuccess() throws Exception {
         paid(); bookings().cancelBooking(1L,f.actor(4),"Change schedule");
         long id=f.jdbc.queryForObject("SELECT id FROM refunds",Long.class);
-        var form=new RefundRecipientForm(); form.setBankBin("970422"); form.setAccountNumber("000123456");form.setConfirmedAccountName("NGUYEN TEST");
+        var form=new RefundRecipientForm(); form.setBankBin("970422"); form.setAccountNumber("000123456");
         f.app.getBean(RefundRecipientService.class).submit(id,form,f.actor(4));
         var provider=f.app.getBean(PayoutWorkerTest.FakePayouts.class); provider.reset();
         provider.onCreate=(channel,command)->new com.carrent.payment.provider.PayoutResult("p611-offline",command.referenceId(),com.carrent.payment.provider.TransferOutcome.NOT_SENT,command.bankBin(),command.accountNumber(),command.amount(),com.carrent.payment.provider.PayoutResult.NotSentReason.INSUFFICIENT_FUNDS);

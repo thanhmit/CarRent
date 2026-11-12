@@ -1,0 +1,56 @@
+{
+  "command": {
+    "referenceId": "refund:1:attempt:1",
+    "amount": 540000,
+    "description": "Hoan tien 1",
+    "toBin": "970422",
+    "toAccountNumber": "000123456"
+  },
+  "requestSignature": "3c84d8ddf541ebef839d424eeb691df94e7b39a70f95a7a8a4abb8d4acb6a67c",
+  "PROCESSING": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_bank_only_1",
+        "referenceId": "refund:1:attempt:1",
+        "transactions": [
+          {
+            "referenceId": "refund:1:attempt:1",
+            "amount": 540000,
+            "description": "Hoan tien 1",
+            "toBin": "970422",
+            "toAccountNumber": "000123456",
+            "id": "tx_bank_only_1",
+            "state": "PROCESSING"
+          }
+        ],
+        "approvalState": "APPROVED"
+      }
+    },
+    "signature": "5abc33303d8de7e60828fed8b40e10063d89d872eb4f68cdb491db130e1dac1a"
+  },
+  "SUCCEEDED": {
+    "body": {
+      "code": "00",
+      "desc": "success",
+      "data": {
+        "id": "payout_bank_only_1",
+        "referenceId": "refund:1:attempt:1",
+        "transactions": [
+          {
+            "referenceId": "refund:1:attempt:1",
+            "amount": 540000,
+            "description": "Hoan tien 1",
+            "toBin": "970422",
+            "toAccountNumber": "000123456",
+            "id": "tx_bank_only_1",
+            "state": "SUCCEEDED"
+          }
+        ],
+        "approvalState": "APPROVED"
+      }
+    },
+    "signature": "e0f4c77ea3d2a0e859980d4cfbc7d96d3fb7cc9b5202dce68fd562159c01a824"
+  }
+}

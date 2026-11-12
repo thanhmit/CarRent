@@ -2,6 +2,8 @@
 
 ## Phạm vi
 
+**Hoàn tiền bằng ngân hàng + STK (12/11/2026):** sau refund-accounts v1, áp dụng [2026-11-12-01-refund-bank-account-only.sql](2026-11-12-01-refund-bank-account-only.sql) để cho phép `refund_recipient_accounts.account_name=NULL`. Sao lưu riêng bảng này, phục hồi thử trên schema tạm và đối chiếu toàn bộ hàng trước khi đặt `@carrent_refund_bank_account_backup_confirmed=1` trong connection đã chọn đúng schema. Migration giữ nguyên dữ liệu và các constraint khác, từ chối chạy lại; không chạy lại bootstrap trên DB đang có dữ liệu. [Luồng hiện tại](../refund-bank-account-only.md) không dùng lookup hoặc tên chủ tài khoản.
+
 **P6.11:** bootstrap `scriptDB.sql` có `bookings.cancellation_reason VARCHAR(500) NULL`. Schema đã có Phase 6 nhưng thiếu cột này dùng migration riêng `2026-11-02-01-cancellation-reason.sql`, sau backup và dừng ứng dụng; đặt `@carrent_cancellation_backup_confirmed=1` trong session đã chọn đúng schema. Giữ nguyên migration rental cũ; nâng cấp từ legacy phải áp dụng rental rồi cancellation-reason. Script từ chối thiếu backup, thiếu Phase 6 hoặc đã có cột, không sửa dữ liệu cũ. Chỉ chạy trên schema fixture trong đợt implement P6.11; **chưa chạy lên DB ứng dụng**.
 
 `2026-10-27-01-payment-core.sql` tạo đúng 7 bảng tài chính trên schema legacy hiện hành. File không chọn database, không ghi/xóa dữ liệu legacy, không seed kênh thật và không chạy khi ứng dụng boot. `scriptDB.sql` dành cho bootstrap; không dùng `CREATE TABLE IF NOT EXISTS` của bootstrap làm công cụ sửa schema bị lệch.
