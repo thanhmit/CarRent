@@ -20,14 +20,20 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class RefundController {
     private final RefundRecipientService recipients;
-    public RefundController(RefundRecipientService recipients) { this.recipients = recipients; }
+    private final RefundBankDirectory banks;
+    public RefundController(RefundRecipientService recipients, RefundBankDirectory banks) {
+        this.recipients = recipients; this.banks = banks;
+    }
+
+    @ModelAttribute("bankDirectory")
+    public RefundBankDirectory bankDirectory() { return banks; }
 
     @ModelAttribute
     void noCache(HttpServletResponse response) { response.setHeader("Cache-Control", "no-store"); }
 
     @InitBinder("recipientForm")
     void bind(WebDataBinder binder) {
-        binder.setAllowedFields("bankBin", "accountNumber", "saveForLater", "confirmedAccountName");
+        binder.setAllowedFields("bankBin", "accountNumber", "saveForLater");
     }
 
     @GetMapping("/payment/refunds/{id}")
@@ -38,27 +44,15 @@ public class RefundController {
         return "payment/refund";
     }
 
-    @PostMapping("/payment/refunds/{id}/recipient/preview")
-    public String preview(@PathVariable Long id, @Valid @ModelAttribute("recipientForm") RefundRecipientForm form,
-            BindingResult errors, @AuthenticationPrincipal CustomUserPrincipal actor, Model model, HttpServletResponse response) {
-        model.addAttribute("refund", recipients.view(id, actor));
-        if (errors.hasErrors()) { response.setStatus(400); return "payment/refund"; }
-        try {
-            var destination = recipients.preview(id, form, actor);
-            form.setConfirmedAccountName(destination.accountName());
-            model.addAttribute("destination", destination);
-        } catch (BusinessException ex) {
-            response.setStatus(409); model.addAttribute("errorMessage", ex.getMessage());
-        }
-        return "payment/refund";
-    }
-
     @PostMapping("/payment/refunds/{id}/recipient")
     public String submit(@PathVariable Long id, @Valid @ModelAttribute("recipientForm") RefundRecipientForm form,
             BindingResult errors, @RequestParam(defaultValue = "false") boolean confirmed,
             @AuthenticationPrincipal CustomUserPrincipal actor, Model model, HttpServletResponse response,
             RedirectAttributes redirect) {
         model.addAttribute("refund", recipients.view(id, actor));
+        if (!errors.hasFieldErrors("bankBin") && !banks.supports(form.getBankBin())) {
+            errors.rejectValue("bankBin", "unsupported", "Ngân hàng nhận chưa được hỗ trợ.");
+        }
         if (errors.hasErrors()) { response.setStatus(400); return "payment/refund"; }
         try {
             if (!confirmed) throw new BusinessException("Vui lòng xác nhận đã kiểm tra đúng tài khoản nhận.");

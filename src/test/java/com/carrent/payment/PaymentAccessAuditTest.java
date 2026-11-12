@@ -117,18 +117,15 @@ class PaymentAccessAuditTest {
         for (long actor : ACTORS) {
             unchanged(get(url), actor, actor == 0 ? 302 : actor == 4 ? 200 : 403);
             unchanged(get(url + "/status"), actor, actor == 0 ? 302 : actor == 1 || actor == 2 || actor == 4 ? 200 : 403);
-            if (actor != 4) for (String suffix : List.of("/recipient/preview", "/recipient"))
+            if (actor != 4) for (String suffix : List.of("/recipient"))
                 unchanged(recipient(url + suffix), actor, actor == 0 ? 302 : 403);
         }
         assertThat(verifications.get()).isZero();
         var before = snapshot();
-        requestAs(recipient(url + "/recipient/preview"), 4, 200);
-        assertThat(snapshot()).isEqualTo(before);
-        assertThat(verifications.get()).isOne();
         requestAs(recipient(url + "/recipient").param("amount", "1").param("payoutChannelId", "104")
                 .param("recipientUserId", "1").param("status", "SUCCEEDED")
                 .param("readyAt", "2000-01-01T00:00:00Z").param("dueAt", "2099-01-01T00:00:00Z"), 4, 302);
-        assertThat(verifications.get()).isEqualTo(2);
+        assertThat(verifications.get()).isZero();
         assertThat(f.jdbc.queryForMap("SELECT amount,payout_channel_id,recipient_user_id,status,ready_at,due_at FROM refunds WHERE id=?", id))
                 .containsEntry("amount", 540000L).containsEntry("payout_channel_id", 103L)
                 .containsEntry("recipient_user_id", 4L).containsEntry("status", "READY")
@@ -289,7 +286,7 @@ class PaymentAccessAuditTest {
 
     private MockHttpServletRequestBuilder recipient(String path) {
         return post(path).with(csrf()).param("bankBin", "970422").param("accountNumber", "000123456")
-                .param("confirmedAccountName", "NGUYEN TEST").param("confirmed", "true");
+                .param("confirmed", "true");
     }
 
     private void unchanged(MockHttpServletRequestBuilder request, long actor, int status) throws Exception {

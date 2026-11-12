@@ -4,6 +4,12 @@ Double-click **`start.bat`** ở thư mục gốc repo. Cần Windows 10/11 x64,
 PowerShell 5.1, kết nối mạng và quyền cài phần mềm khi Windows hiện UAC.
 Không cần cài Node, Git hoặc Maven riêng để chạy web Thymeleaf này.
 
+Trong cấu hình local hiện tại, **toàn bộ giá trị được đặt trong
+`application-local.properties`**, gồm cả các khóa `CARRENT_*` trước đây ở
+`.env`. Các khóa này là property trong file, không yêu cầu khai báo biến
+môi trường Windows. `.env` hiện chỉ còn ghi chú; ứng dụng và launcher vẫn
+đọc được cấu hình gộp mà không cần sửa code.
+
 ## Launcher tự làm những gì?
 
 1. Kiểm tra JDK có cả `java` và `javac`, phiên bản từ 21. Nếu thiếu, cài
@@ -49,8 +55,8 @@ sửa allowlist, tạo webhook hoặc xử lý enrollment/OTP. Launcher không t
 
 | File | Dùng cho | Có đưa lên Git không? |
 | --- | --- | --- |
-| `.env` | Ngrok token, ngân hàng thu, HMAC SePay, ID người dùng, khóa payOS/VietQR | Không |
-| `application-local.properties` | Kết nối MySQL và các override provider đã có | Không |
+| `application-local.properties` | Toàn bộ cấu hình local: MySQL, ngân hàng thu, SePay, ID người dùng, payOS/VietQR và ngrok | Không |
+| `.env` | Nguồn cấu hình tùy chọn để tương thích; hiện chỉ còn ghi chú, không chứa giá trị | Không |
 | `.local/SETUP-NEEDED.md` | Báo cáo tự tạo; đọc rồi sửa file input, không điền secret vào báo cáo | Không |
 | `.local/*.log`, `.local/mysql/` | Log/process/datadir riêng; có thể chứa thông tin nhạy cảm | Không |
 | `.env.example` | Tên các trường dùng chung; luôn để trống secret | Có |
@@ -303,9 +309,12 @@ lệnh kill mù theo file PID. Kiểm tra Task Manager → Details → Command l
 chạy không được restart tự động khi config/source thay đổi: dừng đúng app,
 sửa file và chạy BAT để build/nạp lại.
 
-Launcher mới luôn ép `ddl-auto=none`, SQL init `never`, payout worker OFF
-và rental deadline job OFF. Subscription UI được bật. Nó không tự chi tiền,
-không tạo refund, không bật Payment Settings S1/S2/S3 và không sửa trạng thái
-`UNKNOWN`. Việc bật live payout là quy trình riêng sau xác minh nguồn/đích,
-provider và đối soát; xem tài liệu payOS. Nếu tái sử dụng một app đã chạy,
-launcher giữ nguyên cấu hình runtime của app đó.
+Launcher luôn ép `ddl-auto=none`, SQL init `never` và rental deadline job OFF.
+Subscription UI được bật. Payout worker mặc định OFF; khi người vận hành đặt
+`carrent.payment.payout.enabled=true` trong cấu hình riêng, launcher giữ lựa chọn
+bật này khi khởi động app. Worker sẽ gửi/đối soát các khoản hoàn đủ điều kiện khi
+scheduler, cấu hình kênh PayOS và mapping DB cùng được bật. Launcher không tự tạo
+refund hoặc sửa trạng thái `UNKNOWN`. Xem tài liệu payOS về điều kiện của nguồn chi.
+Nếu tái sử dụng một app đã chạy, launcher giữ cấu hình runtime của app đó; cần
+restart đúng process để nạp cấu hình mới. Ngày 12/11/2026, người dùng đã yêu cầu
+bật chi thật để tự test; trạng thái này thay thế ghi nhận OFF trong báo cáo trước đó.

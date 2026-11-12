@@ -91,7 +91,7 @@ class PaymentMaintenancePayoutTest {
         f.app.getBean(ReceiptProcessor.class).process(f.receive(9001, intent.code(), "600000"));
         long receipt = f.jdbc.queryForObject("SELECT id FROM payment_receipts", Long.class);
         long id = f.app.getBean(RefundService.class).request("CUSTOMER_CANCEL:1:" + receipt, receipt, 540000, RefundReason.CUSTOMER_CANCEL);
-        var form = new RefundRecipientForm(); form.setBankBin("970422"); form.setAccountNumber("000123456"); form.setConfirmedAccountName("NGUYEN TEST");
+        var form = new RefundRecipientForm(); form.setBankBin("970422"); form.setAccountNumber("000123456");
         f.app.getBean(RefundRecipientService.class).submit(id, form, f.actor(4));
         return id;
     }

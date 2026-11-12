@@ -43,7 +43,7 @@ class PaymentFoundationTest {
             assertThat(f.payments.status(intent.id(), f.actor(payer)).status()).isEqualTo("REFUND_PENDING");
             f.mvc.perform(post("/payment/refunds/" + refund + "/recipient").with(user(f.actor(payer))).with(csrf())
                     .param("bankBin", "970422").param("accountNumber", "000123456")
-                    .param("confirmedAccountName", "NGUYEN TEST").param("confirmed", "true"))
+                    .param("confirmed", "true"))
                     .andExpect(status().is3xxRedirection());
             await(() -> {
                 assertThat(f.jdbc.queryForObject("SELECT COUNT(*) FROM payout_attempts WHERE status='UNKNOWN'", Long.class)).isEqualTo(1);

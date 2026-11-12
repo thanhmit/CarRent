@@ -39,59 +39,38 @@ class VietQrRecipientIntegrationTest {
     @AfterEach void verifyRequests(){server.verify();}
     String url(){return "/payment/refunds/"+refund;}
 
-    void lookup(String name){
-        server.expect(requestTo("https://api.vietqr.io/v2/lookup"))
-                .andExpect(request->assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse())
-                .andExpect(content().json("{\"bin\":970422,\"accountNumber\":\"000123456\"}"))
-                .andRespond(withSuccess("{\"code\":\"00\",\"data\":{\"accountName\":\""+name+"\"}}",MediaType.APPLICATION_JSON));
-    }
-
-    @Test void previewThenReverificationProtectsTheNameAndOnlyConfirmationMakesTheRefundReady() throws Exception {
+    @Test void confirmationWithoutLookupChangesOnlyTheRefundAndNeverCallsVietQr() throws Exception {
         var before=snapshot();
-        lookup("FIRST VERIFIED NAME");lookup("CHANGED VERIFIED NAME");lookup("CHANGED VERIFIED NAME");
-        String page=f.mvc.perform(post(url()+"/recipient/preview").with(user(f.actor(4))).with(csrf())
-                .param("bankBin","970422").param("accountNumber","000123456"))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(page).contains("FIRST VERIFIED NAME");assertThat(snapshot()).isEqualTo(before);
         f.mvc.perform(post(url()+"/recipient").with(user(f.actor(4))).with(csrf())
                 .param("bankBin","970422").param("accountNumber","000123456")
-                .param("confirmedAccountName","FIRST VERIFIED NAME").param("confirmed","true"))
-                .andExpect(status().isConflict());
-        assertThat(snapshot()).isEqualTo(before);
-        f.mvc.perform(post(url()+"/recipient").with(user(f.actor(4))).with(csrf())
-                .param("bankBin","970422").param("accountNumber","000123456")
-                .param("confirmedAccountName","CHANGED VERIFIED NAME").param("confirmed","true"))
+                .param("confirmed","true"))
                 .andExpect(status().is3xxRedirection());
         var after=snapshot();before.forEach((table,rows)->{if(!table.equals("refunds"))assertThat(after.get(table)).isEqualTo(rows);});
         var row=f.jdbc.queryForMap("SELECT amount,status,payout_channel_id,recipient_user_id,account_number,account_name,ready_at,due_at FROM refunds WHERE id=?",refund);
         assertThat(row).containsEntry("status","READY").containsEntry("amount",540000L)
                 .containsEntry("payout_channel_id",103L).containsEntry("recipient_user_id",4L)
-                .containsEntry("account_number","000123456").containsEntry("account_name","CHANGED VERIFIED NAME");
+                .containsEntry("account_number","000123456").containsEntry("account_name",null);
         assertThat(row.get("ready_at")).isEqualTo(java.time.LocalDateTime.of(2026,10,30,3,0));
         assertThat(row.get("due_at")).isEqualTo(java.time.LocalDateTime.of(2026,10,30,4,0));
         assertThat(f.count("payout_attempts")).isZero();
     }
 
-    @Test void lookupFailureKeepsTheRefundAndSavedAccountsUnchanged() throws Exception {
+    @Test void removedPreviewRouteCannotTriggerALookupOrChangeData() throws Exception {
         var before=snapshot();
-        server.expect(requestTo("https://api.vietqr.io/v2/lookup"))
-                .andRespond(withStatus(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS).body("private-provider-body"));
-        String page=f.mvc.perform(post(url()+"/recipient/preview").with(user(f.actor(4))).with(csrf())
+        f.mvc.perform(post(url()+"/recipient/preview").with(user(f.actor(4))).with(csrf())
                 .param("bankBin","970422").param("accountNumber","000123456"))
-                .andExpect(status().isConflict()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(page).doesNotContain("private-provider-body","fixture-private-lookup-key");
+                .andExpect(status().isNotFound());
         assertThat(snapshot()).isEqualTo(before);
     }
 
     @Test void wrongRecipientMissingCsrfAndMissingConfirmationNeverReachLookup() throws Exception {
         var before=snapshot();
-        f.mvc.perform(post(url()+"/recipient/preview").with(user(f.actor(5))).with(csrf())
+        f.mvc.perform(post(url()+"/recipient").with(user(f.actor(5))).with(csrf())
                 .param("bankBin","970422").param("accountNumber","000123456")).andExpect(status().isForbidden());
-        f.mvc.perform(post(url()+"/recipient/preview").with(user(f.actor(4)))
+        f.mvc.perform(post(url()+"/recipient").with(user(f.actor(4)))
                 .param("bankBin","970422").param("accountNumber","000123456")).andExpect(status().isForbidden());
         f.mvc.perform(post(url()+"/recipient").with(user(f.actor(4))).with(csrf())
-                .param("bankBin","970422").param("accountNumber","000123456")
-                .param("confirmedAccountName","KNOWN NAME")).andExpect(status().isConflict());
+                .param("bankBin","970422").param("accountNumber","000123456")).andExpect(status().isConflict());
         assertThat(snapshot()).isEqualTo(before);
     }
 

@@ -353,7 +353,7 @@ class PayoutWorkerTest {
         f.app.getBean(ReceiptProcessor.class).process(f.jdbc.queryForObject("SELECT id FROM webhook_inbox",Long.class));
         long receipt=f.jdbc.queryForObject("SELECT id FROM payment_receipts",Long.class);
         long id=f.app.getBean(RefundService.class).request("CANCELLED_SUBSCRIPTION:"+receipt,receipt,5000,RefundReason.CANCELLED_SUBSCRIPTION);
-        var form=new RefundRecipientForm(); form.setBankBin("970422"); form.setAccountNumber("000123456"); form.setConfirmedAccountName("NGUYEN TEST");
+        var form=new RefundRecipientForm(); form.setBankBin("970422"); form.setAccountNumber("000123456");
         f.app.getBean(RefundRecipientService.class).submit(id,form,f.actor(2));
         provider.onCreate=(channel,c) -> {
             assertThat(channel).isEqualTo(104);
@@ -388,7 +388,7 @@ class PayoutWorkerTest {
         long receipt=f.jdbc.queryForObject("SELECT id FROM payment_receipts",Long.class);
         long id=f.app.getBean(RefundService.class).request("CUSTOMER_CANCEL:1:"+receipt,receipt,540000,RefundReason.CUSTOMER_CANCEL);
         var form=new RefundRecipientForm(); form.setBankBin("970422"); form.setAccountNumber("000123456");
-        form.setConfirmedAccountName("NGUYEN TEST");
+
         f.app.getBean(RefundRecipientService.class).submit(id,form,f.actor(4));
         return id;
     }

@@ -169,8 +169,7 @@ public class PayoutTransactions {
         return refund.getReadyAt()!=null && refund.getDueAt()!=null
                 && refund.getDueAt().equals(refund.getReadyAt().plusSeconds(3600))
                 && refund.getBankBin()!=null && refund.getBankBin().matches("[0-9]{6}")
-                && refund.getAccountNumber()!=null && refund.getAccountNumber().matches("[0-9]{1,50}")
-                && refund.getAccountName()!=null && !refund.getAccountName().isBlank();
+                && refund.getAccountNumber()!=null && refund.getAccountNumber().matches("[0-9]{1,50}");
     }
 
     private Claim claim(Refund refund,PayoutAttempt attempt) {

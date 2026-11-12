@@ -14,6 +14,7 @@ class RefundAccountMigrationTest {
             var legacy = migrated.legacySnapshot();
             var core = migrated.coreSchema();
             migrate(migrated, true);
+            BankAccountRefundMigrationTest.migrate(migrated, true);
             fresh.bootstrap(Path.of("scriptDB.sql"));
             assertThat(schema(migrated)).isEqualTo(schema(fresh));
             assertThat(migrated.legacySnapshot()).isEqualTo(legacy);

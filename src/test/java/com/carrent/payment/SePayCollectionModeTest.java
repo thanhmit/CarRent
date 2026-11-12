@@ -33,7 +33,7 @@ class SePayCollectionModeTest {
         long refund = f.app.getBean(RefundService.class).request("CUSTOMER_CANCEL:1:" + receipt,
                 receipt, 540000, RefundReason.CUSTOMER_CANCEL);
         var form = new RefundRecipientForm();
-        form.setBankBin("970422"); form.setAccountNumber("000123456"); form.setConfirmedAccountName("NGUYEN TEST");
+        form.setBankBin("970422"); form.setAccountNumber("000123456");
         f.app.getBean(RefundRecipientService.class).submit(refund, form, f.actor(4));
         job.scan(); drain();
         assertThat(provider.creates.get()).isZero();

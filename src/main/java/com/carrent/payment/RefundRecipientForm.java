@@ -2,7 +2,6 @@ package com.carrent.payment;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +15,4 @@ public class RefundRecipientForm {
     @Pattern(regexp = "[0-9]{1,50}", message = "Số tài khoản phải gồm 1–50 chữ số.")
     private String accountNumber;
     private boolean saveForLater;
-    @Size(max = 150, message = "Tên tài khoản không hợp lệ.")
-    private String confirmedAccountName;
 }

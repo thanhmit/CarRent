@@ -119,11 +119,8 @@ class SubscriptionOwnerUiTest {
         assertThat(f.jdbc.queryForMap("SELECT payout_channel_id,recipient_user_id,status FROM refunds"))
                 .containsEntry("payout_channel_id",104L).containsEntry("recipient_user_id",2L).containsEntry("status","WAITING_RECIPIENT");
         String recipient="/payment/refunds/"+id;
-        f.mvc.perform(post(recipient+"/recipient/preview").with(user(f.actor(2))).with(csrf())
-                .param("bankBin","970422").param("accountNumber","000777888"))
-                .andExpect(status().isOk()).andExpect(model().attributeExists("destination"));
         f.mvc.perform(post(recipient+"/recipient").with(user(f.actor(2))).with(csrf())
-                .param("bankBin","970422").param("accountNumber","000777888").param("confirmedAccountName","NGUYEN TEST").param("confirmed","true"))
+                .param("bankBin","970422").param("accountNumber","000777888").param("confirmed","true"))
                 .andExpect(status().is3xxRedirection());
         var provider=f.app.getBean(PayoutWorkerTest.FakePayouts.class);
         provider.onCreate=(channel,c) -> {
@@ -153,9 +150,9 @@ class SubscriptionOwnerUiTest {
                 "/payment/intents/"+order.intent().id()+"/status","/payment/finances/refunds/"+id,"/payment/refunds/"+id,"/payment/refunds/"+id+"/status"}) {
             f.mvc.perform(get(url).with(user(foreign))).andExpect(status().isForbidden());
         }
-        for(String suffix:new String[]{"/recipient/preview","/recipient"}) {
+        for(String suffix:new String[]{"/recipient"}) {
             var request=post("/payment/refunds/"+id+suffix).with(user(foreign)).with(csrf())
-                    .param("bankBin","970422").param("accountNumber","000777888").param("confirmedAccountName","NGUYEN TEST").param("confirmed","true");
+                    .param("bankBin","970422").param("accountNumber","000777888").param("confirmed","true");
             f.mvc.perform(request).andExpect(status().isForbidden());
             f.mvc.perform(post("/payment/refunds/"+id+suffix).with(user(owner)).param("bankBin","970422").param("accountNumber","000777888"))
                     .andExpect(status().isForbidden());

@@ -80,6 +80,8 @@ final class PaymentFlowFixture implements AutoCloseable {
                             "--fixture.refund-verifier.enabled=" + verifierEnabled,
                             "--carrent.payment.recipient-lookup.enabled=false",
                             "--carrent.payment.maintenance.enabled=" + maintenanceEnabled,
+                            "--carrent.payment.payout.enabled=" + System.getProperty("carrent.payment.payout.enabled", "true"),
+                            "--carrent.subscription.enabled=" + System.getProperty("carrent.subscription.enabled", "false"),
                             "--carrent.rental.workflow.enabled=" + System.getProperty("carrent.rental.workflow.enabled", "false"),
                             "--carrent.rental.advance.enabled=" + System.getProperty("carrent.rental.advance.enabled", "false"),
                             "--carrent.rental.balance.enabled=" + System.getProperty("carrent.rental.balance.enabled", "false"),

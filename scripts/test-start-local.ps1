@@ -52,7 +52,12 @@ cycle=${cycle}
     Check ($startup -contains '--carrent.payment.pilot.owner-id=0') 'fresh blank pilot owner does not prevent web boot'
     Check ($startup -contains '--carrent.payment.pilot.admin-id=0') 'invalid pilot admin fails closed to no pilot'
     Check ($startup -contains '--carrent.payment.recipient-lookup.enabled=false') 'incomplete lookup does not prevent web boot'
-    Check ($startup -contains '--carrent.payment.payout.enabled=false') 'new web never enables payout worker'
+    Check ($startup -contains '--carrent.payment.payout.enabled=false') 'new web disables payout worker by default'
+    $liveStartup = @(Get-AppStartupArguments 'C:\fixture\carrent.jar' @{'carrent.payment.payout.enabled'='true'})
+    Check ($liveStartup -contains '--carrent.payment.payout.enabled=true') 'explicit configuration enables payout worker'
+    Check ($liveStartup -notcontains '--carrent.payment.payout.enabled=false') 'explicit payout activation is not overridden'
+    $invalidStartup = @(Get-AppStartupArguments 'C:\fixture\carrent.jar' @{'carrent.payment.payout.enabled'='invalid'})
+    Check ($invalidStartup -contains '--carrent.payment.payout.enabled=false') 'invalid payout flag stays disabled'
     Check ($startup -contains '--carrent.payment.providers.sepay.owner-live.enabled=false') 'missing collection secret disables incomplete provider'
     Check (-not (Test-NewManagedDatabase $false @{'spring.datasource.password'='supplied'} 'supplied' 'root')) 'existing effective credentials are never replaced'
     Check (-not (Test-NewManagedDatabase $false @{'spring.datasource.username'='developer'} '' 'developer')) 'existing DB username is never replaced'
